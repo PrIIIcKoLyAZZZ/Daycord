@@ -14,15 +14,17 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void MarkDatabaseReady()
     {
-        IsDatabaseReady = true;
         DatabaseStatusMessage = "Local database ready.";
+        IsDatabaseReady = true;
     }
 
     public void MarkDatabaseFailed(Exception error)
     {
         IsDatabaseReady = false;
+
         DatabaseStatusMessage =
-            $"Database initialization failed: {error.Message} " +
-            "The application cannot access task data. Close Daycord and check the database or its backups.";
+            $"Database initialization failed: {error.Message}\n" +
+            "Task data is unavailable. Close Daycord and check the database " +
+            "or its backups.";
     }
 }

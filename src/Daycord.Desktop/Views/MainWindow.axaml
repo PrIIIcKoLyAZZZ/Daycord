@@ -33,13 +33,14 @@
                            FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryText}" />
 
-                <!-- MVVM binding -->
+                <!-- Welcome message -->
                 <TextBlock Text="{Binding WelcomeMessage}"
                            FontSize="18"
                            Foreground="{DynamicResource PrimaryText}" />
 
-                <!-- Application status -->
-                <TextBlock Text="Базовая структура приложения готова."
+                <!-- Database initialization status -->
+                <TextBlock Text="{Binding DatabaseStatusMessage}"
+                           TextWrapping="Wrap"
                            FontSize="14"
                            Foreground="{DynamicResource SecondaryText}" />
 

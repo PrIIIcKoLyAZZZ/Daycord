@@ -12,6 +12,7 @@ namespace Daycord.Desktop;
 public partial class App : Application
 {
     private ServiceProvider? _serviceProvider;
+    private bool _databaseInitializationStarted;
 
     public override void Initialize()
     {
@@ -22,30 +23,53 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var provider = ServiceRegistration.CreateServiceProvider();
-            _serviceProvider = provider;
-            var viewModel = provider.GetRequiredService<MainWindowViewModel>();
-            var window = provider.GetRequiredService<MainWindow>();
+            _serviceProvider = ServiceRegistration.CreateServiceProvider();
 
-            // The window displays an initializing state, not functional data screens.
+            var viewModel =
+                _serviceProvider.GetRequiredService<MainWindowViewModel>();
+
+            var window =
+                _serviceProvider.GetRequiredService<MainWindow>();
+
             window.Opened += async (_, _) =>
             {
-                try
+                if (_databaseInitializationStarted)
                 {
-                    var initializer = provider.GetRequiredService<IDatabaseInitializer>();
-                    await initializer.InitializeAsync();
-                    viewModel.MarkDatabaseReady();
+                    return;
                 }
-                catch (Exception error)
-                {
-                    viewModel.MarkDatabaseFailed(error);
-                }
+
+                _databaseInitializationStarted = true;
+
+                await InitializeDatabaseAsync(viewModel);
             };
 
             desktop.MainWindow = window;
-            desktop.Exit += (_, _) => _serviceProvider?.Dispose();
+
+            desktop.Exit += (_, _) =>
+            {
+                _serviceProvider?.Dispose();
+                _serviceProvider = null;
+            };
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private async Task InitializeDatabaseAsync(
+        MainWindowViewModel viewModel)
+    {
+        try
+        {
+            var initializer = _serviceProvider!
+                .GetRequiredService<IDatabaseInitializer>();
+
+            await initializer.InitializeAsync();
+
+            viewModel.MarkDatabaseReady();
+        }
+        catch (Exception error)
+        {
+            viewModel.MarkDatabaseFailed(error);
+        }
     }
 }

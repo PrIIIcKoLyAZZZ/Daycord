@@ -1,140 +1,441 @@
 # Daycord
 
-Daycord — локальное desktop-приложение для планирования задач, учёта фактически
-выполненной работы и формирования ежемесячных Excel-отчётов (последнее — в будущем).
-Поддерживаемые платформы: macOS ARM64 и Windows x64. Приложение работает без
-отдельного сервера, обязательной регистрации и интернет-соединения.
+Daycord — локальное кроссплатформенное desktop-приложение для планирования
+задач, учёта фактически выполненной работы и формирования ежемесячных
+Excel-отчётов.
 
-## Технологии
+Целевые платформы: macOS ARM64 и Windows x64.
 
-| Компонент | Технология |
+Приложение работает локально, без отдельного сервера, обязательной
+регистрации и постоянного интернет-соединения.
+
+## Technology Stack
+
+| Component | Technology |
 |---|---|
-| Язык и runtime | C#, .NET 10 |
-| Solution | `Daycord.slnx` |
-| UI | Avalonia 12.1.4 |
-| MVVM | CommunityToolkit.Mvvm 8.4.2 |
+| Language | C# |
+| Runtime | .NET 10 |
+| Solution | Daycord.slnx |
+| UI | Avalonia 12 |
+| MVVM | CommunityToolkit.Mvvm |
 | DI | Microsoft.Extensions.DependencyInjection |
-| База данных | SQLite / Microsoft.Data.Sqlite 10.0.13 |
-| Доступ к данным | Dapper 2.1.89 |
-| Миграции | Встроенные версионированные SQL-скрипты |
-| Excel | ClosedXML (планируется) |
-| IDE | JetBrains Rider |
+| Database | SQLite |
+| Data access | Dapper 2.1.89 |
+| SQLite provider | Microsoft.Data.Sqlite 10.0.13 |
+| Migrations | Embedded versioned SQL scripts |
+| Excel | ClosedXML (planned) |
 
-Entity Framework Core не используется.
+Entity Framework Core is not used.
 
-## Архитектура
+## Solution Architecture
 
-Solution содержит три проекта:
+Daycord consists of three projects.
 
-- **Daycord.Core** — независимые доменные сущности `TaskItem`,
-  `TaskStatusDefinition`, `PlanningPeriod`, `WorkEntry` и контракт
-  `IDatabaseInitializer`. Статус задачи задаётся `StatusId`, а не enum.
-- **Daycord.Infrastructure** — пути пользовательских данных, фабрика
-  подключений SQLite, Dapper type handlers, миграции и защитные копии.
-- **Daycord.Desktop** — нативное окно Avalonia, MVVM, тема Graphite & Amber,
-  конфигурация DI и асинхронный запуск базы данных.
+### Daycord.Core
 
-Направление зависимостей: Infrastructure → Core, Desktop → Core и Infrastructure.
-HTTP-backend, WebView и универсальный repository framework не используются.
+Contains domain entities and application contracts:
 
-## Сборка и запуск
+- TaskItem
+- TaskStatusDefinition
+- PlanningPeriod
+- WorkEntry
+- IDatabaseInitializer
 
-Необходим .NET SDK 10. `global.json` закрепляет 10.0.201 с `latestPatch`.
-Это временное отклонение от ранее обсуждавшейся ветки 10.0.400.
-В корне репозитория выполнить:
+Core does not depend on Infrastructure or Desktop.
+
+### Daycord.Infrastructure
+
+Contains:
+
+- AppDataPaths
+- SqliteConnectionFactory
+- SqliteTypeHandlers
+- DatabaseInitializer
+- MigrationRunner
+- DatabaseBackupService
+- Embedded SQL migrations
+
+Infrastructure depends on Core.
+
+### Daycord.Desktop
+
+Contains:
+
+- Avalonia views
+- MVVM view models
+- Dependency injection configuration
+- Application startup
+- Graphite & Amber theme resources
+
+Desktop depends on Core and Infrastructure.
+
+## Build and Run
+
+Requires .NET SDK 10.
+
+From the repository root:
 
 ```bash
-dotnet --info
 dotnet restore Daycord.slnx
 dotnet build Daycord.slnx
 dotnet run --project src/Daycord.Desktop/Daycord.Desktop.csproj
 ```
 
-Для первого восстановления NuGet потребуется сеть. После установки
-приложение не требует сетевого подключения для работы.
+The solution uses Central Package Management through
+`Directory.Packages.props`.
 
-## Локальная база данных
+The application must not require a network connection after installation.
 
-Рабочий файл называется `daycord.db` и создаётся автоматически при первом
-запуске. Путь определяется через `Environment.SpecialFolder.LocalApplicationData`:
+## Local Database
 
-- macOS: `~/Library/Application Support/Daycord/daycord.db`;
-- Windows: `%LOCALAPPDATA%\Daycord\daycord.db`.
+The database file is named:
 
-При запуске главное окно сначала отображает **Initializing local database...**.
-После успешной проверки появляется **Local database ready.** Если инициализация
-завершается ошибкой, окно показывает причину, а сценарии, требующие БД, остаются
-недоступными. Подключения создаются на время операции с включёнными foreign keys.
+`daycord.db`
 
-Основные таблицы: `TaskStatuses`, `Tasks`, `PlanningPeriods`, `WorkEntries`.
-План и факт работы разделены, длительности хранятся в целых минутах.
-Идентификаторы (`Guid`) — текст в формате D, даты (`DateOnly`) — `yyyy-MM-dd`,
-технические метки — ISO 8601 UTC. Dapper-конвертеры расположены в
-`SqliteTypeHandlers.cs`.
+Its location is determined through:
 
-После миграции `001_InitialSchema.sql` существуют два системных статуса:
+`Environment.SpecialFolder.LocalApplicationData`
 
-| Key | Name | Id | IsCompleted |
-|---|---|---|---|
-| `open` | Open | `5e8a148e-1a3b-4b17-bba6-251392a01d61` | false |
-| `completed` | Completed | `b9436dc3-7247-4d9e-a032-2a9cb1b9c7a8` | true |
+Expected paths:
 
-Схема допускает пользовательские статусы; редактор статусов не входит в DC-003.
-По умолчанию интерфейс использует английский язык; русская локализация появится позже.
+macOS:
 
-## Автоматические миграции и защита данных
+`~/Library/Application Support/Daycord/daycord.db`
 
-Скрипты расположены в
-`src/Daycord.Infrastructure/Persistence/Migrations/` и встраиваются в assembly.
-Запускаются по порядку перед доступом приложения к данным. `__SchemaMigrations`
-содержит номер, имя, SHA-256 контрольную сумму SQL-скрипта и время применения.
-Повторное применение запрещено; изменение опубликованного скрипта, неизвестная
-или более новая версия останавливают запуск. Изменения схемы и запись о версии
-производятся в одной транзакции с откатом при ошибке.
+Windows:
 
-Перед обновлением **существующей** базы создаётся консистентная защитная копия
-с помощью `SqliteConnection.BackupDatabase()` в:
+`%LOCALAPPDATA%\Daycord\daycord.db`
+
+The database is created automatically during the first application startup.
+
+Existing databases are never deleted or silently recreated by the initializer.
+
+### Tables
+
+The initial schema contains:
+
+- TaskStatuses
+- Tasks
+- PlanningPeriods
+- WorkEntries
+- __SchemaMigrations
+
+PlanningPeriods and WorkEntries are independent records.
+
+Durations are stored in integer minutes.
+
+Foreign keys and CHECK constraints protect referential integrity.
+
+Dependent records use RESTRICT deletion rules.
+
+## Built-in Task Statuses
+
+| SystemKey | Name | IsCompleted |
+|---|---|---|
+| open | Open | false |
+| completed | Completed | true |
+
+Permanent identifiers:
+
+Open:
+
+`5e8a148e-1a3b-4b17-bba6-251392a01d61`
+
+Completed:
+
+`b9436dc3-7247-4d9e-a032-2a9cb1b9c7a8`
+
+Tasks reference statuses through `TaskItem.StatusId`.
+
+The database supports custom statuses, but the status editor is not
+implemented in DC-003.
+
+## Data Serialization
+
+The SQLite storage conventions are:
+
+| C# type | SQLite type | Format |
+|---|---|---|
+| Guid | TEXT | D |
+| DateOnly | TEXT | yyyy-MM-dd |
+| DateTime UTC | TEXT | ISO 8601 UTC |
+| bool | INTEGER | 0 or 1 |
+| int | INTEGER | Integer |
+
+All technical timestamps must represent UTC unambiguously.
+
+Dapper type handlers are centralized in Infrastructure.
+
+## Automatic Database Migrations
+
+Migrations are embedded into the Infrastructure assembly.
+
+Migration files:
+
+```text
+Persistence/
+└── Migrations/
+    ├── 001_InitialSchema.sql
+    └── 002_NormalizeMigrationUtcTimestamps.sql
+```
+
+Migrations are applied automatically during application startup.
+
+The `__SchemaMigrations` table contains:
+
+- Version
+- Name
+- Checksum
+- AppliedAtUtc
+
+Checksums are calculated with SHA-256.
+
+Previously applied migrations are validated before applying new versions.
+
+An unknown migration version, modified checksum, or unsupported database
+schema prevents further initialization.
+
+Migration execution is transactional.
+
+An error causes a rollback.
+
+Published migration files must not be modified.
+
+## Migration 001 — Initial Schema
+
+Creates the domain tables, foreign keys, constraints, indexes,
+and built-in statuses.
+
+This migration is immutable.
+
+Its original contents and checksum must remain unchanged.
+
+## Migration 002 — UTC Timestamp Normalization
+
+The original DC-003 migration runner inserted `DateTime.UtcNow`
+into SQLite through Microsoft.Data.Sqlite.
+
+The resulting historical representation did not include an explicit
+timezone marker.
+
+Example:
+
+`2026-10-19 20:43:14.657501`
+
+The reworked MigrationRunner writes new migration timestamps as
+invariant ISO 8601 UTC strings with an explicit `Z`.
+
+Example:
+
+`2026-10-19T20:43:14.6575010Z`
+
+Migration 002 converts the recognized historical representation:
+
+Before:
+
+`2026-10-19 20:43:14.657501`
+
+After:
+
+`2026-10-19T20:43:14.657501Z`
+
+The historical fractional precision is preserved without rounding.
+
+Conversion is limited to the recognized format associated with
+the original UTC-writing code path.
+
+Unrecognized formats are rejected rather than interpreted
+using the current system timezone.
+
+Migration 002 does not modify Tasks, PlanningPeriods, WorkEntries,
+or TaskStatuses.
+
+For a newly created database, both migrations are applied in order.
+
+For an existing database at version 001, only version 002 is pending.
+
+## Database Backups
+
+Before upgrading an existing recognized database, Daycord creates
+a protective backup using:
+
+`SqliteConnection.BackupDatabase()`
+
+Backups are stored under:
 
 `<Daycord data directory>/Backups/SchemaUpgrades/`
 
-Защитные копии не удаляются автоматически. Для новой базы копия не создаётся,
-как и при повторном запуске без новых миграций. Проверяются `integrity_check`,
-`foreign_key_check`, таблицы и встроенные статусы. Доступ к неизвестной схеме
-без признанной истории миграций блокируется — файлы пользователя не заменяются.
-SQLite пытается включить WAL, но может продолжить работу с rollback journal,
-если файловая система не поддерживает переключение.
+SQLite Backup API is used instead of directly copying a potentially
+open database file.
 
-**Не редактируйте ранее применённые SQL-миграции.** Новые изменения схемы
-добавляются только файлами со следующей последовательной версией:
-`002_...sql`, `003_...sql` и т. д.
+Backup files are retained after successful upgrades.
 
-## Проверка без риска для пользовательских данных
+A database without pending migrations does not require a new backup.
 
-Проверку первого запуска проводить в отдельном тестовом профиле.
-В инфраструктуре предусмотрен `new AppDataPaths(testDirectory)` для изоляции
-проверок. Не удаляйте реальную базу ради тестирования.
+The application does not automatically restore or overwrite an
+existing database after a migration failure.
 
-На тестовой базе проверить:
+## Database Integrity
 
-1. Первый запуск создаёт таблицы, миграцию и системные статусы.
-2. Повторный запуск не меняет пользовательские записи и не добавляет backup.
-3. `PRAGMA integrity_check;` возвращает `ok`, а `PRAGMA foreign_key_check;` — 0 строк.
-4. CHECK/FK ограничения отклоняют некорректные длительности и ссылки.
-5. При несовпадении checksum или неизвестной схеме запуска не происходит.
+Initialization checks:
 
-Ручной сценарий обновления схемы можно проверить при появлении второй
-настоящей продуктовой миграции. Специальная фиктивная миграция не добавляется.
-Автоматические unit-тесты исключены из MVP решением владельца.
+- Migration history structure
+- Applied versions
+- Migration checksums
+- Required domain tables
+- Built-in status identifiers
+- Migration UTC timestamp formats
+- PRAGMA integrity_check
+- PRAGMA foreign_key_check
 
-## Интерфейс
+Foreign key enforcement is enabled for opened application connections.
 
-Тема Graphite & Amber сохранена. Доступны Light, Dark, System (по умолчанию).
-Цветовые ресурсы находятся в `src/Daycord.Desktop/Themes/Palette.axaml`.
+WAL journaling is attempted when supported.
 
-Пока не реализованы CRUD задач, календарь, Dashboard, пользовательский редактор
-статусов, переключение языка, Excel-экспорт и пользовательские backup/restore.
+The application may retain another valid journal mode when WAL
+is unavailable.
 
-## Документация
+## Application Startup
 
-Архитектурные решения: `docs/architecture/DC-001.md`.
-DC-003 реализует слой хранения, но не меняет состав Solution и границы проектов.
+The Desktop application uses asynchronous database initialization.
+
+The MainWindowViewModel initially displays:
+
+`Initializing local database...`
+
+After successful initialization:
+
+`Local database ready.`
+
+On initialization failure:
+
+`Database initialization failed: ...`
+
+The application must not display a successful database state
+before initialization completes.
+
+Data-dependent features must not be activated after a failed initialization.
+
+All user-visible messages introduced in DC-003 are in English.
+
+Russian localization will be implemented in a later task.
+
+## Safe Migration Verification
+
+Never delete or manually modify the real user database to test
+initialization or migrations.
+
+A database snapshot can be created using SQLite Backup API.
+
+On macOS:
+
+```bash
+DB="$HOME/Library/Application Support/Daycord/daycord.db"
+
+TEST_DIR="$(mktemp -d)"
+
+sqlite3 "$DB" ".backup '$TEST_DIR/daycord.db'"
+```
+
+This creates an isolated database snapshot.
+
+The normal Desktop application still uses the real
+LocalApplicationData directory.
+
+Therefore, do not assume that launching the normal Desktop project
+will use the test database.
+
+For testing the C# initializer in isolation, construct
+`AppDataPaths` with the test directory and resolve the initializer
+using that instance.
+
+An isolated diagnostic harness must remain outside the production
+Solution and must not add application features or unit-test projects.
+
+After running the initializer against the isolated database,
+check the migration history:
+
+```bash
+sqlite3 "$TEST_DIR/daycord.db" \
+"SELECT Version, Name, AppliedAtUtc
+ FROM __SchemaMigrations
+ ORDER BY Version;"
+```
+
+Expected migration versions:
+
+- 1 — 001_InitialSchema.sql
+- 2 — 002_NormalizeMigrationUtcTimestamps.sql
+
+Check statuses:
+
+```bash
+sqlite3 "$TEST_DIR/daycord.db" \
+"SELECT SystemKey, Name, IsCompleted
+ FROM TaskStatuses
+ ORDER BY SortOrder;"
+```
+
+Expected statuses:
+
+- open / Open / 0
+- completed / Completed / 1
+
+Check database integrity:
+
+```bash
+sqlite3 "$TEST_DIR/daycord.db" \
+"PRAGMA integrity_check;"
+```
+
+Expected result:
+
+`ok`
+
+Check foreign keys:
+
+```bash
+sqlite3 "$TEST_DIR/daycord.db" \
+"PRAGMA foreign_key_check;"
+```
+
+Expected result:
+
+No rows.
+
+A complete verification must also include:
+
+1. Repeated initialization without duplicate migrations.
+2. Repeated initialization without duplicate system statuses.
+3. Checksum mismatch detection.
+4. Unknown migration version handling.
+5. Protective backup before schema upgrade.
+6. Rollback on migration failure.
+7. Positive-duration CHECK constraints.
+8. Foreign key enforcement.
+9. Confirmation that user records remain unchanged.
+
+All destructive or error-injection checks must use isolated databases.
+
+## Current MVP Scope
+
+DC-003 implements database infrastructure and startup initialization.
+
+The following are intentionally excluded:
+
+- Task CRUD
+- Calendar
+- Dashboard
+- Custom status editor
+- Full localization
+- Excel reporting
+- User backup/restore interface
+- Cloud synchronization
+
+## Documentation
+
+Architecture decisions:
+
+`docs/architecture/DC-001.md`
+
+Further work requires a separate development task.
