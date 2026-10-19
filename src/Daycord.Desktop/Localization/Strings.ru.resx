@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+
+    <resheader name="version">
+        <value>2.0</value>
+    </resheader>
+
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+
+    <!-- Application -->
+
+    <data name="AppName" xml:space="preserve">
+    <value>Daycord</value>
+  </data>
+
+    <data name="AppWordmark" xml:space="preserve">
+    <value>DAYCORD</value>
+  </data>
+
+    <data name="WelcomeMessage" xml:space="preserve">
+    <value>Добро пожаловать в Daycord</value>
+  </data>
+
+    <!-- Navigation -->
+
+    <data name="NavigationHeading" xml:space="preserve">
+    <value>Навигация</value>
+  </data>
+
+    <data name="NavHome" xml:space="preserve">
+    <value>Главная</value>
+  </data>
+
+    <data name="NavCalendar" xml:space="preserve">
+    <value>Календарь</value>
+  </data>
+
+    <data name="NavTasks" xml:space="preserve">
+    <value>Задачи</value>
+  </data>
+
+    <data name="NavNewTask" xml:space="preserve">
+    <value>Новая задача</value>
+  </data>
+
+    <data name="NavReports" xml:space="preserve">
+    <value>Отчёты</value>
+  </data>
+
+    <data name="NavSettings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+
+    <!-- Placeholder pages -->
+
+    <data name="PlaceholderHeading" xml:space="preserve">
+    <value>Скоро появится</value>
+  </data>
+
+    <data name="PlaceholderDescription" xml:space="preserve">
+    <value>Этот раздел станет доступен в одном из следующих обновлений.</value>
+  </data>
+
+    <!-- Database initialization -->
+
+    <data name="DatabaseInitializing" xml:space="preserve">
+    <value>Инициализация локальной базы данных...</value>
+  </data>
+
+    <data name="DatabaseReady" xml:space="preserve">
+    <value>Локальная база данных готова.</value>
+  </data>
+
+    <data name="DatabaseInitializationFailed" xml:space="preserve">
+    <value>Не удалось инициализировать базу данных: {0}</value>
+  </data>
+
+    <data name="DatabaseUnavailable" xml:space="preserve">
+    <value>Данные задач недоступны. Закройте Daycord и проверьте базу данных или её резервные копии.</value>
+  </data>
+
+</root>
