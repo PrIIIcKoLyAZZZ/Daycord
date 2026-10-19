@@ -1,5 +1,3 @@
-using TaskStatus = Daycord.Core.Domain.Enums.TaskStatus;
-
 namespace Daycord.Core.Domain.Entities;
 
 public class TaskItem
@@ -14,7 +12,7 @@ public class TaskItem
 
     public string? DescriptionMarkdown { get; set; }
 
-    public TaskStatus Status { get; set; } = TaskStatus.Open;
+    public Guid StatusId { get; set; } = TaskStatusDefinition.OpenId;
 
     public DateTime CreatedAtUtc { get; set; }
 
