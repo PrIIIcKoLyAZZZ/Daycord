@@ -1,0 +1,51 @@
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Daycord.Desktop.ViewModels"
+    x:Class="Daycord.Desktop.Views.PlaceholderPageView"
+    x:DataType="vm:PlaceholderPageViewModel">
+
+    <Grid Margin="32">
+
+        <StackPanel
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            MaxWidth="480"
+            Spacing="12">
+
+            <!-- Amber accent -->
+            <Border
+                Width="36"
+                Height="3"
+                CornerRadius="2"
+                HorizontalAlignment="Left"
+                Background="{DynamicResource Accent}" />
+
+            <!-- Current section -->
+            <TextBlock
+                Text="{Binding PageTitle}"
+                FontSize="28"
+                FontWeight="SemiBold"
+                TextWrapping="Wrap"
+                Foreground="{DynamicResource PrimaryText}" />
+
+            <!-- Placeholder heading -->
+            <TextBlock
+                Text="{Binding PlaceholderHeading}"
+                FontSize="17"
+                FontWeight="Medium"
+                TextWrapping="Wrap"
+                Foreground="{DynamicResource PrimaryText}" />
+
+            <!-- Placeholder description -->
+            <TextBlock
+                Text="{Binding PlaceholderDescription}"
+                FontSize="14"
+                TextWrapping="Wrap"
+                Foreground="{DynamicResource SecondaryText}" />
+
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>
