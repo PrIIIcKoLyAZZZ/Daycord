@@ -3,89 +3,89 @@
     <resheader name="resmimetype">
         <value>text/microsoft-resx</value>
     </resheader>
-
     <resheader name="version">
         <value>2.0</value>
     </resheader>
-
     <resheader name="reader">
         <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
-
     <resheader name="writer">
         <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
 
     <!-- Application -->
-
-    <data name="AppName" xml:space="preserve">
-    <value>Daycord</value>
-  </data>
-
-    <data name="AppWordmark" xml:space="preserve">
-    <value>DAYCORD</value>
-  </data>
-
-    <data name="WelcomeMessage" xml:space="preserve">
-    <value>Welcome to Daycord</value>
-  </data>
+    <data name="AppName"><value>Daycord</value></data>
+    <data name="AppWordmark"><value>DAYCORD</value></data>
+    <data name="WelcomeMessage"><value>Welcome to Daycord</value></data>
 
     <!-- Navigation -->
-
-    <data name="NavigationHeading" xml:space="preserve">
-    <value>Navigation</value>
-  </data>
-
-    <data name="NavHome" xml:space="preserve">
-    <value>Home</value>
-  </data>
-
-    <data name="NavCalendar" xml:space="preserve">
-    <value>Calendar</value>
-  </data>
-
-    <data name="NavTasks" xml:space="preserve">
-    <value>Tasks</value>
-  </data>
-
-    <data name="NavNewTask" xml:space="preserve">
-    <value>New Task</value>
-  </data>
-
-    <data name="NavReports" xml:space="preserve">
-    <value>Reports</value>
-  </data>
-
-    <data name="NavSettings" xml:space="preserve">
-    <value>Settings</value>
-  </data>
+    <data name="NavigationHeading"><value>Navigation</value></data>
+    <data name="NavHome"><value>Home</value></data>
+    <data name="NavCalendar"><value>Calendar</value></data>
+    <data name="NavTasks"><value>Tasks</value></data>
+    <data name="NavNewTask"><value>Quick Task</value></data>
+    <data name="NavReports"><value>Reports</value></data>
+    <data name="NavSettings"><value>Settings</value></data>
 
     <!-- Placeholder pages -->
-
-    <data name="PlaceholderHeading" xml:space="preserve">
-    <value>Coming soon</value>
-  </data>
-
-    <data name="PlaceholderDescription" xml:space="preserve">
-    <value>This section will be available in a future update.</value>
-  </data>
+    <data name="PlaceholderHeading"><value>Coming soon</value></data>
+    <data name="PlaceholderDescription"><value>This section will be available in a future update.</value></data>
 
     <!-- Database initialization -->
+    <data name="DatabaseInitializing"><value>Initializing local database...</value></data>
+    <data name="DatabaseReady"><value>Local database ready.</value></data>
+    <data name="DatabaseInitializationFailed"><value>Database initialization failed: {0}</value></data>
+    <data name="DatabaseUnavailable"><value>Task data is unavailable. Close Daycord and check the database or its backups.</value></data>
 
-    <data name="DatabaseInitializing" xml:space="preserve">
-    <value>Initializing local database...</value>
-  </data>
+    <!-- Retained legacy DC-006 strings -->
+    <data name="TerminalRecentlyCreated"><value>RECENTLY CREATED</value></data>
+    <data name="TerminalEmptySession"><value>No tasks created in this session.</value></data>
+    <data name="TerminalCreateHeading"><value>CREATE TASK</value></data>
+    <data name="TerminalDateLabel"><value>Date</value></data>
+    <data name="TerminalTitleLabel"><value>Title</value></data>
+    <data name="TerminalTitlePlaceholder"><value>Enter task title...</value></data>
+    <data name="TerminalShortDescriptionLabel"><value>Description</value></data>
+    <data name="TerminalShortDescriptionPlaceholder"><value>Optional short description</value></data>
+    <data name="TerminalStatusLabel"><value>Status</value></data>
+    <data name="TerminalEnterHint"><value>Press Enter in Title to create a task</value></data>
+    <data name="TerminalRetryStatuses"><value>Retry loading statuses</value></data>
+    <data name="TerminalCreating"><value>Creating...</value></data>
+    <data name="TerminalCreateTask"><value>Create Task</value></data>
+    <data name="TerminalTaskCreated"><value>Task created successfully.</value></data>
+    <data name="TerminalDateRequired"><value>Select a task date.</value></data>
+    <data name="TerminalTitleRequired"><value>Enter a task title.</value></data>
+    <data name="TerminalStatusRequired"><value>Select a task status.</value></data>
+    <data name="TerminalCreateError"><value>Could not create task: {0}</value></data>
+    <data name="TerminalStatusLoadError"><value>Could not load task statuses: {0}</value></data>
+    <data name="TerminalStatusOpen"><value>Open</value></data>
+    <data name="TerminalStatusCompleted"><value>Completed</value></data>
+    <data name="TerminalExpandTask"><value>Expand task details</value></data>
+    <data name="TerminalCollapseTask"><value>Collapse task details</value></data>
+    <data name="TerminalMarkdownLabel"><value>MARKDOWN DESCRIPTION</value></data>
+    <data name="TerminalMarkdownPlaceholder"><value>Add detailed Markdown description...</value></data>
+    <data name="TerminalSavingMarkdown"><value>Saving...</value></data>
+    <data name="TerminalSaveMarkdown"><value>Save Description</value></data>
+    <data name="TerminalMarkdownSaveError"><value>Could not save description: {0}</value></data>
+    <data name="TerminalMarkdownSaved"><value>Description saved.</value></data>
 
-    <data name="DatabaseReady" xml:space="preserve">
-    <value>Local database ready.</value>
-  </data>
-
-    <data name="DatabaseInitializationFailed" xml:space="preserve">
-    <value>Database initialization failed: {0}</value>
-  </data>
-
-    <data name="DatabaseUnavailable" xml:space="preserve">
-    <value>Task data is unavailable. Close Daycord and check the database or its backups.</value>
-  </data>
-
+    <!-- Quick Task -->
+    <data name="QuickTaskRecentHeading"><value>RECENTLY CREATED</value></data>
+    <data name="QuickTaskEmptySession"><value>No tasks created in this session.</value></data>
+    <data name="QuickTaskDateLabel"><value>Date</value></data>
+    <data name="QuickTaskNumberLabel"><value>Issue number (optional)</value></data>
+    <data name="QuickTaskTitleLabel"><value>Title</value></data>
+    <data name="QuickTaskTimeLabel"><value>Planned time (optional)</value></data>
+    <data name="QuickTaskNumberPlaceholder"><value>ISSUE-123</value></data>
+    <data name="QuickTaskTitlePlaceholder"><value>Task title...</value></data>
+    <data name="QuickTaskTimePlaceholder"><value>1h</value></data>
+    <data name="QuickTaskEnterHint"><value>Press Enter to create a task</value></data>
+    <data name="QuickTaskToday"><value>today</value></data>
+    <data name="QuickTaskTomorrow"><value>tomorrow</value></data>
+    <data name="QuickTaskCreating"><value>Creating...</value></data>
+    <data name="QuickTaskCreateAction"><value>Create task</value></data>
+    <data name="QuickTaskCreated"><value>Task created.</value></data>
+    <data name="QuickTaskDateRequired"><value>Select a date.</value></data>
+    <data name="QuickTaskTitleRequired"><value>Enter a task title.</value></data>
+    <data name="QuickTaskInvalidTime"><value>Enter a duration such as 30m or 1h 30m.</value></data>
+    <data name="QuickTaskCreateError"><value>Could not create task: {0}</value></data>
 </root>

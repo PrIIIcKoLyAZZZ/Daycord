@@ -4,7 +4,9 @@ public sealed class TaskListItem
 {
     public Guid Id { get; set; }
 
-    public DateOnly TaskDate { get; set; }
+    public DateOnly? TaskDate { get; set; }
+
+    public string? TaskNumber { get; set; }
 
     public string Title { get; set; } = string.Empty;
 

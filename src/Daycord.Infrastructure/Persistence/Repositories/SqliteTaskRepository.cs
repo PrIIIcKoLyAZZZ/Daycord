@@ -1,8 +1,8 @@
+using System.Globalization;
 using Dapper;
 using Daycord.Core.Application.Contracts;
 using Daycord.Core.Application.Models;
 using Daycord.Core.Domain.Entities;
-using Daycord.Infrastructure.Persistence;
 
 using TaskQueryModel = Daycord.Core.Application.Models.TaskQuery;
 
@@ -11,6 +11,52 @@ namespace Daycord.Infrastructure.Persistence.Repositories;
 public sealed class SqliteTaskRepository : ITaskRepository
 {
     private readonly SqliteConnectionFactory _connections;
+
+    private const string InsertTaskSql = """
+        INSERT INTO Tasks
+        (
+            Id,
+            TaskDate,
+            TaskNumber,
+            Title,
+            ShortDescription,
+            DescriptionMarkdown,
+            StatusId,
+            CreatedAtUtc,
+            UpdatedAtUtc,
+            CompletedAtUtc
+        )
+        VALUES
+        (
+            @Id,
+            @TaskDate,
+            @TaskNumber,
+            @Title,
+            @ShortDescription,
+            @DescriptionMarkdown,
+            @StatusId,
+            @CreatedAtUtc,
+            @UpdatedAtUtc,
+            @CompletedAtUtc
+        );
+        """;
+
+    private const string InsertPlanningPeriodSql = """
+        INSERT INTO PlanningPeriods
+        (
+            Id,
+            TaskId,
+            PlannedDate,
+            PlannedMinutes
+        )
+        VALUES
+        (
+            @Id,
+            @TaskId,
+            @PlannedDate,
+            @PlannedMinutes
+        );
+        """;
 
     public SqliteTaskRepository(
         SqliteConnectionFactory connections)
@@ -25,42 +71,74 @@ public sealed class SqliteTaskRepository : ITaskRepository
     {
         ArgumentNullException.ThrowIfNull(task);
 
-        const string sql = """
-            INSERT INTO Tasks
-            (
-                Id,
-                TaskDate,
-                Title,
-                ShortDescription,
-                DescriptionMarkdown,
-                StatusId,
-                CreatedAtUtc,
-                UpdatedAtUtc,
-                CompletedAtUtc
-            )
-            VALUES
-            (
-                @Id,
-                @TaskDate,
-                @Title,
-                @ShortDescription,
-                @DescriptionMarkdown,
-                @StatusId,
-                @CreatedAtUtc,
-                @UpdatedAtUtc,
-                @CompletedAtUtc
-            );
-            """;
-
         await using var connection =
-            await _connections.OpenConnectionAsync(
-                cancellationToken);
+            await _connections.OpenConnectionAsync(cancellationToken);
 
         await connection.ExecuteAsync(
             new CommandDefinition(
-                sql,
-                task,
+                InsertTaskSql,
+                GetTaskParameters(task),
                 cancellationToken: cancellationToken));
+    }
+
+    public async Task CreateWithPlanningAsync(
+        TaskItem task,
+        PlanningPeriod planningPeriod,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+        ArgumentNullException.ThrowIfNull(planningPeriod);
+
+        if (planningPeriod.TaskId != task.Id)
+        {
+            throw new ArgumentException(
+                "Planning period must reference the task being created.",
+                nameof(planningPeriod));
+        }
+
+        if (planningPeriod.PlannedDate != task.TaskDate)
+        {
+            throw new ArgumentException(
+                "Initial planning date must match the task date.",
+                nameof(planningPeriod));
+        }
+
+        if (planningPeriod.PlannedMinutes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(planningPeriod),
+                "Planned minutes must be greater than zero.");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        await using var transaction =
+            await connection.BeginTransactionAsync(cancellationToken);
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                InsertTaskSql,
+                GetTaskParameters(task),
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                InsertPlanningPeriodSql,
+                new
+                {
+                    Id = FormatGuid(planningPeriod.Id),
+                    TaskId = FormatGuid(planningPeriod.TaskId),
+                    PlannedDate = FormatDate(planningPeriod.PlannedDate),
+                    planningPeriod.PlannedMinutes
+                },
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+
+        await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task<TaskItem?> GetByIdAsync(
@@ -71,6 +149,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
             SELECT
                 Id,
                 TaskDate,
+                TaskNumber,
                 Title,
                 ShortDescription,
                 DescriptionMarkdown,
@@ -84,13 +163,12 @@ public sealed class SqliteTaskRepository : ITaskRepository
             """;
 
         await using var connection =
-            await _connections.OpenConnectionAsync(
-                cancellationToken);
+            await _connections.OpenConnectionAsync(cancellationToken);
 
         return await connection.QuerySingleOrDefaultAsync<TaskItem>(
             new CommandDefinition(
                 sql,
-                new { Id = id },
+                new { Id = FormatGuid(id) },
                 cancellationToken: cancellationToken));
     }
 
@@ -104,6 +182,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
             UPDATE Tasks
             SET
                 TaskDate = @TaskDate,
+                TaskNumber = @TaskNumber,
                 Title = @Title,
                 ShortDescription = @ShortDescription,
                 DescriptionMarkdown = @DescriptionMarkdown,
@@ -114,13 +193,12 @@ public sealed class SqliteTaskRepository : ITaskRepository
             """;
 
         await using var connection =
-            await _connections.OpenConnectionAsync(
-                cancellationToken);
+            await _connections.OpenConnectionAsync(cancellationToken);
 
         var affectedRows = await connection.ExecuteAsync(
             new CommandDefinition(
                 sql,
-                task,
+                GetTaskParameters(task),
                 cancellationToken: cancellationToken));
 
         return affectedRows > 0;
@@ -172,6 +250,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
             SELECT
                 t.Id,
                 t.TaskDate,
+                t.TaskNumber,
                 t.Title,
                 t.ShortDescription,
                 t.StatusId,
@@ -183,6 +262,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
             WHERE
                 (
                     @SearchPattern IS NULL
+                    OR t.TaskNumber LIKE @SearchPattern ESCAPE '~'
                     OR t.Title LIKE @SearchPattern ESCAPE '~'
                     OR t.ShortDescription LIKE @SearchPattern ESCAPE '~'
                 )
@@ -208,15 +288,16 @@ public sealed class SqliteTaskRepository : ITaskRepository
         var parameters = new
         {
             SearchPattern = searchPattern,
-            query.StatusId,
-            query.TaskDate,
-            query.DateFrom,
-            query.DateTo
+            StatusId = query.StatusId.HasValue
+                ? FormatGuid(query.StatusId.Value)
+                : null,
+            TaskDate = FormatNullableDate(query.TaskDate),
+            DateFrom = FormatNullableDate(query.DateFrom),
+            DateTo = FormatNullableDate(query.DateTo)
         };
 
         await using var connection =
-            await _connections.OpenConnectionAsync(
-                cancellationToken);
+            await _connections.OpenConnectionAsync(cancellationToken);
 
         var items = await connection.QueryAsync<TaskListItem>(
             new CommandDefinition(
@@ -225,6 +306,36 @@ public sealed class SqliteTaskRepository : ITaskRepository
                 cancellationToken: cancellationToken));
 
         return items.ToList();
+    }
+
+    public async Task<IReadOnlyList<TaskStatusDefinition>> ListStatusesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT
+                Id,
+                SystemKey,
+                Name,
+                IsSystem,
+                IsCompleted,
+                SortOrder
+            FROM TaskStatuses
+            ORDER BY
+                SortOrder ASC,
+                Name COLLATE NOCASE ASC,
+                Id ASC;
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var statuses =
+            await connection.QueryAsync<TaskStatusDefinition>(
+                new CommandDefinition(
+                    sql,
+                    cancellationToken: cancellationToken));
+
+        return statuses.ToList();
     }
 
     public async Task<TaskStatusDefinition?> GetStatusByIdAsync(
@@ -245,14 +356,13 @@ public sealed class SqliteTaskRepository : ITaskRepository
             """;
 
         await using var connection =
-            await _connections.OpenConnectionAsync(
-                cancellationToken);
+            await _connections.OpenConnectionAsync(cancellationToken);
 
         return await connection
             .QuerySingleOrDefaultAsync<TaskStatusDefinition>(
                 new CommandDefinition(
                     sql,
-                    new { StatusId = statusId },
+                    new { StatusId = FormatGuid(statusId) },
                     cancellationToken: cancellationToken));
     }
 
@@ -268,26 +378,71 @@ public sealed class SqliteTaskRepository : ITaskRepository
                 IsCompleted,
                 SortOrder
             FROM TaskStatuses
-            WHERE
-                Id = @OpenId
-                AND IsSystem = 1
-                AND SystemKey = 'open'
+            WHERE SystemKey = 'open'
+              AND IsSystem = 1
             LIMIT 1;
             """;
 
         await using var connection =
-            await _connections.OpenConnectionAsync(
-                cancellationToken);
+            await _connections.OpenConnectionAsync(cancellationToken);
 
         return await connection
             .QuerySingleOrDefaultAsync<TaskStatusDefinition>(
                 new CommandDefinition(
                     sql,
-                    new
-                    {
-                        OpenId = TaskStatusDefinition.OpenId
-                    },
                     cancellationToken: cancellationToken));
+    }
+
+    private static object GetTaskParameters(TaskItem task)
+    {
+        return new
+        {
+            Id = FormatGuid(task.Id),
+            TaskDate = FormatNullableDate(task.TaskDate),
+            task.TaskNumber,
+            task.Title,
+            task.ShortDescription,
+            task.DescriptionMarkdown,
+            StatusId = FormatGuid(task.StatusId),
+            CreatedAtUtc = FormatUtc(task.CreatedAtUtc),
+            UpdatedAtUtc = FormatUtc(task.UpdatedAtUtc),
+            CompletedAtUtc = task.CompletedAtUtc.HasValue
+                ? FormatUtc(task.CompletedAtUtc.Value)
+                : null
+        };
+    }
+
+    private static string FormatGuid(Guid value)
+    {
+        return value.ToString("D");
+    }
+
+    private static string FormatDate(DateOnly value)
+    {
+        return value.ToString(
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture);
+    }
+
+    private static string? FormatNullableDate(DateOnly? value)
+    {
+        return value.HasValue
+            ? FormatDate(value.Value)
+            : null;
+    }
+
+    private static string FormatUtc(DateTime value)
+    {
+        if (value.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException(
+                "Database timestamps must be UTC.",
+                nameof(value));
+        }
+
+        return value.ToString(
+            "O",
+            CultureInfo.InvariantCulture);
     }
 
     private static string EscapeLikePattern(string value)

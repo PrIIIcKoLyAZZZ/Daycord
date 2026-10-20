@@ -1,4 +1,3 @@
-
 using Daycord.Core.Application.Contracts;
 using Daycord.Core.Application.Models;
 using Daycord.Core.Domain.Entities;
@@ -22,8 +21,21 @@ public sealed class TaskService
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var title = NormalizeTitle(request.Title);
         ValidateTaskDate(request.TaskDate);
+        ValidatePlannedMinutes(request.PlannedMinutes);
+
+        // PlanningPeriods.PlannedDate is NOT NULL.
+        // Never invent a planning date when none was supplied.
+        if (request.PlannedMinutes.HasValue &&
+            !request.TaskDate.HasValue)
+        {
+            throw new ArgumentException(
+                "A task date is required when planned time is specified.",
+                nameof(request));
+        }
+
+        var title = NormalizeTitle(request.Title);
+        var taskNumber = NormalizeTaskNumber(request.TaskNumber);
 
         TaskStatusDefinition status;
 
@@ -54,6 +66,7 @@ public sealed class TaskService
         {
             Id = Guid.NewGuid(),
             TaskDate = request.TaskDate,
+            TaskNumber = taskNumber,
             Title = title,
             ShortDescription = request.ShortDescription,
             DescriptionMarkdown = request.DescriptionMarkdown,
@@ -63,9 +76,33 @@ public sealed class TaskService
             CompletedAtUtc = status.IsCompleted ? now : null
         };
 
-        await _repository.CreateAsync(
-            task,
-            cancellationToken);
+        if (request.PlannedMinutes is int plannedMinutes)
+        {
+            // The earlier validation guarantees a real date.
+            var plannedDate = request.TaskDate
+                ?? throw new InvalidOperationException(
+                    "Planned time requires a task date.");
+
+            var planningPeriod = new PlanningPeriod
+            {
+                Id = Guid.NewGuid(),
+                TaskId = task.Id,
+                PlannedDate = plannedDate,
+                PlannedMinutes = plannedMinutes
+            };
+
+            // Task + planning period are saved atomically.
+            await _repository.CreateWithPlanningAsync(
+                task,
+                planningPeriod,
+                cancellationToken);
+        }
+        else
+        {
+            await _repository.CreateAsync(
+                task,
+                cancellationToken);
+        }
 
         return task;
     }
@@ -112,6 +149,9 @@ public sealed class TaskService
         task.Title = title;
         task.ShortDescription = request.ShortDescription;
         task.DescriptionMarkdown = request.DescriptionMarkdown;
+
+        // The existing UpdateTaskRequest does not contain
+        // TaskNumber. Preserve the stored issue number.
         task.UpdatedAtUtc = now;
 
         var updated = await _repository.UpdateAsync(
@@ -184,6 +224,14 @@ public sealed class TaskService
             cancellationToken);
     }
 
+    public Task<IReadOnlyList<TaskStatusDefinition>> ListStatusesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return _repository.ListStatusesAsync(cancellationToken);
+    }
+
     private async Task<TaskItem> GetRequiredTaskAsync(
         Guid id,
         CancellationToken cancellationToken)
@@ -254,12 +302,39 @@ public sealed class TaskService
         return title.Trim();
     }
 
-    private static void ValidateTaskDate(DateOnly taskDate)
+    private static string? NormalizeTaskNumber(
+        string? taskNumber)
     {
-        if (taskDate == default)
+        if (string.IsNullOrWhiteSpace(taskNumber))
+        {
+            return null;
+        }
+
+        return taskNumber.Trim();
+    }
+
+    private static void ValidatePlannedMinutes(
+        int? plannedMinutes)
+    {
+        if (plannedMinutes.HasValue &&
+            plannedMinutes.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(plannedMinutes),
+                "Planned minutes must be greater than zero.");
+        }
+    }
+
+    private static void ValidateTaskDate(
+        DateOnly? taskDate)
+    {
+        // NULL means that the task is not assigned to a date.
+        // The default date value (0001-01-01) is invalid.
+        if (taskDate.HasValue &&
+            taskDate.Value == default)
         {
             throw new ArgumentException(
-                "Task date is required.",
+                "Task date is invalid.",
                 nameof(taskDate));
         }
     }

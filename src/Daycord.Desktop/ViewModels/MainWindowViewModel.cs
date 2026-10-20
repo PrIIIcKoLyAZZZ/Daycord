@@ -13,6 +13,8 @@ public partial class MainWindowViewModel :
     private readonly INavigationService _navigation;
     private readonly ILocalizationService _localization;
     private readonly PlaceholderPageViewModel _placeholderPage;
+    private readonly Func<TerminalViewModel> _createTerminalPage;
+    private TerminalViewModel? _terminalPage;
 
     private string? _databaseErrorDetails;
     private bool _disposed;
@@ -26,7 +28,8 @@ public partial class MainWindowViewModel :
     public MainWindowViewModel(
         INavigationService navigation,
         ILocalizationService localization,
-        PlaceholderPageViewModel placeholderPage)
+        PlaceholderPageViewModel placeholderPage,
+        Func<TerminalViewModel> createTerminalPage)
     {
         _navigation = navigation
             ?? throw new ArgumentNullException(nameof(navigation));
@@ -37,7 +40,15 @@ public partial class MainWindowViewModel :
         _placeholderPage = placeholderPage
             ?? throw new ArgumentNullException(nameof(placeholderPage));
 
+        _createTerminalPage = createTerminalPage
+            ?? throw new ArgumentNullException(nameof(createTerminalPage));
+
         _placeholderPage.SetPage(_navigation.CurrentPage);
+
+        if (_navigation.CurrentPage == PageKind.NewTask)
+        {
+            _terminalPage = _createTerminalPage();
+        }
 
         _navigation.PropertyChanged += OnNavigationChanged;
         _localization.PropertyChanged += OnLocalizationChanged;
@@ -84,8 +95,8 @@ public partial class MainWindowViewModel :
     public string CurrentPageTitle =>
         _placeholderPage.PageTitle;
 
-    public PlaceholderPageViewModel CurrentPageContent =>
-        _placeholderPage;
+    public object CurrentPageContent =>
+        _terminalPage ?? (object)_placeholderPage;
 
     // Active navigation state
 
@@ -235,8 +246,26 @@ public partial class MainWindowViewModel :
             return;
         }
 
-        _placeholderPage.SetPage(_navigation.CurrentPage);
+        if (_disposed)
+        {
+            return;
+        }
 
+        var page = _navigation.CurrentPage;
+        _placeholderPage.SetPage(page);
+
+        if (page == PageKind.NewTask)
+        {
+            // Repeated selection does not create a new session.
+            _terminalPage ??= _createTerminalPage();
+        }
+        else if (_terminalPage is { } previousSession)
+        {
+            _terminalPage = null;
+            previousSession.Dispose();
+        }
+
+        OnPropertyChanged(nameof(CurrentPageContent));
         OnPropertyChanged(nameof(CurrentPage));
         OnPropertyChanged(nameof(CurrentPageTitle));
 
@@ -292,5 +321,7 @@ public partial class MainWindowViewModel :
 
         _navigation.PropertyChanged -= OnNavigationChanged;
         _localization.PropertyChanged -= OnLocalizationChanged;
+        _terminalPage?.Dispose();
+        _terminalPage = null;
     }
 }

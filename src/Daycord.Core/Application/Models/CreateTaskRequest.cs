@@ -1,8 +1,10 @@
 namespace Daycord.Core.Application.Models;
 
 public sealed record CreateTaskRequest(
-    DateOnly TaskDate,
+    DateOnly? TaskDate,
     string Title,
     string? ShortDescription = null,
     string? DescriptionMarkdown = null,
-    Guid? StatusId = null);
+    Guid? StatusId = null,
+    string? TaskNumber = null,
+    int? PlannedMinutes = null);

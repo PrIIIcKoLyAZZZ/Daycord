@@ -1,3 +1,4 @@
+using Daycord.Core.Application.Models;
 using Daycord.Core.Domain.Entities;
 
 namespace Daycord.Core.Application.Contracts;
@@ -8,6 +9,11 @@ public interface ITaskRepository
         TaskItem task,
         CancellationToken cancellationToken = default);
 
+    Task CreateWithPlanningAsync(
+        TaskItem task,
+        PlanningPeriod planningPeriod,
+        CancellationToken cancellationToken = default);
+
     Task<TaskItem?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default);
@@ -16,10 +22,12 @@ public interface ITaskRepository
         TaskItem task,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<Daycord.Core.Application.Models.TaskListItem>>
-        ListAsync(
-            Daycord.Core.Application.Models.TaskQuery query,
-            CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TaskListItem>> ListAsync(
+        TaskQuery query,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TaskStatusDefinition>> ListStatusesAsync(
+        CancellationToken cancellationToken = default);
 
     Task<TaskStatusDefinition?> GetStatusByIdAsync(
         Guid statusId,
