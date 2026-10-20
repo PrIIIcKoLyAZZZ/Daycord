@@ -25,6 +25,14 @@
 
         </DataTemplate>
 
+        <DataTemplate
+            DataType="vm:TerminalViewModel"
+            x:DataType="vm:TerminalViewModel">
+
+            <views:TerminalView />
+
+        </DataTemplate>
+
     </Window.DataTemplates>
 
     <!-- Sidebar navigation styles -->

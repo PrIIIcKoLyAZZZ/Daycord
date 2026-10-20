@@ -3,89 +3,89 @@
     <resheader name="resmimetype">
         <value>text/microsoft-resx</value>
     </resheader>
-
     <resheader name="version">
         <value>2.0</value>
     </resheader>
-
     <resheader name="reader">
         <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
-
     <resheader name="writer">
         <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
 
-    <!-- Application -->
+    <!-- Приложение -->
+    <data name="AppName"><value>Daycord</value></data>
+    <data name="AppWordmark"><value>DAYCORD</value></data>
+    <data name="WelcomeMessage"><value>Добро пожаловать в Daycord</value></data>
 
-    <data name="AppName" xml:space="preserve">
-    <value>Daycord</value>
-  </data>
+    <!-- Навигация -->
+    <data name="NavigationHeading"><value>Навигация</value></data>
+    <data name="NavHome"><value>Главная</value></data>
+    <data name="NavCalendar"><value>Календарь</value></data>
+    <data name="NavTasks"><value>Задачи</value></data>
+    <data name="NavNewTask"><value>Быстрая задача</value></data>
+    <data name="NavReports"><value>Отчёты</value></data>
+    <data name="NavSettings"><value>Настройки</value></data>
 
-    <data name="AppWordmark" xml:space="preserve">
-    <value>DAYCORD</value>
-  </data>
+    <!-- Временные экраны -->
+    <data name="PlaceholderHeading"><value>Скоро появится</value></data>
+    <data name="PlaceholderDescription"><value>Этот раздел станет доступен в одном из следующих обновлений.</value></data>
 
-    <data name="WelcomeMessage" xml:space="preserve">
-    <value>Добро пожаловать в Daycord</value>
-  </data>
+    <!-- Инициализация БД -->
+    <data name="DatabaseInitializing"><value>Инициализация локальной базы данных...</value></data>
+    <data name="DatabaseReady"><value>Локальная база данных готова.</value></data>
+    <data name="DatabaseInitializationFailed"><value>Не удалось инициализировать базу данных: {0}</value></data>
+    <data name="DatabaseUnavailable"><value>Данные задач недоступны. Закройте Daycord и проверьте базу данных или её резервные копии.</value></data>
 
-    <!-- Navigation -->
+    <!-- Сохранённые строки предыдущей версии DC-006 -->
+    <data name="TerminalRecentlyCreated"><value>НЕДАВНО СОЗДАННЫЕ</value></data>
+    <data name="TerminalEmptySession"><value>В этом сеансе ещё нет созданных задач.</value></data>
+    <data name="TerminalCreateHeading"><value>СОЗДАТЬ ЗАДАЧУ</value></data>
+    <data name="TerminalDateLabel"><value>Дата</value></data>
+    <data name="TerminalTitleLabel"><value>Название</value></data>
+    <data name="TerminalTitlePlaceholder"><value>Введите название задачи...</value></data>
+    <data name="TerminalShortDescriptionLabel"><value>Описание</value></data>
+    <data name="TerminalShortDescriptionPlaceholder"><value>Краткое описание (необязательно)</value></data>
+    <data name="TerminalStatusLabel"><value>Статус</value></data>
+    <data name="TerminalEnterHint"><value>Нажмите Enter в поле названия, чтобы создать задачу</value></data>
+    <data name="TerminalRetryStatuses"><value>Повторить загрузку статусов</value></data>
+    <data name="TerminalCreating"><value>Создание...</value></data>
+    <data name="TerminalCreateTask"><value>Создать задачу</value></data>
+    <data name="TerminalTaskCreated"><value>Задача успешно создана.</value></data>
+    <data name="TerminalDateRequired"><value>Выберите дату задачи.</value></data>
+    <data name="TerminalTitleRequired"><value>Введите название задачи.</value></data>
+    <data name="TerminalStatusRequired"><value>Выберите статус задачи.</value></data>
+    <data name="TerminalCreateError"><value>Не удалось создать задачу: {0}</value></data>
+    <data name="TerminalStatusLoadError"><value>Не удалось загрузить статусы задач: {0}</value></data>
+    <data name="TerminalStatusOpen"><value>Открыта</value></data>
+    <data name="TerminalStatusCompleted"><value>Завершена</value></data>
+    <data name="TerminalExpandTask"><value>Развернуть сведения о задаче</value></data>
+    <data name="TerminalCollapseTask"><value>Свернуть сведения о задаче</value></data>
+    <data name="TerminalMarkdownLabel"><value>ОПИСАНИЕ MARKDOWN</value></data>
+    <data name="TerminalMarkdownPlaceholder"><value>Добавьте подробное описание в Markdown...</value></data>
+    <data name="TerminalSavingMarkdown"><value>Сохранение...</value></data>
+    <data name="TerminalSaveMarkdown"><value>Сохранить описание</value></data>
+    <data name="TerminalMarkdownSaveError"><value>Не удалось сохранить описание: {0}</value></data>
+    <data name="TerminalMarkdownSaved"><value>Описание сохранено.</value></data>
 
-    <data name="NavigationHeading" xml:space="preserve">
-    <value>Навигация</value>
-  </data>
-
-    <data name="NavHome" xml:space="preserve">
-    <value>Главная</value>
-  </data>
-
-    <data name="NavCalendar" xml:space="preserve">
-    <value>Календарь</value>
-  </data>
-
-    <data name="NavTasks" xml:space="preserve">
-    <value>Задачи</value>
-  </data>
-
-    <data name="NavNewTask" xml:space="preserve">
-    <value>Новая задача</value>
-  </data>
-
-    <data name="NavReports" xml:space="preserve">
-    <value>Отчёты</value>
-  </data>
-
-    <data name="NavSettings" xml:space="preserve">
-    <value>Настройки</value>
-  </data>
-
-    <!-- Placeholder pages -->
-
-    <data name="PlaceholderHeading" xml:space="preserve">
-    <value>Скоро появится</value>
-  </data>
-
-    <data name="PlaceholderDescription" xml:space="preserve">
-    <value>Этот раздел станет доступен в одном из следующих обновлений.</value>
-  </data>
-
-    <!-- Database initialization -->
-
-    <data name="DatabaseInitializing" xml:space="preserve">
-    <value>Инициализация локальной базы данных...</value>
-  </data>
-
-    <data name="DatabaseReady" xml:space="preserve">
-    <value>Локальная база данных готова.</value>
-  </data>
-
-    <data name="DatabaseInitializationFailed" xml:space="preserve">
-    <value>Не удалось инициализировать базу данных: {0}</value>
-  </data>
-
-    <data name="DatabaseUnavailable" xml:space="preserve">
-    <value>Данные задач недоступны. Закройте Daycord и проверьте базу данных или её резервные копии.</value>
-  </data>
-
+    <!-- Quick Task -->
+    <data name="QuickTaskRecentHeading"><value>НЕДАВНО СОЗДАННЫЕ</value></data>
+    <data name="QuickTaskEmptySession"><value>В этом сеансе пока нет созданных задач.</value></data>
+    <data name="QuickTaskDateLabel"><value>Дата</value></data>
+    <data name="QuickTaskNumberLabel"><value>Номер задачи (необязательно)</value></data>
+    <data name="QuickTaskTitleLabel"><value>Заголовок</value></data>
+    <data name="QuickTaskTimeLabel"><value>Плановое время (необязательно)</value></data>
+    <data name="QuickTaskNumberPlaceholder"><value>KREMD-1122</value></data>
+    <data name="QuickTaskTitlePlaceholder"><value>Заголовок задачи...</value></data>
+    <data name="QuickTaskTimePlaceholder"><value>1ч</value></data>
+    <data name="QuickTaskEnterHint"><value>Нажмите Enter, чтобы создать задачу</value></data>
+    <data name="QuickTaskToday"><value>сегодня</value></data>
+    <data name="QuickTaskTomorrow"><value>завтра</value></data>
+    <data name="QuickTaskCreating"><value>Создание...</value></data>
+    <data name="QuickTaskCreateAction"><value>Создать задачу</value></data>
+    <data name="QuickTaskCreated"><value>Задача создана.</value></data>
+    <data name="QuickTaskDateRequired"><value>Выберите дату.</value></data>
+    <data name="QuickTaskTitleRequired"><value>Введите заголовок задачи.</value></data>
+    <data name="QuickTaskInvalidTime"><value>Введите длительность, например 30м или 1ч 30м.</value></data>
+    <data name="QuickTaskCreateError"><value>Не удалось создать задачу: {0}</value></data>
 </root>
