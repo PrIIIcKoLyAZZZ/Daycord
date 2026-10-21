@@ -22,6 +22,10 @@ public interface ITaskRepository
         TaskItem task,
         CancellationToken cancellationToken = default);
 
+    Task<bool> DeleteAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<TaskListItem>> ListAsync(
         TaskQuery query,
         CancellationToken cancellationToken = default);

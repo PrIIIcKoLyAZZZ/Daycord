@@ -1,0 +1,658 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Daycord.Desktop.ViewModels"
+             x:Class="Daycord.Desktop.Views.TaskListView"
+             x:DataType="vm:TaskListViewModel"
+             Background="{DynamicResource Background}">
+    <UserControl.Styles>
+        <Style Selector="TextBox.task-search, TextBox.task-date-input">
+            <Setter Property="Background" Value="{DynamicResource Surface}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Background}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="9,7" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style Selector="TextBox.task-search:focus, TextBox.task-date-input:focus, TextBox.task-date-input.invalid">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        </Style>
+
+        <Style Selector="Button.task-action">
+            <Setter Property="Background" Value="{DynamicResource Surface}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Background}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style Selector="Button.task-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
+        </Style>
+
+        <Style Selector="Button.task-danger">
+            <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+        </Style>
+
+        <Style Selector="Button.task-confirm">
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground" Value="{DynamicResource Background}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="18,9" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="ComboBox.task-filter">
+            <Setter Property="Background" Value="{DynamicResource Surface}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Background}" />
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style Selector="Button.calendar-trigger, Button.calendar-nav">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="MinHeight" Value="30" />
+        </Style>
+
+        <Style Selector="Button.calendar-nav">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <Style Selector="TextBlock.calendar-weekday">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
+            <Setter Property="FontFamily" Value="Menlo, Consolas, Courier New" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.calendar-day">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style Selector="Button.calendar-day.outside">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+
+        <Style Selector="Button.calendar-day.today">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        </Style>
+
+        <!-- Selected date: separate button and template styles. -->
+        <Style Selector="Button.calendar-day.selected">
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground" Value="{DynamicResource Background}" />
+        </Style>
+
+        <Style Selector="Button.calendar-day.selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground" Value="{DynamicResource Background}" />
+        </Style>
+
+        <Style Selector="ListBox.task-table">
+            <Setter Property="Background" Value="{DynamicResource Surface}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <Style Selector="ListBox.task-table ListBoxItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+
+        <Style Selector="ListBox.task-table ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource Background}" />
+        </Style>
+
+        <Style Selector="ListBox.task-table ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
+        </Style>
+
+        <Style Selector="ListBox.task-table ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBackground}" />
+        </Style>
+
+        <Style Selector="Border.task-status TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
+        </Style>
+
+        <Style Selector="Border.task-status.completed TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Margin="20,20,20,22">
+        <Grid IsEnabled="{Binding !IsDeleteConfirmationOpen}"
+              RowDefinitions="Auto,Auto,*"
+              RowSpacing="12">
+
+            <!-- Search and actions -->
+            <StackPanel Grid.Row="0" Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                    <TextBox Grid.Column="0"
+                             Classes="task-search"
+                             Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             PlaceholderText="{Binding SearchPlaceholder}" />
+
+                    <Button Grid.Column="1"
+                            Classes="task-action"
+                            Content="{Binding FiltersButtonLabel}"
+                            Command="{Binding ToggleFiltersCommand}" />
+
+                    <Button Grid.Column="2"
+                            Classes="task-action task-danger"
+                            Content="{Binding DeleteButtonLabel}"
+                            Command="{Binding RequestDeleteCommand}" />
+                </Grid>
+
+                <!-- Collapsible filters -->
+                <Border IsVisible="{Binding AreFiltersExpanded}"
+                        Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource Background}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12,12,12,5">
+
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8"
+                                    Margin="0,0,18,7">
+                            <TextBlock Text="{Binding StatusFilterLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       VerticalAlignment="Center" />
+
+                            <ComboBox Classes="task-filter"
+                                      Width="150"
+                                      ItemsSource="{Binding StatusOptions}"
+                                      SelectedItem="{Binding SelectedStatus, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TaskListStatusOption">
+                                        <TextBlock Text="{Binding Label}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        
+                        <!-- From date -->
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8"
+                                    Margin="0,0,18,7">
+                            <TextBlock Text="{Binding DateFromLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       VerticalAlignment="Center" />
+
+                            <Border Background="{DynamicResource Background}"
+                                    CornerRadius="7"
+                                    ClipToBounds="True">
+                                <Grid x:Name="FromDateSegment"
+                                      Width="146"
+                                      ColumnDefinitions="*,Auto">
+                                    <TextBox x:Name="FromDateInput"
+                                             Grid.Column="0"
+                                             Classes="task-date-input"
+                                             PlaceholderText="dd.MM.yyyy"
+                                             AcceptsReturn="False"
+                                             TextChanged="OnDateTextChanged"
+                                             LostFocus="OnDateLostFocus"
+                                             KeyDown="OnDateKeyDown" />
+
+                                    <Button Grid.Column="1"
+                                            Classes="calendar-trigger"
+                                            Click="OnFromCalendarClick">
+                                        <Path Width="17"
+                                              Height="17"
+                                              Stretch="Uniform"
+                                              Stroke="{DynamicResource Accent}"
+                                              StrokeThickness="1.6"
+                                              StrokeLineCap="Round"
+                                              Data="M3,5 L17,5 L17,18 L3,18 Z M6.5,2 L6.5,8 M13.5,2 L13.5,8 M3,9 L17,9" />
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+
+                        
+                        <!-- To date -->
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8"
+                                    Margin="0,0,18,7">
+                            <TextBlock Text="{Binding DateToLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       VerticalAlignment="Center" />
+
+                            <Border Background="{DynamicResource Background}"
+                                    CornerRadius="7"
+                                    ClipToBounds="True">
+                                <Grid x:Name="ToDateSegment"
+                                      Width="146"
+                                      ColumnDefinitions="*,Auto">
+                                    <TextBox x:Name="ToDateInput"
+                                             Grid.Column="0"
+                                             Classes="task-date-input"
+                                             PlaceholderText="dd.MM.yyyy"
+                                             AcceptsReturn="False"
+                                             TextChanged="OnDateTextChanged"
+                                             LostFocus="OnDateLostFocus"
+                                             KeyDown="OnDateKeyDown" />
+
+                                    <Button Grid.Column="1"
+                                            Classes="calendar-trigger"
+                                            Click="OnToCalendarClick">
+                                        <Path Width="17"
+                                              Height="17"
+                                              Stretch="Uniform"
+                                              Stroke="{DynamicResource Accent}"
+                                              StrokeThickness="1.6"
+                                              StrokeLineCap="Round"
+                                              Data="M3,5 L17,5 L17,18 L3,18 Z M6.5,2 L6.5,8 M13.5,2 L13.5,8 M3,9 L17,9" />
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+
+                        <!-- Sorting -->
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8"
+                                    Margin="0,0,18,7">
+                            <TextBlock Text="{Binding SortLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       VerticalAlignment="Center" />
+
+                            <ComboBox Classes="task-filter"
+                                      Width="120"
+                                      ItemsSource="{Binding SortOptions}"
+                                      SelectedItem="{Binding SelectedSort, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TaskListSortOption">
+                                        <TextBlock Text="{Binding Label}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <Button Classes="task-action"
+                                    Content="{Binding DirectionLabel}"
+                                    Command="{Binding ToggleSortDirectionCommand}" />
+                        </StackPanel>
+
+                        <Button Classes="task-action"
+                                Margin="0,0,0,7"
+                                Content="{Binding ResetFiltersLabel}"
+                                Command="{Binding ResetFiltersCommand}"
+                                Click="OnResetFiltersClick" />
+                    </WrapPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Loading and validation -->
+            <StackPanel Grid.Row="1" Spacing="6">
+                <ProgressBar Height="2"
+                             IsIndeterminate="True"
+                             IsVisible="{Binding IsLoading}"
+                             Foreground="{DynamicResource Accent}" />
+
+                <TextBlock Text="{Binding LoadingMessage}"
+                           IsVisible="{Binding IsLoading}"
+                           FontSize="11"
+                           Foreground="{DynamicResource SecondaryText}" />
+
+                <TextBlock Text="{Binding DateRangeErrorMessage}"
+                           IsVisible="{Binding HasDateRangeError}"
+                           Foreground="{DynamicResource Accent}"
+                           TextWrapping="Wrap" />
+
+                <TextBlock Text="{Binding LoadErrorMessage}"
+                           IsVisible="{Binding HasLoadError}"
+                           Foreground="{DynamicResource Accent}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Adaptive task table -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource Background}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    ClipToBounds="True">
+                <Grid>
+                    <ScrollViewer x:Name="TableHorizontalScroll"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  SizeChanged="OnTableViewportSizeChanged">
+
+                        <Grid x:Name="TableContent"
+                              Width="760"
+                              RowDefinitions="Auto,*">
+
+                            <!-- Headers -->
+                            <Border Grid.Row="0"
+                                    Background="{DynamicResource Surface}"
+                                    BorderBrush="{DynamicResource Background}"
+                                    BorderThickness="0,0,0,1">
+                                <Grid Height="38"
+                                      ColumnDefinitions="104,2.4*,1.7*,84,78,112">
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding DateColumn}"
+                                               Margin="12,0,4,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryText}" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TitleColumn}"
+                                               Margin="8,0,4,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryText}" />
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding DescriptionColumn}"
+                                               Margin="8,0,4,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryText}" />
+
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding PlannedColumn}"
+                                               Margin="4,0,8,0"
+                                               TextAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryText}" />
+
+                                    <TextBlock Grid.Column="4"
+                                               Text="{Binding ActualColumn}"
+                                               Margin="4,0,8,0"
+                                               TextAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryText}" />
+
+                                    <TextBlock Grid.Column="5"
+                                               Text="{Binding StatusColumn}"
+                                               Margin="10,0,4,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryText}" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Rows -->
+                            <ListBox Grid.Row="1"
+                                     Classes="task-table"
+                                     ItemsSource="{Binding Items}"
+                                     SelectedItem="{Binding SelectedTask, Mode=TwoWay}"
+                                     SelectionMode="Single"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TaskListRowViewModel">
+                                        <Border Height="38"
+                                                Background="Transparent"
+                                                BorderBrush="{DynamicResource Background}"
+                                                BorderThickness="0,0,0,1">
+
+                                            <Grid ColumnDefinitions="104,2.4*,1.7*,84,78,112">
+
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding DateText}"
+                                                           Margin="12,0,4,0"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="11"
+                                                           FontFamily="Menlo, Consolas, Courier New"
+                                                           Foreground="{DynamicResource SecondaryText}" />
+
+                                                <Grid Grid.Column="1"
+                                                      Margin="8,0,6,0"
+                                                      ColumnDefinitions="Auto,*">
+
+                                                    <Border Grid.Column="0"
+                                                            IsVisible="{Binding HasTaskNumber}"
+                                                            Background="{DynamicResource Background}"
+                                                            CornerRadius="4"
+                                                            Padding="5,2"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding TaskNumberText}"
+                                                                   FontSize="10"
+                                                                   FontFamily="Menlo, Consolas, Courier New"
+                                                                   Foreground="{DynamicResource Accent}" />
+                                                    </Border>
+
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Title}"
+                                                               ToolTip.Tip="{Binding Title}"
+                                                               Margin="6,0,0,0"
+                                                               VerticalAlignment="Center"
+                                                               FontSize="12"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               TextWrapping="NoWrap"
+                                                               Foreground="{DynamicResource PrimaryText}" />
+                                                </Grid>
+
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding ShortDescriptionText}"
+                                                           ToolTip.Tip="{Binding ShortDescriptionText}"
+                                                           Margin="8,0,6,0"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="12"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           TextWrapping="NoWrap"
+                                                           Foreground="{DynamicResource SecondaryText}" />
+
+                                                <TextBlock Grid.Column="3"
+                                                           Text="{Binding PlannedText}"
+                                                           Margin="4,0,8,0"
+                                                           TextAlignment="Right"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="11"
+                                                           FontFamily="Menlo, Consolas, Courier New"
+                                                           Foreground="{DynamicResource PrimaryText}" />
+
+                                                <TextBlock Grid.Column="4"
+                                                           Text="{Binding ActualText}"
+                                                           Margin="4,0,8,0"
+                                                           TextAlignment="Right"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="11"
+                                                           FontFamily="Menlo, Consolas, Courier New"
+                                                           Foreground="{DynamicResource PrimaryText}" />
+
+                                                <Border Grid.Column="5"
+                                                        Classes="task-status"
+                                                        Classes.completed="{Binding IsCompleted}"
+                                                        Background="{DynamicResource Background}"
+                                                        CornerRadius="4"
+                                                        Padding="6,3"
+                                                        Margin="10,0,8,0"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding StatusText}"
+                                                               FontSize="11"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               MaxWidth="94" />
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- Empty states -->
+                    <TextBlock IsVisible="{Binding HasNoTasks}"
+                               Text="{Binding EmptyMessage}"
+                               Margin="30,48"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="13"
+                               Foreground="{DynamicResource SecondaryText}" />
+
+                    <TextBlock IsVisible="{Binding HasNoResults}"
+                               Text="{Binding NoResultsMessage}"
+                               Margin="30,48"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="13"
+                               Foreground="{DynamicResource SecondaryText}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Custom date picker -->
+        <Popup x:Name="DatePopup"
+               Placement="BottomEdgeAlignedLeft"
+               IsLightDismissEnabled="True">
+            <Border Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource Accent}"
+                    BorderThickness="1"
+                    CornerRadius="9"
+                    Padding="14"
+                    Width="280">
+
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Button Grid.Column="0"
+                                Classes="calendar-nav"
+                                Content="‹"
+                                Click="OnPreviousMonthClick" />
+
+                        <TextBlock x:Name="CalendarMonthTitle"
+                                   Grid.Column="1"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource PrimaryText}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold" />
+
+                        <Button Grid.Column="2"
+                                Classes="calendar-nav"
+                                Content="›"
+                                Click="OnNextMonthClick" />
+                    </Grid>
+
+                    <UniformGrid x:Name="WeekdayHeader" Columns="7" />
+                    <UniformGrid x:Name="CalendarDaysGrid"
+                                 Columns="7"
+                                 Rows="6" />
+
+                    <Border Height="1"
+                            Background="{DynamicResource SecondaryText}"
+                            Opacity="0.25" />
+
+                    <Button x:Name="CalendarTodayButton"
+                            Classes="calendar-nav"
+                            HorizontalAlignment="Left"
+                            Width="110"
+                            Padding="10,0"
+                            FontSize="12"
+                            Foreground="{DynamicResource Accent}"
+                            Click="OnTodayClick" />
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Delete confirmation -->
+        <Grid IsVisible="{Binding IsDeleteConfirmationOpen}"
+              ZIndex="10">
+            <Border Background="#AA000000" />
+
+            <Border Width="440"
+                    MaxWidth="440"
+                    Margin="18"
+                    Padding="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource SidebarSelectedBackground}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+
+                <StackPanel Spacing="16">
+                    <TextBlock Text="{Binding DeleteConfirmationTitle}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryText}" />
+
+                    <TextBlock Text="{Binding DeleteConfirmationMessage}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SecondaryText}" />
+
+                    <ProgressBar Height="2"
+                                 IsIndeterminate="True"
+                                 IsVisible="{Binding IsDeleting}"
+                                 Foreground="{DynamicResource Accent}" />
+
+                    <TextBlock Text="{Binding DeletingMessage}"
+                               IsVisible="{Binding IsDeleting}"
+                               Foreground="{DynamicResource SecondaryText}" />
+
+                    <TextBlock Text="{Binding DeleteErrorMessage}"
+                               IsVisible="{Binding HasDeleteError}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource Accent}" />
+
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Spacing="8">
+                        <Button Classes="task-action"
+                                Content="{Binding CancelDeleteLabel}"
+                                Command="{Binding CancelDeleteCommand}" />
+
+                        <Button Classes="task-confirm"
+                                Content="{Binding ConfirmDeleteLabel}"
+                                Command="{Binding ConfirmDeleteCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
