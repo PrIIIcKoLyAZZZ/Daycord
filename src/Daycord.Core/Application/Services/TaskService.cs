@@ -78,7 +78,6 @@ public sealed class TaskService
 
         if (request.PlannedMinutes is int plannedMinutes)
         {
-            // The earlier validation guarantees a real date.
             var plannedDate = request.TaskDate
                 ?? throw new InvalidOperationException(
                     "Planned time requires a task date.");
@@ -91,7 +90,6 @@ public sealed class TaskService
                 PlannedMinutes = plannedMinutes
             };
 
-            // Task + planning period are saved atomically.
             await _repository.CreateWithPlanningAsync(
                 task,
                 planningPeriod,
@@ -150,8 +148,7 @@ public sealed class TaskService
         task.ShortDescription = request.ShortDescription;
         task.DescriptionMarkdown = request.DescriptionMarkdown;
 
-        // The existing UpdateTaskRequest does not contain
-        // TaskNumber. Preserve the stored issue number.
+        // Preserve TaskNumber, which is absent from UpdateTaskRequest.
         task.UpdatedAtUtc = now;
 
         var updated = await _repository.UpdateAsync(
@@ -201,6 +198,18 @@ public sealed class TaskService
         }
 
         return task;
+    }
+
+    public Task<bool> DeleteAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Dependent records are deleted transactionally
+        // by SqliteTaskRepository.
+        return _repository.DeleteAsync(taskId, cancellationToken);
     }
 
     public async Task<IReadOnlyList<TaskListItem>> ListAsync(
@@ -305,16 +314,12 @@ public sealed class TaskService
     private static string? NormalizeTaskNumber(
         string? taskNumber)
     {
-        if (string.IsNullOrWhiteSpace(taskNumber))
-        {
-            return null;
-        }
-
-        return taskNumber.Trim();
+        return string.IsNullOrWhiteSpace(taskNumber)
+            ? null
+            : taskNumber.Trim();
     }
 
-    private static void ValidatePlannedMinutes(
-        int? plannedMinutes)
+    private static void ValidatePlannedMinutes(int? plannedMinutes)
     {
         if (plannedMinutes.HasValue &&
             plannedMinutes.Value <= 0)
@@ -325,13 +330,9 @@ public sealed class TaskService
         }
     }
 
-    private static void ValidateTaskDate(
-        DateOnly? taskDate)
+    private static void ValidateTaskDate(DateOnly? taskDate)
     {
-        // NULL means that the task is not assigned to a date.
-        // The default date value (0001-01-01) is invalid.
-        if (taskDate.HasValue &&
-            taskDate.Value == default)
+        if (taskDate.HasValue && taskDate.Value == default)
         {
             throw new ArgumentException(
                 "Task date is invalid.",

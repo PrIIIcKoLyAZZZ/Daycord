@@ -204,6 +204,55 @@ public sealed class SqliteTaskRepository : ITaskRepository
         return affectedRows > 0;
     }
 
+    public async Task<bool> DeleteAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Task ID must not be empty.",
+                nameof(id));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        await using var transaction =
+            await connection.BeginTransactionAsync(cancellationToken);
+
+        var parameters = new { TaskId = FormatGuid(id) };
+
+        // Foreign keys are RESTRICT, not CASCADE.
+        // Delete dependent records and the task atomically.
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                "DELETE FROM WorkEntries WHERE TaskId = @TaskId;",
+                parameters,
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                "DELETE FROM PlanningPeriods WHERE TaskId = @TaskId;",
+                parameters,
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+
+        var affectedRows = await connection.ExecuteAsync(
+            new CommandDefinition(
+                "DELETE FROM Tasks WHERE Id = @TaskId;",
+                parameters,
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return affectedRows == 1;
+    }
+
     public async Task<IReadOnlyList<TaskListItem>> ListAsync(
         TaskQueryModel query,
         CancellationToken cancellationToken = default)
@@ -222,6 +271,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
         var orderBy = query.SortBy switch
         {
             TaskSortField.TaskDate =>
+                $"CASE WHEN t.TaskDate IS NULL THEN 1 ELSE 0 END ASC, " +
                 $"t.TaskDate {direction}",
 
             TaskSortField.Title =>
@@ -255,10 +305,34 @@ public sealed class SqliteTaskRepository : ITaskRepository
                 t.ShortDescription,
                 t.StatusId,
                 s.Name AS StatusName,
-                s.IsCompleted
+                CASE WHEN s.IsSystem = 1
+                    THEN s.SystemKey
+                    ELSE NULL
+                END AS StatusSystemKey,
+                s.IsCompleted,
+                planned.TotalPlannedMinutes,
+                actual.TotalActualMinutes
             FROM Tasks AS t
             INNER JOIN TaskStatuses AS s
                 ON s.Id = t.StatusId
+            LEFT JOIN
+            (
+                SELECT
+                    TaskId,
+                    SUM(PlannedMinutes) AS TotalPlannedMinutes
+                FROM PlanningPeriods
+                GROUP BY TaskId
+            ) AS planned
+                ON planned.TaskId = t.Id
+            LEFT JOIN
+            (
+                SELECT
+                    TaskId,
+                    SUM(ActualMinutes) AS TotalActualMinutes
+                FROM WorkEntries
+                GROUP BY TaskId
+            ) AS actual
+                ON actual.TaskId = t.Id
             WHERE
                 (
                     @SearchPattern IS NULL

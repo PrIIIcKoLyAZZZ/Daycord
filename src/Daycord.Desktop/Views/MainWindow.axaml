@@ -33,6 +33,14 @@
 
         </DataTemplate>
 
+        <DataTemplate
+            DataType="vm:TaskListViewModel"
+            x:DataType="vm:TaskListViewModel">
+
+            <views:TaskListView />
+
+        </DataTemplate>
+
     </Window.DataTemplates>
 
     <!-- Sidebar navigation styles -->

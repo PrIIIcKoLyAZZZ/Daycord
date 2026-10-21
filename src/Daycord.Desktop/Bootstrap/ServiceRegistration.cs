@@ -44,9 +44,15 @@ public static class ServiceRegistration
 
         services.AddSingleton<PlaceholderPageViewModel>();
 
-        // New Task sessions have short lifetimes. ActivatorUtilities
-        // creates them using DI without retaining IDisposable instances
-        // in the root container after the user leaves the page.
+        // Keep Task List filters, sorting and selection
+        // while navigating between application sections.
+        // TaskListView reloads data when it becomes visible.
+        services.AddSingleton<TaskListViewModel>();
+
+        // New Task sessions have short lifetimes.
+        // ActivatorUtilities creates them using DI without
+        // retaining IDisposable instances in the root
+        // container after the user leaves the page.
         services.AddSingleton<Func<TerminalViewModel>>(provider =>
             () => ActivatorUtilities.CreateInstance<TerminalViewModel>(
                 provider));

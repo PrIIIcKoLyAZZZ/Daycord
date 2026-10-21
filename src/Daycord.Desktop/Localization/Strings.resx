@@ -88,4 +88,47 @@
     <data name="QuickTaskTitleRequired"><value>Enter a task title.</value></data>
     <data name="QuickTaskInvalidTime"><value>Enter a duration such as 30m or 1h 30m.</value></data>
     <data name="QuickTaskCreateError"><value>Could not create task: {0}</value></data>
+
+    <!-- Task List (DC-007) -->
+    <data name="TaskListHeading"><value>Tasks</value></data>
+    <data name="TaskListSearchPlaceholder"><value>Search by title or short description...</value></data>
+    <data name="TaskListStatusFilter"><value>Status</value></data>
+    <data name="TaskListDateFrom"><value>From</value></data>
+    <data name="TaskListDateTo"><value>To</value></data>
+    <data name="TaskListSortLabel"><value>Sort by</value></data>
+    <data name="TaskListDescending"><value>Descending</value></data>
+    <data name="TaskListAscending"><value>Ascending</value></data>
+    <data name="TaskListRefresh"><value>Refresh</value></data>
+    <data name="TaskListResetFilters"><value>Clear filters</value></data>
+    <data name="TaskListLoading"><value>Loading tasks...</value></data>
+    <data name="TaskListEmpty"><value>No tasks yet. Create a task in Quick Task to see it here.</value></data>
+    <data name="TaskListNoResults"><value>No tasks match the current search and filters.</value></data>
+    <data name="TaskListColumnDate"><value>Date</value></data>
+    <data name="TaskListColumnTitle"><value>Title</value></data>
+    <data name="TaskListColumnDescription"><value>Short Description</value></data>
+    <data name="TaskListColumnPlanned"><value>Planned</value></data>
+    <data name="TaskListColumnActual"><value>Actual</value></data>
+    <data name="TaskListColumnStatus"><value>Status</value></data>
+    <data name="TaskListInvalidDateRange"><value>Start date cannot be later than end date.</value></data>
+    <data name="TaskListLoadError"><value>Could not load tasks: {0}</value></data>
+    <data name="TaskListStatusOpen"><value>Open</value></data>
+    <data name="TaskListStatusCompleted"><value>Completed</value></data>
+    <data name="TaskListHoursUnit"><value>h</value></data>
+    <data name="TaskListMinutesUnit"><value>m</value></data>
+    <data name="TaskListAllStatuses"><value>All statuses</value></data>
+    <data name="TaskListSortDate"><value>Date</value></data>
+    <data name="TaskListSortTitle"><value>Title</value></data>
+    <data name="TaskListSortStatus"><value>Status</value></data>
+
+    <!-- Task List actions (DC-007, package 7.3) -->
+    <data name="TaskListShowFilters"><value>Filters</value></data>
+    <data name="TaskListHideFilters"><value>Hide filters</value></data>
+    <data name="TaskListFiltersActive"><value>Filters active</value></data>
+    <data name="TaskListDelete"><value>Delete</value></data>
+    <data name="TaskListDeleteConfirmationTitle"><value>Delete task?</value></data>
+    <data name="TaskListDeleteConfirmationMessage"><value>Permanently delete “{0}” and all its planned and recorded time? This cannot be undone.</value></data>
+    <data name="TaskListConfirmDelete"><value>Delete task</value></data>
+    <data name="TaskListCancelDelete"><value>Cancel</value></data>
+    <data name="TaskListDeleting"><value>Deleting task...</value></data>
+    <data name="TaskListDeleteError"><value>Could not delete task: {0}</value></data>
 </root>

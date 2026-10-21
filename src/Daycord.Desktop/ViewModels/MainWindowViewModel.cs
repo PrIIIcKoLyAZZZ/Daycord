@@ -13,7 +13,9 @@ public partial class MainWindowViewModel :
     private readonly INavigationService _navigation;
     private readonly ILocalizationService _localization;
     private readonly PlaceholderPageViewModel _placeholderPage;
+    private readonly TaskListViewModel _taskListPage;
     private readonly Func<TerminalViewModel> _createTerminalPage;
+
     private TerminalViewModel? _terminalPage;
 
     private string? _databaseErrorDetails;
@@ -29,6 +31,7 @@ public partial class MainWindowViewModel :
         INavigationService navigation,
         ILocalizationService localization,
         PlaceholderPageViewModel placeholderPage,
+        TaskListViewModel taskListPage,
         Func<TerminalViewModel> createTerminalPage)
     {
         _navigation = navigation
@@ -39,6 +42,9 @@ public partial class MainWindowViewModel :
 
         _placeholderPage = placeholderPage
             ?? throw new ArgumentNullException(nameof(placeholderPage));
+
+        _taskListPage = taskListPage
+            ?? throw new ArgumentNullException(nameof(taskListPage));
 
         _createTerminalPage = createTerminalPage
             ?? throw new ArgumentNullException(nameof(createTerminalPage));
@@ -95,8 +101,15 @@ public partial class MainWindowViewModel :
     public string CurrentPageTitle =>
         _placeholderPage.PageTitle;
 
-    public object CurrentPageContent =>
-        _terminalPage ?? (object)_placeholderPage;
+    public object CurrentPageContent => CurrentPage switch
+    {
+        PageKind.Tasks => _taskListPage,
+
+        PageKind.NewTask when _terminalPage is not null =>
+            _terminalPage,
+
+        _ => _placeholderPage
+    };
 
     // Active navigation state
 
@@ -252,6 +265,7 @@ public partial class MainWindowViewModel :
         }
 
         var page = _navigation.CurrentPage;
+
         _placeholderPage.SetPage(page);
 
         if (page == PageKind.NewTask)
@@ -321,7 +335,10 @@ public partial class MainWindowViewModel :
 
         _navigation.PropertyChanged -= OnNavigationChanged;
         _localization.PropertyChanged -= OnLocalizationChanged;
+
         _terminalPage?.Dispose();
         _terminalPage = null;
+
+        // TaskListViewModel is owned and disposed by DI.
     }
 }

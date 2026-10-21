@@ -88,4 +88,47 @@
     <data name="QuickTaskTitleRequired"><value>Введите заголовок задачи.</value></data>
     <data name="QuickTaskInvalidTime"><value>Введите длительность, например 30м или 1ч 30м.</value></data>
     <data name="QuickTaskCreateError"><value>Не удалось создать задачу: {0}</value></data>
+
+    <!-- Список задач (DC-007) -->
+    <data name="TaskListHeading"><value>Задачи</value></data>
+    <data name="TaskListSearchPlaceholder"><value>Поиск по названию или краткому описанию...</value></data>
+    <data name="TaskListStatusFilter"><value>Статус</value></data>
+    <data name="TaskListDateFrom"><value>От</value></data>
+    <data name="TaskListDateTo"><value>До</value></data>
+    <data name="TaskListSortLabel"><value>Сортировка</value></data>
+    <data name="TaskListDescending"><value>По убыванию</value></data>
+    <data name="TaskListAscending"><value>По возрастанию</value></data>
+    <data name="TaskListRefresh"><value>Обновить</value></data>
+    <data name="TaskListResetFilters"><value>Сбросить фильтры</value></data>
+    <data name="TaskListLoading"><value>Загрузка задач...</value></data>
+    <data name="TaskListEmpty"><value>Задач пока нет. Создайте задачу через «Быструю задачу», чтобы она появилась здесь.</value></data>
+    <data name="TaskListNoResults"><value>По заданным условиям задачи не найдены.</value></data>
+    <data name="TaskListColumnDate"><value>Дата</value></data>
+    <data name="TaskListColumnTitle"><value>Название</value></data>
+    <data name="TaskListColumnDescription"><value>Краткое описание</value></data>
+    <data name="TaskListColumnPlanned"><value>План</value></data>
+    <data name="TaskListColumnActual"><value>Факт</value></data>
+    <data name="TaskListColumnStatus"><value>Статус</value></data>
+    <data name="TaskListInvalidDateRange"><value>Начальная дата не может быть позже конечной.</value></data>
+    <data name="TaskListLoadError"><value>Не удалось загрузить задачи: {0}</value></data>
+    <data name="TaskListStatusOpen"><value>Открыта</value></data>
+    <data name="TaskListStatusCompleted"><value>Завершена</value></data>
+    <data name="TaskListHoursUnit"><value>ч</value></data>
+    <data name="TaskListMinutesUnit"><value>м</value></data>
+    <data name="TaskListAllStatuses"><value>Все статусы</value></data>
+    <data name="TaskListSortDate"><value>Дата</value></data>
+    <data name="TaskListSortTitle"><value>Название</value></data>
+    <data name="TaskListSortStatus"><value>Статус</value></data>
+
+    <!-- Task List actions (DC-007, package 7.3) -->
+    <data name="TaskListShowFilters"><value>Фильтры</value></data>
+    <data name="TaskListHideFilters"><value>Скрыть фильтры</value></data>
+    <data name="TaskListFiltersActive"><value>Фильтры активны</value></data>
+    <data name="TaskListDelete"><value>Удалить</value></data>
+    <data name="TaskListDeleteConfirmationTitle"><value>Удалить задачу?</value></data>
+    <data name="TaskListDeleteConfirmationMessage"><value>Удалить задачу «{0}» вместе со всем плановым и учтённым временем? Это действие нельзя отменить.</value></data>
+    <data name="TaskListConfirmDelete"><value>Удалить задачу</value></data>
+    <data name="TaskListCancelDelete"><value>Отмена</value></data>
+    <data name="TaskListDeleting"><value>Удаление задачи...</value></data>
+    <data name="TaskListDeleteError"><value>Не удалось удалить задачу: {0}</value></data>
 </root>

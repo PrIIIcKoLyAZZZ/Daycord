@@ -16,5 +16,15 @@ public sealed class TaskListItem
 
     public string StatusName { get; set; } = string.Empty;
 
+    // Populated only for built-in system statuses.
+    // Custom statuses keep their own StatusName.
+    public string? StatusSystemKey { get; set; }
+
     public bool IsCompleted { get; set; }
+
+    // NULL means that no planning period exists for this task.
+    public long? TotalPlannedMinutes { get; set; }
+
+    // NULL means that no work entry exists for this task.
+    public long? TotalActualMinutes { get; set; }
 }
