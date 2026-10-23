@@ -131,4 +131,43 @@
     <data name="TaskListCancelDelete"><value>Отмена</value></data>
     <data name="TaskListDeleting"><value>Удаление задачи...</value></data>
     <data name="TaskListDeleteError"><value>Не удалось удалить задачу: {0}</value></data>
+
+    <!-- Task Details (DC-008) -->
+    <data name="TaskDetailsHeading"><value>КАРТОЧКА ЗАДАЧИ</value></data>
+    <data name="TaskDetailsBack"><value>← Назад</value></data>
+    <data name="TaskDetailsSave"><value>Сохранить изменения</value></data>
+    <data name="TaskDetailsCancel"><value>Отмена</value></data>
+    <data name="TaskDetailsNumber"><value>Номер задачи</value></data>
+    <data name="TaskDetailsTitle"><value>Название</value></data>
+    <data name="TaskDetailsDate"><value>Дата</value></data>
+    <data name="TaskDetailsStatus"><value>Статус</value></data>
+    <data name="TaskDetailsShortDescription"><value>Краткое описание</value></data>
+    <data name="TaskDetailsMarkdown"><value>ОПИСАНИЕ MARKDOWN</value></data>
+    <data name="TaskDetailsEdit"><value>Редактирование</value></data>
+    <data name="TaskDetailsPreview"><value>Просмотр</value></data>
+    <data name="TaskDetailsLoading"><value>Загрузка задачи...</value></data>
+    <data name="TaskDetailsSaving"><value>Сохранение...</value></data>
+    <data name="TaskDetailsSaveSuccessful"><value>Изменения сохранены.</value></data>
+    <data name="TaskDetailsTaskNotFound"><value>Эта задача больше не существует.</value></data>
+    <data name="TaskDetailsDatePlaceholder"><value>дд.мм.гггг (необязательно)</value></data>
+    <data name="TaskDetailsDiscardTitle"><value>Отменить изменения?</value></data>
+    <data name="TaskDetailsDiscardMessage"><value>Есть несохранённые изменения. Выйти из карточки без сохранения?</value></data>
+    <data name="TaskDetailsDiscard"><value>Не сохранять</value></data>
+    <data name="TaskDetailsKeepEditing"><value>Продолжить редактирование</value></data>
+    <data name="TaskDetailsLoadFailed"><value>Не удалось загрузить задачу: {0}</value></data>
+    <data name="TaskDetailsTitleRequired"><value>Введите название задачи.</value></data>
+    <data name="TaskDetailsDateInvalid"><value>Введите корректную дату или оставьте поле пустым.</value></data>
+    <data name="TaskDetailsStatusRequired"><value>Выберите статус задачи.</value></data>
+    <data name="TaskDetailsValidationError"><value>Некорректные данные задачи: {0}</value></data>
+    <data name="TaskDetailsSaveFailed"><value>Не удалось сохранить задачу: {0}</value></data>
+
+    <!-- Quick Task: open existing task (DC-008) -->
+    <data name="QuickTaskOpenDetails"><value>Открыть карточку задачи</value></data>
+
+    <!-- Full task creation (DC-008) -->
+    <data name="TaskDetailsCreateHeading"><value>СОЗДАНИЕ ЗАДАЧИ</value></data>
+    <data name="TaskDetailsCreateAction"><value>Создать задачу</value></data>
+    <data name="TaskDetailsCreating"><value>Создание...</value></data>
+    <data name="TaskDetailsCreateSuccessful"><value>Задача создана.</value></data>
+    <data name="TaskDetailsCreateFailed"><value>Не удалось создать задачу: {0}</value></data>
 </root>

@@ -15,11 +15,9 @@
             <Setter Property="MinHeight" Value="36" />
             <Setter Property="FontSize" Value="12" />
         </Style>
-
         <Style Selector="TextBox.task-search:focus, TextBox.task-date-input:focus, TextBox.task-date-input.invalid">
             <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
         </Style>
-
         <Style Selector="Button.task-action">
             <Setter Property="Background" Value="{DynamicResource Surface}" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
@@ -30,15 +28,23 @@
             <Setter Property="MinHeight" Value="36" />
             <Setter Property="FontSize" Value="12" />
         </Style>
-
         <Style Selector="Button.task-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
         </Style>
-
+        <Style Selector="Button.task-create">
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground" Value="{DynamicResource Background}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
         <Style Selector="Button.task-danger">
             <Setter Property="Foreground" Value="{DynamicResource Accent}" />
         </Style>
-
         <Style Selector="Button.task-confirm">
             <Setter Property="Background" Value="{DynamicResource Accent}" />
             <Setter Property="Foreground" Value="{DynamicResource Background}" />
@@ -48,7 +54,6 @@
             <Setter Property="Padding" Value="18,9" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
-
         <Style Selector="ComboBox.task-filter">
             <Setter Property="Background" Value="{DynamicResource Surface}" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
@@ -56,7 +61,6 @@
             <Setter Property="MinHeight" Value="34" />
             <Setter Property="FontSize" Value="12" />
         </Style>
-
         <Style Selector="Button.calendar-trigger, Button.calendar-nav">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource Accent}" />
@@ -66,7 +70,6 @@
             <Setter Property="Padding" Value="5" />
             <Setter Property="MinHeight" Value="30" />
         </Style>
-
         <Style Selector="Button.calendar-nav">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
             <Setter Property="Width" Value="32" />
@@ -74,14 +77,12 @@
             <Setter Property="FontSize" Value="20" />
             <Setter Property="Padding" Value="0" />
         </Style>
-
         <Style Selector="TextBlock.calendar-weekday">
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
             <Setter Property="FontFamily" Value="Menlo, Consolas, Courier New" />
             <Setter Property="FontSize" Value="10" />
             <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
-
         <Style Selector="Button.calendar-day">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
@@ -92,33 +93,26 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="FontSize" Value="12" />
         </Style>
-
         <Style Selector="Button.calendar-day.outside">
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
             <Setter Property="Opacity" Value="0.5" />
         </Style>
-
         <Style Selector="Button.calendar-day.today">
             <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
         </Style>
-
-        <!-- Selected date: separate button and template styles. -->
         <Style Selector="Button.calendar-day.selected">
             <Setter Property="Background" Value="{DynamicResource Accent}" />
             <Setter Property="Foreground" Value="{DynamicResource Background}" />
         </Style>
-
         <Style Selector="Button.calendar-day.selected /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource Accent}" />
             <Setter Property="Foreground" Value="{DynamicResource Background}" />
         </Style>
-
         <Style Selector="ListBox.task-table">
             <Setter Property="Background" Value="{DynamicResource Surface}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
         </Style>
-
         <Style Selector="ListBox.task-table ListBoxItem">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -128,23 +122,18 @@
             <Setter Property="MinHeight" Value="38" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         </Style>
-
         <Style Selector="ListBox.task-table ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource Background}" />
         </Style>
-
         <Style Selector="ListBox.task-table ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
         </Style>
-
         <Style Selector="ListBox.task-table ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBackground}" />
         </Style>
-
         <Style Selector="Border.task-status TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
         </Style>
-
         <Style Selector="Border.task-status.completed TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource Accent}" />
         </Style>
@@ -157,18 +146,23 @@
 
             <!-- Search and actions -->
             <StackPanel Grid.Row="0" Spacing="10">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
                     <TextBox Grid.Column="0"
                              Classes="task-search"
                              Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              PlaceholderText="{Binding SearchPlaceholder}" />
 
                     <Button Grid.Column="1"
+                            Classes="task-create"
+                            Content="{Binding CreateFullTaskLabel}"
+                            Command="{Binding CreateFullTaskCommand}" />
+
+                    <Button Grid.Column="2"
                             Classes="task-action"
                             Content="{Binding FiltersButtonLabel}"
                             Command="{Binding ToggleFiltersCommand}" />
 
-                    <Button Grid.Column="2"
+                    <Button Grid.Column="3"
                             Classes="task-action task-danger"
                             Content="{Binding DeleteButtonLabel}"
                             Command="{Binding RequestDeleteCommand}" />
@@ -203,7 +197,6 @@
                             </ComboBox>
                         </StackPanel>
 
-                        
                         <!-- From date -->
                         <StackPanel Orientation="Horizontal"
                                     Spacing="8"
@@ -243,8 +236,6 @@
                             </Border>
                         </StackPanel>
 
-
-                        
                         <!-- To date -->
                         <StackPanel Orientation="Horizontal"
                                     Spacing="8"
@@ -283,7 +274,6 @@
                                 </Grid>
                             </Border>
                         </StackPanel>
-
 
                         <!-- Sorting -->
                         <StackPanel Orientation="Horizontal"
@@ -366,7 +356,6 @@
                                     BorderThickness="0,0,0,1">
                                 <Grid Height="38"
                                       ColumnDefinitions="104,2.4*,1.7*,84,78,112">
-
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding DateColumn}"
                                                Margin="12,0,4,0"
@@ -427,16 +416,13 @@
                                      SelectionMode="Single"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
-
                                 <ListBox.ItemTemplate>
                                     <DataTemplate x:DataType="vm:TaskListRowViewModel">
                                         <Border Height="38"
                                                 Background="Transparent"
                                                 BorderBrush="{DynamicResource Background}"
                                                 BorderThickness="0,0,0,1">
-
                                             <Grid ColumnDefinitions="104,2.4*,1.7*,84,78,112">
-
                                                 <TextBlock Grid.Column="0"
                                                            Text="{Binding DateText}"
                                                            Margin="12,0,4,0"
@@ -448,7 +434,6 @@
                                                 <Grid Grid.Column="1"
                                                       Margin="8,0,6,0"
                                                       ColumnDefinitions="Auto,*">
-
                                                     <Border Grid.Column="0"
                                                             IsVisible="{Binding HasTaskNumber}"
                                                             Background="{DynamicResource Background}"
@@ -556,7 +541,6 @@
                     CornerRadius="9"
                     Padding="14"
                     Width="280">
-
                 <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <Button Grid.Column="0"
@@ -579,6 +563,7 @@
                     </Grid>
 
                     <UniformGrid x:Name="WeekdayHeader" Columns="7" />
+
                     <UniformGrid x:Name="CalendarDaysGrid"
                                  Columns="7"
                                  Rows="6" />
@@ -614,7 +599,6 @@
                     BorderBrush="{DynamicResource SidebarSelectedBackground}"
                     BorderThickness="1"
                     CornerRadius="10">
-
                 <StackPanel Spacing="16">
                     <TextBlock Text="{Binding DeleteConfirmationTitle}"
                                FontSize="18"

@@ -85,6 +85,18 @@
             <Setter Property="Foreground" Value="{DynamicResource Background}" />
         </Style>
 
+        <Style Selector="Button.quick-history-open">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="32" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="FontSize" Value="17" />
+        </Style>
+
         <Style Selector="Button.quick-submit">
             <Setter Property="Background" Value="{DynamicResource Accent}" />
             <Setter Property="Foreground" Value="{DynamicResource Background}" />
@@ -205,6 +217,20 @@
                                         FontSize="11"
                                         TextAlignment="Right"
                                         VerticalAlignment="Center" />
+
+                                    <!-- Open Task Details -->
+
+                                    <Button
+                                        Grid.Column="5"
+                                        Classes="quick-history-open"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Content="↗"
+                                        ToolTip.Tip="{Binding $parent[ItemsControl].((vm:TerminalViewModel)DataContext).OpenDetailsLabel}"
+                                        IsEnabled="{Binding $parent[ItemsControl].((vm:TerminalViewModel)DataContext).CanEditForm}"
+                                        Command="{Binding $parent[ItemsControl].((vm:TerminalViewModel)DataContext).OpenSessionTaskCommand}"
+                                        CommandParameter="{Binding}" />
+
                                 </Grid>
                             </Border>
                         </DataTemplate>

@@ -15,8 +15,10 @@ public partial class MainWindowViewModel :
     private readonly PlaceholderPageViewModel _placeholderPage;
     private readonly TaskListViewModel _taskListPage;
     private readonly Func<TerminalViewModel> _createTerminalPage;
+    private readonly Func<TaskDetailsViewModel> _createTaskDetailsPage;
 
     private TerminalViewModel? _terminalPage;
+    private TaskDetailsViewModel? _taskDetailsPage;
 
     private string? _databaseErrorDetails;
     private bool _disposed;
@@ -32,7 +34,8 @@ public partial class MainWindowViewModel :
         ILocalizationService localization,
         PlaceholderPageViewModel placeholderPage,
         TaskListViewModel taskListPage,
-        Func<TerminalViewModel> createTerminalPage)
+        Func<TerminalViewModel> createTerminalPage,
+        Func<TaskDetailsViewModel> createTaskDetailsPage)
     {
         _navigation = navigation
             ?? throw new ArgumentNullException(nameof(navigation));
@@ -49,6 +52,9 @@ public partial class MainWindowViewModel :
         _createTerminalPage = createTerminalPage
             ?? throw new ArgumentNullException(nameof(createTerminalPage));
 
+        _createTaskDetailsPage = createTaskDetailsPage
+            ?? throw new ArgumentNullException(nameof(createTaskDetailsPage));
+
         _placeholderPage.SetPage(_navigation.CurrentPage);
 
         if (_navigation.CurrentPage == PageKind.NewTask)
@@ -58,6 +64,15 @@ public partial class MainWindowViewModel :
 
         _navigation.PropertyChanged += OnNavigationChanged;
         _localization.PropertyChanged += OnLocalizationChanged;
+
+        if (_navigation.CurrentTaskId is Guid taskId)
+        {
+            ShowTaskDetails(taskId);
+        }
+        else if (_navigation.IsCreatingTask)
+        {
+            ShowNewTaskEditor();
+        }
     }
 
     // Application
@@ -74,7 +89,7 @@ public partial class MainWindowViewModel :
     public string NavigationHeading =>
         _localization.GetString("NavigationHeading");
 
-    // Navigation labels
+    // Sidebar
 
     public string NavHomeLabel =>
         _localization.GetString("NavHome");
@@ -94,24 +109,35 @@ public partial class MainWindowViewModel :
     public string NavSettingsLabel =>
         _localization.GetString("NavSettings");
 
-    // Current page
+    // Current section and editor state
 
     public PageKind CurrentPage => _navigation.CurrentPage;
+
+    public bool IsCreatingTask => _navigation.IsCreatingTask;
 
     public string CurrentPageTitle =>
         _placeholderPage.PageTitle;
 
-    public object CurrentPageContent => CurrentPage switch
+    public object CurrentPageContent
     {
-        PageKind.Tasks => _taskListPage,
+        get
+        {
+            if (_taskDetailsPage is not null)
+            {
+                return _taskDetailsPage;
+            }
 
-        PageKind.NewTask when _terminalPage is not null =>
-            _terminalPage,
+            return CurrentPage switch
+            {
+                PageKind.Tasks => _taskListPage,
 
-        _ => _placeholderPage
-    };
+                PageKind.NewTask when _terminalPage is not null =>
+                    _terminalPage,
 
-    // Active navigation state
+                _ => _placeholderPage
+            };
+        }
+    }
 
     public bool IsHomeSelected =>
         CurrentPage == PageKind.Home;
@@ -147,12 +173,12 @@ public partial class MainWindowViewModel :
 
             if (IsDatabaseFailed)
             {
-                string errorMessage = string.Format(
+                var message = string.Format(
                     _localization.GetString(
                         "DatabaseInitializationFailed"),
                     _databaseErrorDetails ?? string.Empty);
 
-                return errorMessage
+                return message
                     + Environment.NewLine
                     + Environment.NewLine
                     + _localization.GetString(
@@ -198,48 +224,49 @@ public partial class MainWindowViewModel :
         OnPropertyChanged(nameof(DatabaseStatusMessage));
     }
 
-    // Navigation commands
+    // Sidebar navigation
 
     [RelayCommand]
-    private void NavigateHome()
-    {
+    private void NavigateHome() =>
         NavigateTo(PageKind.Home);
-    }
 
     [RelayCommand]
-    private void NavigateCalendar()
-    {
+    private void NavigateCalendar() =>
         NavigateTo(PageKind.Calendar);
-    }
 
     [RelayCommand]
-    private void NavigateTasks()
-    {
+    private void NavigateTasks() =>
         NavigateTo(PageKind.Tasks);
-    }
 
     [RelayCommand]
-    private void NavigateNewTask()
-    {
+    private void NavigateNewTask() =>
         NavigateTo(PageKind.NewTask);
-    }
 
     [RelayCommand]
-    private void NavigateReports()
-    {
+    private void NavigateReports() =>
         NavigateTo(PageKind.Reports);
-    }
 
     [RelayCommand]
-    private void NavigateSettings()
-    {
+    private void NavigateSettings() =>
         NavigateTo(PageKind.Settings);
-    }
 
     private void NavigateTo(PageKind page)
     {
-        if (!IsDatabaseReady || _disposed)
+        if (_disposed || !IsDatabaseReady)
         {
+            return;
+        }
+
+        if (_taskDetailsPage is { } details)
+        {
+            details.RequestLeave(() =>
+            {
+                if (!_disposed && IsDatabaseReady)
+                {
+                    _navigation.NavigateTo(page);
+                }
+            });
+
             return;
         }
 
@@ -252,25 +279,147 @@ public partial class MainWindowViewModel :
         object? sender,
         PropertyChangedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(e.PropertyName)
-            && e.PropertyName !=
-                nameof(INavigationService.CurrentPage))
-        {
-            return;
-        }
-
         if (_disposed)
         {
             return;
         }
 
+        if (string.IsNullOrEmpty(e.PropertyName) ||
+            e.PropertyName ==
+                nameof(INavigationService.CurrentTaskId))
+        {
+            if (_navigation.CurrentTaskId is Guid taskId)
+            {
+                ShowTaskDetails(taskId);
+            }
+            else if (!_navigation.IsCreatingTask)
+            {
+                HideTaskDetails();
+            }
+        }
+
+        if (string.IsNullOrEmpty(e.PropertyName) ||
+            e.PropertyName ==
+                nameof(INavigationService.IsCreatingTask))
+        {
+            OnPropertyChanged(nameof(IsCreatingTask));
+
+            if (_navigation.IsCreatingTask)
+            {
+                ShowNewTaskEditor();
+            }
+            else if (!_navigation.CurrentTaskId.HasValue)
+            {
+                HideTaskDetails();
+            }
+        }
+
+        if (string.IsNullOrEmpty(e.PropertyName) ||
+            e.PropertyName ==
+                nameof(INavigationService.CurrentPage))
+        {
+            OnMainSectionChanged();
+        }
+    }
+
+    // Existing task editor
+
+    private void ShowTaskDetails(Guid taskId)
+    {
+        HideTaskDetails();
+
+        var details = _createTaskDetailsPage();
+
+        _taskDetailsPage = details;
+        details.TaskSaved += OnTaskSaved;
+
+        OnPropertyChanged(nameof(CurrentPageContent));
+
+        _ = details.InitializeAsync(taskId);
+    }
+
+    // New full task editor (Tasks section)
+
+    private void ShowNewTaskEditor()
+    {
+        if (_disposed ||
+            _navigation.CurrentPage != PageKind.Tasks ||
+            !_navigation.IsCreatingTask ||
+            _taskDetailsPage is not null)
+        {
+            return;
+        }
+
+        var details = _createTaskDetailsPage();
+
+        _taskDetailsPage = details;
+        details.TaskSaved += OnTaskSaved;
+
+        OnPropertyChanged(nameof(CurrentPageContent));
+
+        // No INSERT occurs until the user presses Save.
+        _ = details.InitializeForCreateAsync();
+    }
+
+    private void HideTaskDetails()
+    {
+        if (_taskDetailsPage is not { } details)
+        {
+            return;
+        }
+
+        _taskDetailsPage = null;
+
+        details.TaskSaved -= OnTaskSaved;
+        details.Dispose();
+
+        OnPropertyChanged(nameof(CurrentPageContent));
+    }
+
+    // Synchronize Quick Task history after editing
+
+    private void OnTaskSaved(
+        object? sender,
+        TaskDetailsSavedEventArgs e)
+    {
+        if (_disposed || _terminalPage is null)
+        {
+            return;
+        }
+
+        var history = _terminalPage.SessionTasks;
+
+        for (var i = 0; i < history.Count; i++)
+        {
+            var current = history[i];
+
+            if (current.Id != e.Task.Id)
+            {
+                continue;
+            }
+
+            // Keep the session's planned duration unchanged.
+            history[i] = new SessionTaskItemViewModel(
+                e.Task,
+                current.PlannedMinutes,
+                _localization);
+
+            break;
+        }
+
+        // TaskListView reloads SQLite when returning to the visual tree.
+    }
+
+    // Main section lifecycle
+
+    private void OnMainSectionChanged()
+    {
         var page = _navigation.CurrentPage;
 
         _placeholderPage.SetPage(page);
 
         if (page == PageKind.NewTask)
         {
-            // Repeated selection does not create a new session.
             _terminalPage ??= _createTerminalPage();
         }
         else if (_terminalPage is { } previousSession)
@@ -291,15 +440,16 @@ public partial class MainWindowViewModel :
         OnPropertyChanged(nameof(IsSettingsSelected));
     }
 
-    // Localization notifications
+    // Localization
 
     private void OnLocalizationChanged(
         object? sender,
         PropertyChangedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(e.PropertyName)
-            && e.PropertyName !=
-                nameof(ILocalizationService.CurrentLanguage))
+        if (_disposed ||
+            (!string.IsNullOrEmpty(e.PropertyName) &&
+             e.PropertyName !=
+                nameof(ILocalizationService.CurrentLanguage)))
         {
             return;
         }
@@ -336,9 +486,9 @@ public partial class MainWindowViewModel :
         _navigation.PropertyChanged -= OnNavigationChanged;
         _localization.PropertyChanged -= OnLocalizationChanged;
 
+        HideTaskDetails();
+
         _terminalPage?.Dispose();
         _terminalPage = null;
-
-        // TaskListViewModel is owned and disposed by DI.
     }
 }

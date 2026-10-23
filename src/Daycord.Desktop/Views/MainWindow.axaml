@@ -1,202 +1,91 @@
-<Window
-    xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:vm="using:Daycord.Desktop.ViewModels"
-    xmlns:views="using:Daycord.Desktop.Views"
-    x:Class="Daycord.Desktop.Views.MainWindow"
-    x:DataType="vm:MainWindowViewModel"
-    Title="{Binding AppName}"
-    Width="1080"
-    Height="720"
-    MinWidth="720"
-    MinHeight="480"
-    WindowStartupLocation="CenterScreen"
-    Background="{DynamicResource Background}">
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Daycord.Desktop.ViewModels"
+        xmlns:views="using:Daycord.Desktop.Views"
+        x:Class="Daycord.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding AppName}"
+        Width="1080"
+        Height="720"
+        MinWidth="720"
+        MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Background}">
 
     <!-- ViewModel to View mapping -->
 
     <Window.DataTemplates>
-
-        <DataTemplate
-            DataType="vm:PlaceholderPageViewModel"
-            x:DataType="vm:PlaceholderPageViewModel">
-
-            <views:PlaceholderPageView />
-
+        <DataTemplate DataType="vm:PlaceholderPageViewModel"
+                      x:DataType="vm:PlaceholderPageViewModel">
+            <views:PlaceholderPageView/>
         </DataTemplate>
 
-        <DataTemplate
-            DataType="vm:TerminalViewModel"
-            x:DataType="vm:TerminalViewModel">
-
-            <views:TerminalView />
-
+        <DataTemplate DataType="vm:TerminalViewModel"
+                      x:DataType="vm:TerminalViewModel">
+            <views:TerminalView/>
         </DataTemplate>
 
-        <DataTemplate
-            DataType="vm:TaskListViewModel"
-            x:DataType="vm:TaskListViewModel">
-
-            <views:TaskListView />
-
+        <DataTemplate DataType="vm:TaskListViewModel"
+                      x:DataType="vm:TaskListViewModel">
+            <views:TaskListView/>
         </DataTemplate>
 
+        <DataTemplate DataType="vm:TaskDetailsViewModel"
+                      x:DataType="vm:TaskDetailsViewModel">
+            <views:TaskDetailsView/>
+        </DataTemplate>
     </Window.DataTemplates>
 
     <!-- Sidebar navigation styles -->
 
     <Window.Styles>
-
-        <!-- Base button -->
-
         <Style Selector="Button.sidebar-nav">
-
-            <Setter
-                Property="Background"
-                Value="Transparent" />
-
-            <Setter
-                Property="Foreground"
-                Value="{DynamicResource PrimaryText}" />
-
-            <Setter
-                Property="BorderBrush"
-                Value="Transparent" />
-
-            <Setter
-                Property="BorderThickness"
-                Value="3,0,0,0" />
-
-            <Setter
-                Property="CornerRadius"
-                Value="8" />
-
-            <Setter
-                Property="Padding"
-                Value="14,11" />
-
-            <Setter
-                Property="HorizontalAlignment"
-                Value="Stretch" />
-
-            <Setter
-                Property="HorizontalContentAlignment"
-                Value="Left" />
-
-            <Setter
-                Property="FontSize"
-                Value="14" />
-
-            <Setter
-                Property="MinHeight"
-                Value="42" />
-
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="3,0,0,0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14,11"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="MinHeight" Value="42"/>
         </Style>
-
-        <!-- Hover over navigation button -->
 
         <Style Selector="Button.sidebar-nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-
-            <Setter
-                Property="Background"
-                Value="{DynamicResource Background}" />
-
-            <Setter
-                Property="Foreground"
-                Value="{DynamicResource PrimaryText}" />
-
-            <Setter
-                Property="BorderBrush"
-                Value="Transparent" />
-
+            <Setter Property="Background" Value="{DynamicResource Background}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
         </Style>
-
-        <!-- Selected button -->
 
         <Style Selector="Button.sidebar-nav.active">
-
-            <Setter
-                Property="Background"
-                Value="{DynamicResource SidebarSelectedBackground}" />
-
-            <Setter
-                Property="Foreground"
-                Value="{DynamicResource Accent}" />
-
-            <Setter
-                Property="BorderBrush"
-                Value="{DynamicResource Accent}" />
-
-            <Setter
-                Property="FontWeight"
-                Value="SemiBold" />
-
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
-
-        <!-- Selected button template -->
 
         <Style Selector="Button.sidebar-nav.active /template/ ContentPresenter#PART_ContentPresenter">
-
-            <Setter
-                Property="Background"
-                Value="{DynamicResource SidebarSelectedBackground}" />
-
-            <Setter
-                Property="Foreground"
-                Value="{DynamicResource Accent}" />
-
-            <Setter
-                Property="BorderBrush"
-                Value="{DynamicResource Accent}" />
-
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
         </Style>
-
-        <!-- Hover over already selected button -->
 
         <Style Selector="Button.sidebar-nav.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-
-            <Setter
-                Property="Background"
-                Value="{DynamicResource SidebarSelectedHoverBackground}" />
-
-            <Setter
-                Property="Foreground"
-                Value="{DynamicResource Accent}" />
-
-            <Setter
-                Property="BorderBrush"
-                Value="{DynamicResource Accent}" />
-
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
         </Style>
-
-        <!-- Press already selected button -->
 
         <Style Selector="Button.sidebar-nav.active:pressed /template/ ContentPresenter#PART_ContentPresenter">
-
-            <Setter
-                Property="Background"
-                Value="{DynamicResource SidebarSelectedHoverBackground}" />
-
-            <Setter
-                Property="Foreground"
-                Value="{DynamicResource Accent}" />
-
-            <Setter
-                Property="BorderBrush"
-                Value="{DynamicResource Accent}" />
-
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
         </Style>
-
-        <!-- Keyboard focus -->
 
         <Style Selector="Button.sidebar-nav:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
-
-            <Setter
-                Property="BorderBrush"
-                Value="{DynamicResource Accent}" />
-
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
         </Style>
-
     </Window.Styles>
 
     <!-- Root layout -->
@@ -205,248 +94,195 @@
 
         <!-- Database initialization -->
 
-        <Border
-            IsVisible="{Binding IsDatabaseInitializing}"
-            Background="{DynamicResource Background}"
-            Padding="32">
+        <Border IsVisible="{Binding IsDatabaseInitializing}"
+                Background="{DynamicResource Background}"
+                Padding="32">
 
-            <Border
-                Background="{DynamicResource Surface}"
-                CornerRadius="14"
-                Padding="36"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MaxWidth="520">
+            <Border Background="{DynamicResource Surface}"
+                    CornerRadius="14"
+                    Padding="36"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    MaxWidth="520">
 
                 <StackPanel Spacing="18">
+                    <Border Width="48" Height="4" CornerRadius="2"
+                            HorizontalAlignment="Left"
+                            Background="{DynamicResource Accent}"/>
 
-                    <Border
-                        Width="48"
-                        Height="4"
-                        CornerRadius="2"
-                        HorizontalAlignment="Left"
-                        Background="{DynamicResource Accent}" />
+                    <TextBlock Text="{Binding AppWordmark}"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryText}"/>
 
-                    <TextBlock
-                        Text="{Binding AppWordmark}"
-                        FontSize="30"
-                        FontWeight="Bold"
-                        Foreground="{DynamicResource PrimaryText}" />
+                    <TextBlock Text="{Binding WelcomeMessage}"
+                               FontSize="18"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource PrimaryText}"/>
 
-                    <TextBlock
-                        Text="{Binding WelcomeMessage}"
-                        FontSize="18"
-                        TextWrapping="Wrap"
-                        Foreground="{DynamicResource PrimaryText}" />
+                    <ProgressBar IsIndeterminate="True"
+                                 Height="3"
+                                 MinWidth="220"
+                                 Foreground="{DynamicResource Accent}"/>
 
-                    <ProgressBar
-                        IsIndeterminate="True"
-                        Height="3"
-                        MinWidth="220"
-                        Foreground="{DynamicResource Accent}" />
-
-                    <TextBlock
-                        Text="{Binding DatabaseStatusMessage}"
-                        FontSize="14"
-                        TextWrapping="Wrap"
-                        Foreground="{DynamicResource SecondaryText}" />
-
+                    <TextBlock Text="{Binding DatabaseStatusMessage}"
+                               FontSize="14"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SecondaryText}"/>
                 </StackPanel>
-
             </Border>
-
         </Border>
 
         <!-- Database initialization error -->
 
-        <Border
-            IsVisible="{Binding IsDatabaseFailed}"
-            Background="{DynamicResource Background}"
-            Padding="32">
+        <Border IsVisible="{Binding IsDatabaseFailed}"
+                Background="{DynamicResource Background}"
+                Padding="32">
 
-            <Border
-                Background="{DynamicResource Surface}"
-                CornerRadius="14"
-                Padding="36"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MaxWidth="600">
+            <Border Background="{DynamicResource Surface}"
+                    CornerRadius="14"
+                    Padding="36"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    MaxWidth="600">
 
                 <StackPanel Spacing="18">
+                    <Border Width="48" Height="4"
+                            CornerRadius="2"
+                            HorizontalAlignment="Left"
+                            Background="{DynamicResource Accent}"/>
 
-                    <Border
-                        Width="48"
-                        Height="4"
-                        CornerRadius="2"
-                        HorizontalAlignment="Left"
-                        Background="{DynamicResource Accent}" />
+                    <TextBlock Text="{Binding AppWordmark}"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryText}"/>
 
-                    <TextBlock
-                        Text="{Binding AppWordmark}"
-                        FontSize="30"
-                        FontWeight="Bold"
-                        Foreground="{DynamicResource PrimaryText}" />
-
-                    <TextBlock
-                        Text="{Binding DatabaseStatusMessage}"
-                        FontSize="14"
-                        TextWrapping="Wrap"
-                        Foreground="{DynamicResource PrimaryText}" />
-
+                    <TextBlock Text="{Binding DatabaseStatusMessage}"
+                               FontSize="14"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource PrimaryText}"/>
                 </StackPanel>
-
             </Border>
-
         </Border>
 
         <!-- Main application shell -->
 
-        <Grid
-            IsVisible="{Binding IsDatabaseReady}"
-            ColumnDefinitions="200,*">
+        <Grid IsVisible="{Binding IsDatabaseReady}"
+              ColumnDefinitions="200,*">
 
             <!-- Sidebar -->
 
-            <Border
-                Grid.Column="0"
-                Background="{DynamicResource Surface}"
-                BorderBrush="{DynamicResource Background}"
-                BorderThickness="0,0,1,0">
+            <Border Grid.Column="0"
+                    Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource Background}"
+                    BorderThickness="0,0,1,0">
 
-                <Grid
-                    Margin="16,24,16,20"
-                    RowDefinitions="Auto,Auto,*,Auto">
+                <Grid Margin="16,24,16,20"
+                      RowDefinitions="Auto,Auto,*,Auto">
 
                     <!-- Brand -->
 
-                    <StackPanel
-                        Grid.Row="0"
-                        Margin="12,0,0,36"
-                        Spacing="10">
+                    <StackPanel Grid.Row="0"
+                                Margin="12,0,0,36"
+                                Spacing="10">
 
-                        <Border
-                            Width="32"
-                            Height="3"
-                            CornerRadius="2"
-                            HorizontalAlignment="Left"
-                            Background="{DynamicResource Accent}" />
+                        <Border Width="32"
+                                Height="3"
+                                CornerRadius="2"
+                                HorizontalAlignment="Left"
+                                Background="{DynamicResource Accent}"/>
 
-                        <TextBlock
-                            Text="{Binding AppWordmark}"
-                            FontSize="20"
-                            FontWeight="Bold"
-                            LetterSpacing="1"
-                            Foreground="{DynamicResource PrimaryText}" />
-
+                        <TextBlock Text="{Binding AppWordmark}"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   LetterSpacing="1"
+                                   Foreground="{DynamicResource PrimaryText}"/>
                     </StackPanel>
 
                     <!-- Navigation heading -->
 
-                    <TextBlock
-                        Grid.Row="1"
-                        Margin="14,0,0,14"
-                        Text="{Binding NavigationHeading}"
-                        FontSize="11"
-                        FontWeight="SemiBold"
-                        Foreground="{DynamicResource SecondaryText}" />
+                    <TextBlock Grid.Row="1"
+                               Margin="14,0,0,14"
+                               Text="{Binding NavigationHeading}"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SecondaryText}"/>
 
                     <!-- Main navigation -->
 
-                    <StackPanel
-                        Grid.Row="2"
-                        Spacing="6">
+                    <StackPanel Grid.Row="2" Spacing="6">
+                        <Button Classes="sidebar-nav"
+                                Classes.active="{Binding IsHomeSelected}"
+                                Content="{Binding NavHomeLabel}"
+                                Command="{Binding NavigateHomeCommand}"/>
 
-                        <Button
-                            Classes="sidebar-nav"
-                            Classes.active="{Binding IsHomeSelected}"
-                            Content="{Binding NavHomeLabel}"
-                            Command="{Binding NavigateHomeCommand}" />
+                        <Button Classes="sidebar-nav"
+                                Classes.active="{Binding IsCalendarSelected}"
+                                Content="{Binding NavCalendarLabel}"
+                                Command="{Binding NavigateCalendarCommand}"/>
 
-                        <Button
-                            Classes="sidebar-nav"
-                            Classes.active="{Binding IsCalendarSelected}"
-                            Content="{Binding NavCalendarLabel}"
-                            Command="{Binding NavigateCalendarCommand}" />
+                        <Button Classes="sidebar-nav"
+                                Classes.active="{Binding IsTasksSelected}"
+                                Content="{Binding NavTasksLabel}"
+                                Command="{Binding NavigateTasksCommand}"/>
 
-                        <Button
-                            Classes="sidebar-nav"
-                            Classes.active="{Binding IsTasksSelected}"
-                            Content="{Binding NavTasksLabel}"
-                            Command="{Binding NavigateTasksCommand}" />
+                        <Button Classes="sidebar-nav"
+                                Classes.active="{Binding IsNewTaskSelected}"
+                                Content="{Binding NavNewTaskLabel}"
+                                Command="{Binding NavigateNewTaskCommand}"/>
 
-                        <Button
-                            Classes="sidebar-nav"
-                            Classes.active="{Binding IsNewTaskSelected}"
-                            Content="{Binding NavNewTaskLabel}"
-                            Command="{Binding NavigateNewTaskCommand}" />
+                        <Border Height="18"/>
 
-                        <Border Height="18" />
-
-                        <Button
-                            Classes="sidebar-nav"
-                            Classes.active="{Binding IsReportsSelected}"
-                            Content="{Binding NavReportsLabel}"
-                            Command="{Binding NavigateReportsCommand}" />
-
+                        <Button Classes="sidebar-nav"
+                                Classes.active="{Binding IsReportsSelected}"
+                                Content="{Binding NavReportsLabel}"
+                                Command="{Binding NavigateReportsCommand}"/>
                     </StackPanel>
 
                     <!-- Bottom navigation -->
 
-                    <Border
-                        Grid.Row="3"
-                        Padding="0,16,0,0"
-                        BorderBrush="{DynamicResource Background}"
-                        BorderThickness="0,1,0,0">
+                    <Border Grid.Row="3"
+                            Padding="0,16,0,0"
+                            BorderBrush="{DynamicResource Background}"
+                            BorderThickness="0,1,0,0">
 
-                        <Button
-                            Classes="sidebar-nav"
-                            Classes.active="{Binding IsSettingsSelected}"
-                            Content="{Binding NavSettingsLabel}"
-                            Command="{Binding NavigateSettingsCommand}" />
-
+                        <Button Classes="sidebar-nav"
+                                Classes.active="{Binding IsSettingsSelected}"
+                                Content="{Binding NavSettingsLabel}"
+                                Command="{Binding NavigateSettingsCommand}"/>
                     </Border>
 
                 </Grid>
-
             </Border>
 
             <!-- Main content -->
 
-            <Grid
-                Grid.Column="1"
-                RowDefinitions="Auto,*"
-                Background="{DynamicResource Background}">
+            <Grid Grid.Column="1"
+                  RowDefinitions="Auto,*"
+                  Background="{DynamicResource Background}">
 
                 <!-- Page header -->
 
-                <Border
-                    Grid.Row="0"
-                    Background="{DynamicResource Surface}"
-                    BorderBrush="{DynamicResource Background}"
-                    BorderThickness="0,0,0,1"
-                    Padding="30,24">
+                <Border Grid.Row="0"
+                        Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource Background}"
+                        BorderThickness="0,0,0,1"
+                        Padding="30,24">
 
-                    <TextBlock
-                        Text="{Binding CurrentPageTitle}"
-                        FontSize="22"
-                        FontWeight="SemiBold"
-                        TextWrapping="Wrap"
-                        Foreground="{DynamicResource PrimaryText}" />
-
+                    <TextBlock Text="{Binding CurrentPageTitle}"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource PrimaryText}"/>
                 </Border>
 
                 <!-- Page content -->
 
-                <ContentControl
-                    Grid.Row="1"
-                    HorizontalContentAlignment="Stretch"
-                    VerticalContentAlignment="Stretch"
-                    Content="{Binding CurrentPageContent}" />
-
+                <ContentControl Grid.Row="1"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch"
+                                Content="{Binding CurrentPageContent}"/>
             </Grid>
-
         </Grid>
-
     </Grid>
-
 </Window>

@@ -44,17 +44,36 @@ public static class ServiceRegistration
 
         services.AddSingleton<PlaceholderPageViewModel>();
 
-        // Keep Task List filters, sorting and selection
-        // while navigating between application sections.
-        // TaskListView reloads data when it becomes visible.
-        services.AddSingleton<TaskListViewModel>();
+        // The Task List is a singleton so that filters,
+        // sorting and selection survive navigation.
+        services.AddSingleton<TaskListViewModel>(provider =>
+        {
+            var taskList = ActivatorUtilities
+                .CreateInstance<TaskListViewModel>(provider);
 
-        // New Task sessions have short lifetimes.
-        // ActivatorUtilities creates them using DI without
-        // retaining IDisposable instances in the root
-        // container after the user leaves the page.
+            var navigation = provider
+                .GetRequiredService<INavigationService>();
+
+            // Open an existing task by its ID.
+            taskList.TaskOpenRequested += navigation.OpenTask;
+
+            // Request the full creation editor.
+            // No database record is created here.
+            taskList.TaskCreationRequested += navigation.OpenNewTask;
+
+            return taskList;
+        });
+
+        // Each Quick Task session is created separately.
+        // MainWindowViewModel controls its lifetime.
         services.AddSingleton<Func<TerminalViewModel>>(provider =>
             () => ActivatorUtilities.CreateInstance<TerminalViewModel>(
+                provider));
+
+        // Each full task editor receives a fresh ViewModel.
+        // It is disposed when the editor is closed.
+        services.AddSingleton<Func<TaskDetailsViewModel>>(provider =>
+            () => ActivatorUtilities.CreateInstance<TaskDetailsViewModel>(
                 provider));
 
         services.AddSingleton<MainWindowViewModel>();

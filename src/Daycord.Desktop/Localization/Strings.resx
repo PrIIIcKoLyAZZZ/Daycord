@@ -131,4 +131,43 @@
     <data name="TaskListCancelDelete"><value>Cancel</value></data>
     <data name="TaskListDeleting"><value>Deleting task...</value></data>
     <data name="TaskListDeleteError"><value>Could not delete task: {0}</value></data>
+
+    <!-- Task Details (DC-008) -->
+    <data name="TaskDetailsHeading"><value>TASK DETAILS</value></data>
+    <data name="TaskDetailsBack"><value>← Back</value></data>
+    <data name="TaskDetailsSave"><value>Save Changes</value></data>
+    <data name="TaskDetailsCancel"><value>Cancel</value></data>
+    <data name="TaskDetailsNumber"><value>Task Number</value></data>
+    <data name="TaskDetailsTitle"><value>Title</value></data>
+    <data name="TaskDetailsDate"><value>Date</value></data>
+    <data name="TaskDetailsStatus"><value>Status</value></data>
+    <data name="TaskDetailsShortDescription"><value>Short Description</value></data>
+    <data name="TaskDetailsMarkdown"><value>MARKDOWN DESCRIPTION</value></data>
+    <data name="TaskDetailsEdit"><value>Edit</value></data>
+    <data name="TaskDetailsPreview"><value>Preview</value></data>
+    <data name="TaskDetailsLoading"><value>Loading task...</value></data>
+    <data name="TaskDetailsSaving"><value>Saving...</value></data>
+    <data name="TaskDetailsSaveSuccessful"><value>Changes saved.</value></data>
+    <data name="TaskDetailsTaskNotFound"><value>This task no longer exists.</value></data>
+    <data name="TaskDetailsDatePlaceholder"><value>dd.mm.yyyy (optional)</value></data>
+    <data name="TaskDetailsDiscardTitle"><value>Discard changes?</value></data>
+    <data name="TaskDetailsDiscardMessage"><value>You have unsaved changes. Leave this task without saving?</value></data>
+    <data name="TaskDetailsDiscard"><value>Discard Changes</value></data>
+    <data name="TaskDetailsKeepEditing"><value>Keep Editing</value></data>
+    <data name="TaskDetailsLoadFailed"><value>Could not load task: {0}</value></data>
+    <data name="TaskDetailsTitleRequired"><value>Enter a task title.</value></data>
+    <data name="TaskDetailsDateInvalid"><value>Enter a valid date or leave it blank.</value></data>
+    <data name="TaskDetailsStatusRequired"><value>Select a task status.</value></data>
+    <data name="TaskDetailsValidationError"><value>Invalid task data: {0}</value></data>
+    <data name="TaskDetailsSaveFailed"><value>Could not save task: {0}</value></data>
+
+    <!-- Quick Task: open existing task (DC-008) -->
+    <data name="QuickTaskOpenDetails"><value>Open task details</value></data>
+
+    <!-- Full task creation (DC-008) -->
+    <data name="TaskDetailsCreateHeading"><value>CREATE TASK</value></data>
+    <data name="TaskDetailsCreateAction"><value>Create Task</value></data>
+    <data name="TaskDetailsCreating"><value>Creating...</value></data>
+    <data name="TaskDetailsCreateSuccessful"><value>Task created.</value></data>
+    <data name="TaskDetailsCreateFailed"><value>Could not create task: {0}</value></data>
 </root>
