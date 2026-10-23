@@ -6,4 +6,6 @@ public sealed record UpdateTaskRequest(
     string Title,
     string? ShortDescription = null,
     string? DescriptionMarkdown = null,
-    Guid? StatusId = null);
+    Guid? StatusId = null,
+    string? TaskNumber = null,
+    bool UpdateTaskNumber = false);

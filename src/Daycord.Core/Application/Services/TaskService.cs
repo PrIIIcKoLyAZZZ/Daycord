@@ -24,8 +24,6 @@ public sealed class TaskService
         ValidateTaskDate(request.TaskDate);
         ValidatePlannedMinutes(request.PlannedMinutes);
 
-        // PlanningPeriods.PlannedDate is NOT NULL.
-        // Never invent a planning date when none was supplied.
         if (request.PlannedMinutes.HasValue &&
             !request.TaskDate.HasValue)
         {
@@ -116,15 +114,67 @@ public sealed class TaskService
             cancellationToken);
     }
 
-    public async Task<TaskItem> UpdateAsync(
+    public Task<IReadOnlyList<PlanningPeriod>> ListPlanningPeriodsAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return _repository.ListPlanningPeriodsAsync(
+            taskId,
+            cancellationToken);
+    }
+
+    // Existing callers preserve all planning records.
+    public Task<TaskItem> UpdateAsync(
         UpdateTaskRequest request,
         CancellationToken cancellationToken = default)
+    {
+        return UpdateCoreAsync(
+            request,
+            updatePlannedTime: false,
+            plannedMinutes: null,
+            cancellationToken: cancellationToken);
+    }
+
+    // Used when the full editor changes planned time.
+    // Null means clear the single existing planning period.
+    public Task<TaskItem> UpdateWithPlannedTimeAsync(
+        UpdateTaskRequest request,
+        int? plannedMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateCoreAsync(
+            request,
+            updatePlannedTime: true,
+            plannedMinutes: plannedMinutes,
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task<TaskItem> UpdateCoreAsync(
+        UpdateTaskRequest request,
+        bool updatePlannedTime,
+        int? plannedMinutes,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
 
         ValidateTaskId(request.Id);
         ValidateTaskDate(request.TaskDate);
+
+        if (updatePlannedTime)
+        {
+            ValidatePlannedMinutes(plannedMinutes);
+
+            if (plannedMinutes.HasValue && !request.TaskDate.HasValue)
+            {
+                throw new ArgumentException(
+                    "A task date is required when planned time is specified.",
+                    nameof(request));
+            }
+        }
 
         var title = NormalizeTitle(request.Title);
 
@@ -148,12 +198,22 @@ public sealed class TaskService
         task.ShortDescription = request.ShortDescription;
         task.DescriptionMarkdown = request.DescriptionMarkdown;
 
-        // Preserve TaskNumber, which is absent from UpdateTaskRequest.
+        // Preserve TaskNumber for callers that do not edit it.
+        if (request.UpdateTaskNumber)
+        {
+            task.TaskNumber = NormalizeTaskNumber(request.TaskNumber);
+        }
+
         task.UpdatedAtUtc = now;
 
-        var updated = await _repository.UpdateAsync(
-            task,
-            cancellationToken);
+        var updated = updatePlannedTime
+            ? await _repository.UpdateWithPlannedTimeAsync(
+                task,
+                plannedMinutes,
+                cancellationToken)
+            : await _repository.UpdateAsync(
+                task,
+                cancellationToken);
 
         if (!updated)
         {
@@ -207,8 +267,6 @@ public sealed class TaskService
         ValidateTaskId(taskId);
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Dependent records are deleted transactionally
-        // by SqliteTaskRepository.
         return _repository.DeleteAsync(taskId, cancellationToken);
     }
 
@@ -389,7 +447,7 @@ public sealed class TaskService
         {
             throw new ArgumentOutOfRangeException(
                 nameof(query),
-                "Unsupported task sort direction.");
+                "Unsupported sort direction.");
         }
     }
 }

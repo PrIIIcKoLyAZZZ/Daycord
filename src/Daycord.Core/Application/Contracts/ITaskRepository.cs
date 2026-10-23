@@ -22,6 +22,15 @@ public interface ITaskRepository
         TaskItem task,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<PlanningPeriod>> ListPlanningPeriodsAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateWithPlannedTimeAsync(
+        TaskItem task,
+        int? plannedMinutes,
+        CancellationToken cancellationToken = default);
+
     Task<bool> DeleteAsync(
         Guid id,
         CancellationToken cancellationToken = default);

@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Daycord.Core.Application.Models;
 using Daycord.Core.Application.Services;
 using Daycord.Desktop.Localization;
+using Daycord.Desktop.Navigation;
 
 namespace Daycord.Desktop.ViewModels;
 
@@ -30,12 +31,14 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
 
     private readonly TaskService _taskService;
     private readonly ILocalizationService _localization;
+    private readonly INavigationService _navigation;
     private readonly CancellationTokenSource _sessionCancellation = new();
+
     private string? _formErrorKey;
     private string? _formErrorDetails;
     private bool _disposed;
 
-    // An empty input means today; an explicit date stays in this text field.
+    // An empty input means today.
     [ObservableProperty]
     private string _dateInputText = string.Empty;
 
@@ -56,24 +59,35 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
 
     public TerminalViewModel(
         TaskService taskService,
-        ILocalizationService localization)
+        ILocalizationService localization,
+        INavigationService navigation)
     {
         _taskService = taskService
             ?? throw new ArgumentNullException(nameof(taskService));
+
         _localization = localization
             ?? throw new ArgumentNullException(nameof(localization));
+
+        _navigation = navigation
+            ?? throw new ArgumentNullException(nameof(navigation));
+
         _localization.PropertyChanged += OnLocalizationChanged;
     }
 
-    public ObservableCollection<SessionTaskItemViewModel> SessionTasks { get; } = new();
+    public ObservableCollection<SessionTaskItemViewModel>
+        SessionTasks { get; } = new();
+
     public event EventHandler? TaskCreated;
 
     public bool IsSessionEmpty => SessionTasks.Count == 0;
+
     public bool CanEditForm => !_disposed && !IsCreating;
+
     public CultureInfo CalendarCulture =>
         CultureInfo.GetCultureInfo(_localization.CurrentLanguage);
 
     public string RecentHeading => Text("QuickTaskRecentHeading");
+    public string OpenDetailsLabel => Text("QuickTaskOpenDetails");
     public string EmptySessionText => Text("QuickTaskEmptySession");
     public string DateLabel => Text("QuickTaskDateLabel");
     public string NumberLabel => Text("QuickTaskNumberLabel");
@@ -84,10 +98,13 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
     public string TitlePlaceholder => Text("QuickTaskTitlePlaceholder");
     public string TimePlaceholder => Text("QuickTaskTimePlaceholder");
     public string EnterHint => Text("QuickTaskEnterHint");
+
     public string CreateButtonText => Text(
         IsCreating ? "QuickTaskCreating" : "QuickTaskCreateAction");
+
     public string CreatedMessage => WasTaskCreated
-        ? Text("QuickTaskCreated") : string.Empty;
+        ? Text("QuickTaskCreated")
+        : string.Empty;
 
     public string FormErrorMessage
     {
@@ -97,43 +114,61 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
                 return string.Empty;
 
             var message = Text(_formErrorKey);
+
             return _formErrorDetails is null
                 ? message
-                : string.Format(CalendarCulture, message, _formErrorDetails);
+                : string.Format(
+                    CalendarCulture,
+                    message,
+                    _formErrorDetails);
         }
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
 
-    // Also used by the calendar View to pick which month to show.
     public DateTime CalendarAnchorDate =>
-        TryResolveDate(out var date) ? date : DateTime.Today;
+        TryResolveDate(out var date)
+            ? date
+            : DateTime.Today;
 
     public bool TryResolveDate(out DateTime date)
     {
         var value = DateInputText.Trim();
 
         if (value.Length == 0 ||
-            value.Equals("today", StringComparison.OrdinalIgnoreCase) ||
-            value.Equals("сегодня", StringComparison.OrdinalIgnoreCase))
+            value.Equals(
+                "today",
+                StringComparison.OrdinalIgnoreCase) ||
+            value.Equals(
+                "сегодня",
+                StringComparison.OrdinalIgnoreCase))
         {
             date = DateTime.Today;
             return true;
         }
 
-        if (value.Equals("tomorrow", StringComparison.OrdinalIgnoreCase) ||
-            value.Equals("завтра", StringComparison.OrdinalIgnoreCase))
+        if (value.Equals(
+                "tomorrow",
+                StringComparison.OrdinalIgnoreCase) ||
+            value.Equals(
+                "завтра",
+                StringComparison.OrdinalIgnoreCase))
         {
             date = DateTime.Today.AddDays(1);
             return true;
         }
 
         if (DateTime.TryParseExact(
-                value, DateFormats, CultureInfo.InvariantCulture,
-                DateTimeStyles.None, out var parsed) ||
+                value,
+                DateFormats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var parsed) ||
             DateTime.TryParse(
-                value, CalendarCulture,
-                DateTimeStyles.None, out parsed))
+                value,
+                CalendarCulture,
+                DateTimeStyles.None,
+                out parsed))
         {
             date = parsed.Date;
             return true;
@@ -145,10 +180,11 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
 
     public void SelectCalendarDate(DateTime date)
     {
-        // Keep the convenient 'today' placeholder when today is selected.
         DateInputText = date.Date == DateTime.Today
             ? string.Empty
-            : date.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
+            : date.ToString(
+                "dd.MM.yyyy",
+                CultureInfo.InvariantCulture);
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateTask))]
@@ -173,7 +209,8 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
         }
 
         if (!TryParsePlannedTime(
-                PlannedTimeInput, DefaultMinutesPerDay,
+                PlannedTimeInput,
+                DefaultMinutesPerDay,
                 out var plannedMinutes))
         {
             SetFormError("QuickTaskInvalidTime");
@@ -195,19 +232,25 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
         try
         {
             var created = await _taskService.CreateAsync(
-                request, _sessionCancellation.Token);
+                request,
+                _sessionCancellation.Token);
 
             if (_disposed)
                 return;
 
-            SessionTasks.Add(new SessionTaskItemViewModel(
-                created, plannedMinutes, _localization));
+            SessionTasks.Add(
+                new SessionTaskItemViewModel(
+                    created,
+                    plannedMinutes,
+                    _localization));
+
             OnPropertyChanged(nameof(IsSessionEmpty));
 
-            // Preserve the date for entering successive tasks.
+            // Preserve the date for successive tasks.
             TaskNumber = string.Empty;
             Title = string.Empty;
             PlannedTimeInput = string.Empty;
+
             WasTaskCreated = true;
             succeeded = true;
         }
@@ -218,57 +261,104 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex) when (!_disposed)
         {
-            SetFormError("QuickTaskCreateError", ex.Message);
+            SetFormError(
+                "QuickTaskCreateError",
+                ex.Message);
         }
         finally
         {
             if (!_disposed)
             {
                 IsCreating = false;
+
                 if (succeeded)
                     TaskCreated?.Invoke(this, EventArgs.Empty);
             }
         }
     }
 
-    private bool CanCreateTask() => !_disposed && !IsCreating;
+    // Task Details integration
+
+    [RelayCommand]
+    private void OpenSessionTask(
+        SessionTaskItemViewModel? item)
+    {
+        if (_disposed ||
+            IsCreating ||
+            item is null ||
+            _navigation.CurrentPage != PageKind.NewTask ||
+            _navigation.IsTaskOpen ||
+            !SessionTasks.Contains(item))
+        {
+            return;
+        }
+
+        // Do not change the main section.
+        // MainWindow keeps the existing TerminalViewModel alive.
+        _navigation.OpenTask(item.Id);
+    }
+
+    private bool CanCreateTask() =>
+        !_disposed && !IsCreating;
 
     private static bool TryParsePlannedTime(
-        string? input, int minutesPerDay, out int? plannedMinutes)
+        string? input,
+        int minutesPerDay,
+        out int? plannedMinutes)
     {
         plannedMinutes = null;
+
         if (string.IsNullOrWhiteSpace(input))
             return true;
+
         if (minutesPerDay <= 0)
             return false;
 
         var value = input.Trim();
-        if (int.TryParse(value, NumberStyles.None,
-                CultureInfo.InvariantCulture, out var plainHours))
+
+        if (int.TryParse(
+                value,
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out var plainHours))
         {
             var total = (long)plainHours * 60;
+
             if (total <= 0 || total > int.MaxValue)
                 return false;
+
             plannedMinutes = (int)total;
             return true;
         }
 
         var match = DurationExpression.Match(value);
+
         if (!match.Success)
             return false;
 
         var days = match.Groups["days"];
         var hours = match.Groups["hours"];
         var minutes = match.Groups["minutes"];
-        if (!days.Success && !hours.Success && !minutes.Success)
+
+        if (!days.Success &&
+            !hours.Success &&
+            !minutes.Success)
+        {
             return false;
+        }
 
         if (!TryReadPart(days, out var d) ||
             !TryReadPart(hours, out var h) ||
             !TryReadPart(minutes, out var m))
+        {
             return false;
+        }
 
-        var result = (long)d * minutesPerDay + (long)h * 60 + m;
+        var result =
+            (long)d * minutesPerDay +
+            (long)h * 60 +
+            m;
+
         if (result <= 0 || result > int.MaxValue)
             return false;
 
@@ -276,20 +366,30 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
         return true;
     }
 
-    private static bool TryReadPart(Group group, out int value)
+    private static bool TryReadPart(
+        Group group,
+        out int value)
     {
         value = 0;
-        return !group.Success || int.TryParse(
-            group.Value, NumberStyles.None,
-            CultureInfo.InvariantCulture, out value);
+
+        return !group.Success ||
+               int.TryParse(
+                   group.Value,
+                   NumberStyles.None,
+                   CultureInfo.InvariantCulture,
+                   out value);
     }
 
-    private string Text(string key) => _localization.GetString(key);
+    private string Text(string key) =>
+        _localization.GetString(key);
 
-    private void SetFormError(string? key, string? details = null)
+    private void SetFormError(
+        string? key,
+        string? details = null)
     {
         _formErrorKey = key;
         _formErrorDetails = details;
+
         OnPropertyChanged(nameof(FormErrorMessage));
     }
 
@@ -299,29 +399,43 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
         WasTaskCreated = false;
     }
 
-    partial void OnDateInputTextChanged(string value) => ClearFeedback();
-    partial void OnTaskNumberChanged(string value) => ClearFeedback();
-    partial void OnTitleChanged(string value) => ClearFeedback();
-    partial void OnPlannedTimeInputChanged(string value) => ClearFeedback();
+    partial void OnDateInputTextChanged(string value) =>
+        ClearFeedback();
+
+    partial void OnTaskNumberChanged(string value) =>
+        ClearFeedback();
+
+    partial void OnTitleChanged(string value) =>
+        ClearFeedback();
+
+    partial void OnPlannedTimeInputChanged(string value) =>
+        ClearFeedback();
 
     partial void OnIsCreatingChanged(bool value)
     {
         OnPropertyChanged(nameof(CanEditForm));
         OnPropertyChanged(nameof(CreateButtonText));
+
         CreateTaskCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnWasTaskCreatedChanged(bool value) =>
         OnPropertyChanged(nameof(CreatedMessage));
 
-    private void OnLocalizationChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnLocalizationChanged(
+        object? sender,
+        PropertyChangedEventArgs e)
     {
         if (!string.IsNullOrEmpty(e.PropertyName) &&
-            e.PropertyName != nameof(ILocalizationService.CurrentLanguage))
+            e.PropertyName !=
+                nameof(ILocalizationService.CurrentLanguage))
+        {
             return;
+        }
 
         OnPropertyChanged(nameof(CalendarCulture));
         OnPropertyChanged(nameof(RecentHeading));
+        OnPropertyChanged(nameof(OpenDetailsLabel));
         OnPropertyChanged(nameof(EmptySessionText));
         OnPropertyChanged(nameof(DateLabel));
         OnPropertyChanged(nameof(NumberLabel));
@@ -346,9 +460,12 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
             return;
 
         _disposed = true;
+
         _localization.PropertyChanged -= OnLocalizationChanged;
+
         _sessionCancellation.Cancel();
         _sessionCancellation.Dispose();
+
         SessionTasks.Clear();
         TaskCreated = null;
     }
