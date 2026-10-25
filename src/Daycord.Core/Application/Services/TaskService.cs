@@ -126,6 +126,111 @@ public sealed class TaskService
             cancellationToken);
     }
 
+    // DC-009: Create an independent planning period.
+    public async Task<PlanningPeriod> AddPlanningPeriodAsync(
+        Guid taskId,
+        DateOnly plannedDate,
+        int plannedMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        ValidatePlanningInput(plannedDate, plannedMinutes);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await GetRequiredTaskAsync(
+            taskId,
+            cancellationToken);
+
+        var period = new PlanningPeriod
+        {
+            Id = Guid.NewGuid(),
+            TaskId = taskId,
+            PlannedDate = plannedDate,
+            PlannedMinutes = plannedMinutes
+        };
+
+        var created = await _repository.AddPlanningPeriodAsync(
+            period,
+            cancellationToken);
+
+        if (!created)
+        {
+            throw new KeyNotFoundException(
+                $"Task '{taskId}' was not found.");
+        }
+
+        return period;
+    }
+
+    // DC-009: Update only the selected planning period.
+    public async Task<PlanningPeriod> UpdatePlanningPeriodAsync(
+        Guid taskId,
+        Guid periodId,
+        DateOnly plannedDate,
+        int plannedMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        ValidatePeriodId(periodId);
+        ValidatePlanningInput(plannedDate, plannedMinutes);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var periods = await _repository.ListPlanningPeriodsAsync(
+            taskId,
+            cancellationToken);
+
+        var existingPeriod = periods.FirstOrDefault(
+            period => period.Id == periodId);
+
+        if (existingPeriod is null)
+        {
+            throw new KeyNotFoundException(
+                $"Planning period '{periodId}' was not found for task '{taskId}'.");
+        }
+
+        var updatedPeriod = new PlanningPeriod
+        {
+            Id = existingPeriod.Id,
+            TaskId = existingPeriod.TaskId,
+            PlannedDate = plannedDate,
+            PlannedMinutes = plannedMinutes
+        };
+
+        var updated = await _repository.UpdatePlanningPeriodAsync(
+            updatedPeriod,
+            cancellationToken);
+
+        if (!updated)
+        {
+            throw new KeyNotFoundException(
+                $"Planning period '{periodId}' no longer exists.");
+        }
+
+        return updatedPeriod;
+    }
+
+    // DC-009: Delete only the selected planning period.
+    public async Task DeletePlanningPeriodAsync(
+        Guid taskId,
+        Guid periodId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        ValidatePeriodId(periodId);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var deleted = await _repository.DeletePlanningPeriodAsync(
+            taskId,
+            periodId,
+            cancellationToken);
+
+        if (!deleted)
+        {
+            throw new KeyNotFoundException(
+                $"Planning period '{periodId}' was not found for task '{taskId}'.");
+        }
+    }
+
     // Existing callers preserve all planning records.
     public Task<TaskItem> UpdateAsync(
         UpdateTaskRequest request,
@@ -138,7 +243,7 @@ public sealed class TaskService
             cancellationToken: cancellationToken);
     }
 
-    // Used when the full editor changes planned time.
+    // Legacy operation retained for compatibility with DC-008.
     // Null means clear the single existing planning period.
     public Task<TaskItem> UpdateWithPlannedTimeAsync(
         UpdateTaskRequest request,
@@ -201,7 +306,8 @@ public sealed class TaskService
         // Preserve TaskNumber for callers that do not edit it.
         if (request.UpdateTaskNumber)
         {
-            task.TaskNumber = NormalizeTaskNumber(request.TaskNumber);
+            task.TaskNumber = NormalizeTaskNumber(
+                request.TaskNumber);
         }
 
         task.UpdatedAtUtc = now;
@@ -267,7 +373,9 @@ public sealed class TaskService
         ValidateTaskId(taskId);
         cancellationToken.ThrowIfCancellationRequested();
 
-        return _repository.DeleteAsync(taskId, cancellationToken);
+        return _repository.DeleteAsync(
+            taskId,
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<TaskListItem>> ListAsync(
@@ -281,7 +389,8 @@ public sealed class TaskService
 
         var normalizedQuery = query with
         {
-            SearchText = string.IsNullOrWhiteSpace(query.SearchText)
+            SearchText = string.IsNullOrWhiteSpace(
+                query.SearchText)
                 ? null
                 : query.SearchText.Trim()
         };
@@ -296,7 +405,8 @@ public sealed class TaskService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        return _repository.ListStatusesAsync(cancellationToken);
+        return _repository.ListStatusesAsync(
+            cancellationToken);
     }
 
     private async Task<TaskItem> GetRequiredTaskAsync(
@@ -377,7 +487,8 @@ public sealed class TaskService
             : taskNumber.Trim();
     }
 
-    private static void ValidatePlannedMinutes(int? plannedMinutes)
+    private static void ValidatePlannedMinutes(
+        int? plannedMinutes)
     {
         if (plannedMinutes.HasValue &&
             plannedMinutes.Value <= 0)
@@ -388,9 +499,35 @@ public sealed class TaskService
         }
     }
 
-    private static void ValidateTaskDate(DateOnly? taskDate)
+    private static void ValidatePlanningInput(
+        DateOnly plannedDate,
+        int plannedMinutes)
     {
-        if (taskDate.HasValue && taskDate.Value == default)
+        if (plannedDate == default)
+        {
+            throw new ArgumentException(
+                "Planning date is required.",
+                nameof(plannedDate));
+        }
+
+        ValidatePlannedMinutes(plannedMinutes);
+    }
+
+    private static void ValidatePeriodId(Guid periodId)
+    {
+        if (periodId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Planning period ID must not be empty.",
+                nameof(periodId));
+        }
+    }
+
+    private static void ValidateTaskDate(
+        DateOnly? taskDate)
+    {
+        if (taskDate.HasValue &&
+            taskDate.Value == default)
         {
             throw new ArgumentException(
                 "Task date is invalid.",

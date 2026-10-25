@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
-using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Daycord.Core.Application.Models;
@@ -13,16 +12,6 @@ namespace Daycord.Desktop.ViewModels;
 
 public sealed partial class TerminalViewModel : ObservableObject, IDisposable
 {
-    private const int DefaultMinutesPerDay = 24 * 60;
-
-    private static readonly Regex DurationExpression = new(
-        @"^\s*" +
-        @"(?:(?<days>\d+)\s*(?:days?|d|д(?:ней|ня|ень|н)?))?\s*" +
-        @"(?:(?<hours>\d+)\s*(?:hours?|hrs?|h|часов|часа|час|ч))?\s*" +
-        @"(?:(?<minutes>\d+)\s*(?:minutes?|mins?|min|m|минуты|минута|минут|мин|м))?" +
-        @"\s*$",
-        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
     private static readonly string[] DateFormats =
     [
         "dd.MM.yyyy", "d.M.yyyy", "yyyy-MM-dd", "yyyy/MM/dd",
@@ -208,9 +197,8 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (!TryParsePlannedTime(
+        if (!PlannedDuration.TryParse(
                 PlannedTimeInput,
-                DefaultMinutesPerDay,
                 out var plannedMinutes))
         {
             SetFormError("QuickTaskInvalidTime");
@@ -300,85 +288,6 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
 
     private bool CanCreateTask() =>
         !_disposed && !IsCreating;
-
-    private static bool TryParsePlannedTime(
-        string? input,
-        int minutesPerDay,
-        out int? plannedMinutes)
-    {
-        plannedMinutes = null;
-
-        if (string.IsNullOrWhiteSpace(input))
-            return true;
-
-        if (minutesPerDay <= 0)
-            return false;
-
-        var value = input.Trim();
-
-        if (int.TryParse(
-                value,
-                NumberStyles.None,
-                CultureInfo.InvariantCulture,
-                out var plainHours))
-        {
-            var total = (long)plainHours * 60;
-
-            if (total <= 0 || total > int.MaxValue)
-                return false;
-
-            plannedMinutes = (int)total;
-            return true;
-        }
-
-        var match = DurationExpression.Match(value);
-
-        if (!match.Success)
-            return false;
-
-        var days = match.Groups["days"];
-        var hours = match.Groups["hours"];
-        var minutes = match.Groups["minutes"];
-
-        if (!days.Success &&
-            !hours.Success &&
-            !minutes.Success)
-        {
-            return false;
-        }
-
-        if (!TryReadPart(days, out var d) ||
-            !TryReadPart(hours, out var h) ||
-            !TryReadPart(minutes, out var m))
-        {
-            return false;
-        }
-
-        var result =
-            (long)d * minutesPerDay +
-            (long)h * 60 +
-            m;
-
-        if (result <= 0 || result > int.MaxValue)
-            return false;
-
-        plannedMinutes = (int)result;
-        return true;
-    }
-
-    private static bool TryReadPart(
-        Group group,
-        out int value)
-    {
-        value = 0;
-
-        return !group.Success ||
-               int.TryParse(
-                   group.Value,
-                   NumberStyles.None,
-                   CultureInfo.InvariantCulture,
-                   out value);
-    }
 
     private string Text(string key) =>
         _localization.GetString(key);

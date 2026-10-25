@@ -238,6 +238,120 @@ public sealed class SqliteTaskRepository : ITaskRepository
         return periods.ToList();
     }
 
+    // DC-009: Add one independent planning period.
+    public async Task<bool> AddPlanningPeriodAsync(
+        PlanningPeriod period,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePlanningPeriod(period);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string sql = """
+            INSERT INTO PlanningPeriods
+            (
+                Id,
+                TaskId,
+                PlannedDate,
+                PlannedMinutes
+            )
+            SELECT
+                @Id,
+                @TaskId,
+                @PlannedDate,
+                @PlannedMinutes
+            WHERE EXISTS
+            (
+                SELECT 1
+                FROM Tasks
+                WHERE Id = @TaskId
+            );
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var affected = await connection.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                GetPlanningPeriodParameters(period),
+                cancellationToken: cancellationToken));
+
+        return affected == 1;
+    }
+
+    // DC-009: Update only the selected planning period.
+    public async Task<bool> UpdatePlanningPeriodAsync(
+        PlanningPeriod period,
+        CancellationToken cancellationToken = default)
+    {
+        ValidatePlanningPeriod(period);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string sql = """
+            UPDATE PlanningPeriods
+            SET
+                PlannedDate = @PlannedDate,
+                PlannedMinutes = @PlannedMinutes
+            WHERE Id = @Id
+              AND TaskId = @TaskId;
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var affected = await connection.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                GetPlanningPeriodParameters(period),
+                cancellationToken: cancellationToken));
+
+        return affected == 1;
+    }
+
+    // DC-009: Delete only the selected planning period.
+    public async Task<bool> DeletePlanningPeriodAsync(
+        Guid taskId,
+        Guid periodId,
+        CancellationToken cancellationToken = default)
+    {
+        if (taskId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Task ID must not be empty.",
+                nameof(taskId));
+        }
+
+        if (periodId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Planning period ID must not be empty.",
+                nameof(periodId));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string sql = """
+            DELETE FROM PlanningPeriods
+            WHERE Id = @Id
+              AND TaskId = @TaskId;
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var affected = await connection.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                new
+                {
+                    Id = FormatGuid(periodId),
+                    TaskId = FormatGuid(taskId)
+                },
+                cancellationToken: cancellationToken));
+
+        return affected == 1;
+    }
+
     public async Task<bool> UpdateWithPlannedTimeAsync(
         TaskItem task,
         int? plannedMinutes,
@@ -301,8 +415,8 @@ public sealed class SqliteTaskRepository : ITaskRepository
             TaskId = FormatGuid(task.Id)
         };
 
-        // A multi-period schedule must never be replaced by
-        // a single aggregate duration.
+        // Multiple periods must never be replaced by
+        // one aggregate duration.
         var existingIds = (await connection.QueryAsync<string>(
             new CommandDefinition(
                 findSql,
@@ -326,14 +440,12 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         if (affected != 1)
         {
-            // The transaction is rolled back on disposal.
             return false;
         }
 
         if (existingIds.Count == 0 &&
             plannedMinutes is int newMinutes)
         {
-            // No period existed: create one.
             var period = new PlanningPeriod
             {
                 Id = Guid.NewGuid(),
@@ -358,8 +470,6 @@ public sealed class SqliteTaskRepository : ITaskRepository
         else if (existingIds.Count == 1 &&
                  plannedMinutes is int minutes)
         {
-            // Exactly one period: preserve its ID and
-            // update the date and duration.
             await connection.ExecuteAsync(
                 new CommandDefinition(
                     """
@@ -381,8 +491,6 @@ public sealed class SqliteTaskRepository : ITaskRepository
         }
         else if (existingIds.Count == 1)
         {
-            // Empty duration: remove the only period.
-            // Do not touch WorkEntries or ActualMinutes.
             await connection.ExecuteAsync(
                 new CommandDefinition(
                     """
@@ -428,8 +536,8 @@ public sealed class SqliteTaskRepository : ITaskRepository
             TaskId = FormatGuid(id)
         };
 
-        // Foreign keys are RESTRICT, not CASCADE.
-        // Delete dependent records and the task atomically.
+        // Existing task deletion logic.
+        // Foreign keys use RESTRICT, not CASCADE.
         await connection.ExecuteAsync(
             new CommandDefinition(
                 "DELETE FROM WorkEntries WHERE TaskId = @TaskId;",
@@ -668,6 +776,51 @@ public sealed class SqliteTaskRepository : ITaskRepository
                 new CommandDefinition(
                     sql,
                     cancellationToken: cancellationToken));
+    }
+
+    private static void ValidatePlanningPeriod(PlanningPeriod period)
+    {
+        ArgumentNullException.ThrowIfNull(period);
+
+        if (period.Id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Planning period ID must not be empty.",
+                nameof(period));
+        }
+
+        if (period.TaskId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Task ID must not be empty.",
+                nameof(period));
+        }
+
+        if (period.PlannedDate == default)
+        {
+            throw new ArgumentException(
+                "Planning date is required.",
+                nameof(period));
+        }
+
+        if (period.PlannedMinutes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(period),
+                "Planned minutes must be greater than zero.");
+        }
+    }
+
+    private static object GetPlanningPeriodParameters(
+        PlanningPeriod period)
+    {
+        return new
+        {
+            Id = FormatGuid(period.Id),
+            TaskId = FormatGuid(period.TaskId),
+            PlannedDate = FormatDate(period.PlannedDate),
+            period.PlannedMinutes
+        };
     }
 
     private static object GetTaskParameters(TaskItem task)

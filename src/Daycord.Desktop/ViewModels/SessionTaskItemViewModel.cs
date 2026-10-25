@@ -11,7 +11,7 @@ public sealed class SessionTaskItemViewModel : ObservableObject
 
     public SessionTaskItemViewModel(
         TaskItem task,
-        int? plannedMinutes,
+        long? plannedMinutes,
         ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(task);
@@ -35,7 +35,7 @@ public sealed class SessionTaskItemViewModel : ObservableObject
 
     public string Title { get; }
 
-    public int? PlannedMinutes { get; }
+    public long? PlannedMinutes { get; }
 
     public bool HasTaskDate =>
         TaskDate.HasValue;
