@@ -170,4 +170,21 @@
     <data name="TaskDetailsCreating"><value>Creating...</value></data>
     <data name="TaskDetailsCreateSuccessful"><value>Task created.</value></data>
     <data name="TaskDetailsCreateFailed"><value>Could not create task: {0}</value></data>
+
+    <!-- Planning time management (DC-009) -->
+    <data name="PlanningPeriods"><value>PLANNED PERIODS</value></data>
+    <data name="PlanningNoPeriods"><value>No planned periods.</value></data>
+    <data name="PlanningAddPeriod"><value>＋ Add period</value></data>
+    <data name="PlanningEditPeriod"><value>Edit period</value></data>
+    <data name="PlanningDeletePeriod"><value>Delete period</value></data>
+    <data name="PlanningDate"><value>Date</value></data>
+    <data name="PlanningDuration"><value>Duration</value></data>
+    <data name="PlanningTotal"><value>Total planned</value></data>
+    <data name="PlanningDeleteTitle"><value>Delete planned period?</value></data>
+    <data name="PlanningDeleteMessage"><value>This planned period will be permanently deleted. Other periods and recorded work time will not change.</value></data>
+    <data name="PlanningValidationError"><value>Check the date and duration.</value></data>
+    <data name="PlanningSaveFailed"><value>Could not save planned period: {0}</value></data>
+    <data name="PlanningDeleteFailed"><value>Could not delete planned period: {0}</value></data>
+    <data name="PlanningSave"><value>Save period</value></data>
+    <data name="PlanningCancel"><value>Cancel</value></data>
 </root>

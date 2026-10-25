@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Daycord.Core.Application.Services;
 using Daycord.Desktop.Localization;
 using Daycord.Desktop.Navigation;
 
@@ -10,6 +11,7 @@ public partial class MainWindowViewModel :
     ObservableObject,
     IDisposable
 {
+    private readonly TaskService _taskService;
     private readonly INavigationService _navigation;
     private readonly ILocalizationService _localization;
     private readonly PlaceholderPageViewModel _placeholderPage;
@@ -30,6 +32,7 @@ public partial class MainWindowViewModel :
     private bool _isDatabaseFailed;
 
     public MainWindowViewModel(
+        TaskService taskService,
         INavigationService navigation,
         ILocalizationService localization,
         PlaceholderPageViewModel placeholderPage,
@@ -37,6 +40,9 @@ public partial class MainWindowViewModel :
         Func<TerminalViewModel> createTerminalPage,
         Func<TaskDetailsViewModel> createTaskDetailsPage)
     {
+        _taskService = taskService
+            ?? throw new ArgumentNullException(nameof(taskService));
+
         _navigation = navigation
             ?? throw new ArgumentNullException(nameof(navigation));
 
@@ -370,13 +376,79 @@ public partial class MainWindowViewModel :
 
         _taskDetailsPage = null;
 
+        // Refresh when leaving Task Details even if only a planning
+        // period was saved. These operations do not raise TaskSaved.
+        var session = _terminalPage;
+        var closedTaskId = details.TaskId;
+        var shouldRefreshHistory = !_disposed &&
+            session is not null &&
+            _navigation.CurrentPage == PageKind.NewTask &&
+            closedTaskId != Guid.Empty &&
+            session.SessionTasks.Any(item => item.Id == closedTaskId);
+
         details.TaskSaved -= OnTaskSaved;
         details.Dispose();
 
         OnPropertyChanged(nameof(CurrentPageContent));
+
+        if (shouldRefreshHistory && session is not null)
+        {
+            _ = RefreshSessionHistoryAsync(closedTaskId, session);
+        }
     }
 
-    // Synchronize Quick Task history after editing
+    // Reload persisted values after closing the editor.
+    // SQLite is the source of truth for the planned duration.
+
+    private async Task RefreshSessionHistoryAsync(
+        Guid taskId,
+        TerminalViewModel session)
+    {
+        try
+        {
+            var task = await _taskService.GetByIdAsync(taskId);
+
+            if (task is null)
+                return;
+
+            var periods = await _taskService.ListPlanningPeriodsAsync(
+                taskId);
+
+            long? total = periods.Count == 0
+                ? null
+                : periods.Sum(period => (long)period.PlannedMinutes);
+
+            if (_disposed ||
+                !ReferenceEquals(_terminalPage, session) ||
+                _navigation.CurrentPage != PageKind.NewTask)
+            {
+                return;
+            }
+
+            var history = session.SessionTasks;
+
+            for (var i = 0; i < history.Count; i++)
+            {
+                if (history[i].Id != taskId)
+                    continue;
+
+                history[i] = new SessionTaskItemViewModel(
+                    task,
+                    total,
+                    _localization);
+
+                break;
+            }
+        }
+        catch (Exception)
+        {
+            // A failed history refresh must not undo successful edits
+            // or interrupt navigation. Task Details reads SQLite
+            // again when the user reopens the task.
+        }
+    }
+
+    // Synchronize Quick Task history after ordinary task saving.
 
     private void OnTaskSaved(
         object? sender,
@@ -398,7 +470,8 @@ public partial class MainWindowViewModel :
                 continue;
             }
 
-            // Keep the session's planned duration unchanged.
+            // Preserve the displayed duration until the database
+            // refresh replaces it with the current aggregate.
             history[i] = new SessionTaskItemViewModel(
                 e.Task,
                 current.PlannedMinutes,
@@ -462,7 +535,6 @@ public partial class MainWindowViewModel :
         OnPropertyChanged(nameof(NavHomeLabel));
         OnPropertyChanged(nameof(NavCalendarLabel));
         OnPropertyChanged(nameof(NavTasksLabel));
-        OnPropertyChanged(nameof(NavNewTaskLabel));
         OnPropertyChanged(nameof(NavReportsLabel));
         OnPropertyChanged(nameof(NavSettingsLabel));
 

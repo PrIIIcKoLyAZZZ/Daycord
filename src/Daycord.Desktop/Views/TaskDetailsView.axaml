@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Daycord.Desktop.ViewModels"
+             xmlns:views="using:Daycord.Desktop.Views"
              x:Class="Daycord.Desktop.Views.TaskDetailsView"
              x:DataType="vm:TaskDetailsViewModel"
              Background="{DynamicResource Background}">
@@ -90,350 +91,477 @@
             <Setter Property="Padding" Value="6" />
             <Setter Property="MinHeight" Value="32" />
         </Style>
-
-        <Style Selector="Button.calendar-nav">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="FontSize" Value="19" />
-        </Style>
-
-        <Style Selector="TextBlock.calendar-weekday">
-            <Setter Property="Foreground"
-                    Value="{DynamicResource SecondaryText}" />
-            <Setter Property="FontFamily"
-                    Value="Menlo, Consolas, Courier New" />
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-        </Style>
-
-        <Style Selector="Button.calendar-day">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="5" />
-            <Setter Property="MinHeight" Value="32" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="FontSize" Value="12" />
-        </Style>
-
-        <Style Selector="Button.calendar-day.outside">
-            <Setter Property="Foreground"
-                    Value="{DynamicResource SecondaryText}" />
-            <Setter Property="Opacity" Value="0.5" />
-        </Style>
-
-        <Style Selector="Button.calendar-day.today">
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource Accent}" />
-        </Style>
-
-        <Style Selector="Button.calendar-day.selected">
-            <Setter Property="Background"
-                    Value="{DynamicResource Accent}" />
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Background}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
-
-        <Style Selector="Button.calendar-day.selected /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background"
-                    Value="{DynamicResource Accent}" />
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Background}" />
-        </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*,Auto"
-          Margin="20,18,20,22"
-          RowSpacing="12"
-          MaxWidth="980"
-          HorizontalAlignment="Stretch">
+    <!-- Full viewport: dialogs are not width-constrained. -->
+    <Grid>
 
-        <!-- Header -->
-        <Grid Grid.Row="0"
-              ColumnDefinitions="*,Auto"
-              ColumnSpacing="8">
+        <!-- Ordinary editor content -->
+        <Grid RowDefinitions="Auto,*,Auto"
+              Margin="20,18,20,22"
+              RowSpacing="12"
+              MaxWidth="980"
+              HorizontalAlignment="Stretch">
 
-            <StackPanel Grid.Column="0" Spacing="5">
-                <TextBlock Text="{Binding Heading}"
-                           Foreground="{DynamicResource SecondaryText}"
-                           FontFamily="Menlo, Consolas, Courier New"
-                           FontSize="11"
-                           FontWeight="SemiBold" />
+            <!-- Header -->
+            <Grid Grid.Row="0"
+                  ColumnDefinitions="*,Auto"
+                  ColumnSpacing="8">
 
-                <Button Classes="details-action"
-                        HorizontalAlignment="Left"
-                        Content="{Binding BackLabel}"
-                        Command="{Binding BackCommand}" />
-            </StackPanel>
+                <StackPanel Grid.Column="0" Spacing="5">
+                    <TextBlock Text="{Binding Heading}"
+                               Foreground="{DynamicResource SecondaryText}"
+                               FontFamily="Menlo, Consolas, Courier New"
+                               FontSize="11"
+                               FontWeight="SemiBold" />
 
-            <Button Grid.Column="1"
-                    Classes="details-primary"
-                    VerticalAlignment="Bottom"
-                    Content="{Binding SaveButtonText}"
-                    Command="{Binding SaveCommand}" />
-        </Grid>
+                    <Button Classes="details-action"
+                            HorizontalAlignment="Left"
+                            Content="{Binding BackLabel}"
+                            Command="{Binding BackCommand}" />
+                </StackPanel>
 
-        <!-- Main content -->
-        <ScrollViewer Grid.Row="1"
-                      HorizontalScrollBarVisibility="Disabled"
-                      VerticalScrollBarVisibility="Auto">
+                <Button Grid.Column="1"
+                        Classes="details-primary"
+                        VerticalAlignment="Bottom"
+                        Content="{Binding SaveButtonText}"
+                        Command="{Binding SaveCommand}" />
+            </Grid>
 
-            <StackPanel Spacing="15"
-                        Margin="0,4,4,6">
-
-                <ProgressBar Height="2"
-                             IsIndeterminate="True"
-                             IsVisible="{Binding IsLoading}"
-                             Foreground="{DynamicResource Accent}" />
-
-                <TextBlock IsVisible="{Binding IsLoading}"
-                           Text="{Binding LoadingMessage}"
-                           Foreground="{DynamicResource SecondaryText}"
-                           FontSize="12" />
-
-                <TextBlock IsVisible="{Binding IsTaskNotFound}"
-                           Text="{Binding NotFoundMessage}"
-                           Foreground="{DynamicResource Accent}"
-                           TextWrapping="Wrap" />
-
-                <TextBlock IsVisible="{Binding HasError}"
-                           Text="{Binding ErrorMessage}"
-                           Foreground="{DynamicResource Accent}"
-                           FontSize="12"
-                           TextWrapping="Wrap" />
+            <!-- Scrollable task content -->
+            <ScrollViewer Grid.Row="1"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
 
                 <StackPanel Spacing="15"
-                            IsVisible="{Binding IsLoaded}">
+                            Margin="0,4,4,6">
 
-                    <!-- Number and title -->
-                    <Grid ColumnDefinitions="*,2*"
-                          ColumnSpacing="12">
+                    <ProgressBar Height="2"
+                                 IsIndeterminate="True"
+                                 IsVisible="{Binding IsLoading}"
+                                 Foreground="{DynamicResource Accent}" />
 
-                        <StackPanel Grid.Column="0" Spacing="6">
-                            <TextBlock Text="{Binding NumberLabel}"
+                    <TextBlock IsVisible="{Binding IsLoading}"
+                               Text="{Binding LoadingMessage}"
+                               Foreground="{DynamicResource SecondaryText}"
+                               FontSize="12" />
+
+                    <TextBlock IsVisible="{Binding IsTaskNotFound}"
+                               Text="{Binding NotFoundMessage}"
+                               Foreground="{DynamicResource Accent}"
+                               TextWrapping="Wrap" />
+
+                    <TextBlock IsVisible="{Binding HasError}"
+                               Text="{Binding ErrorMessage}"
+                               Foreground="{DynamicResource Accent}"
+                               FontSize="12"
+                               TextWrapping="Wrap" />
+
+                    <StackPanel Spacing="15"
+                                IsVisible="{Binding IsLoaded}">
+
+                        <!-- Number and title -->
+                        <Grid ColumnDefinitions="*,2*"
+                              ColumnSpacing="12">
+
+                            <StackPanel Grid.Column="0" Spacing="6">
+                                <TextBlock Text="{Binding NumberLabel}"
+                                           Foreground="{DynamicResource SecondaryText}"
+                                           FontSize="11" />
+
+                                <TextBox Classes="details-input"
+                                         Text="{Binding TaskNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding CanEdit}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Text="{Binding TitleLabel}"
+                                           Foreground="{DynamicResource SecondaryText}"
+                                           FontSize="11" />
+
+                                <TextBox x:Name="TitleInput"
+                                         Classes="details-input"
+                                         Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding CanEdit}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Date and status -->
+                        <Grid ColumnDefinitions="*,*"
+                              ColumnSpacing="12">
+
+                            <StackPanel Grid.Column="0" Spacing="6">
+                                <TextBlock Text="{Binding DateLabel}"
+                                           Foreground="{DynamicResource SecondaryText}"
+                                           FontSize="11" />
+
+                                <Grid x:Name="DateSegment"
+                                      ColumnDefinitions="*,Auto,Auto">
+
+                                    <Border Grid.ColumnSpan="3"
+                                            Background="{DynamicResource Surface}"
+                                            BorderBrush="{DynamicResource Background}"
+                                            BorderThickness="1"
+                                            CornerRadius="6" />
+
+                                    <TextBox Grid.Column="0"
+                                             Classes="details-input"
+                                             Classes.invalid="{Binding IsDateInputInvalid}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Text="{Binding DateInputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             PlaceholderText="{Binding DatePlaceholder}"
+                                             IsEnabled="{Binding CanEdit}"
+                                             AcceptsReturn="False"
+                                             KeyDown="OnDateKeyDown" />
+
+                                    <Button Grid.Column="1"
+                                            Classes="details-calendar"
+                                            IsEnabled="{Binding CanEdit}"
+                                            Content="×"
+                                            Click="OnClearDateClick" />
+
+                                    <Button Grid.Column="2"
+                                            Classes="details-calendar"
+                                            IsEnabled="{Binding CanEdit}"
+                                            Click="OnCalendarButtonClick">
+
+                                        <Path Width="17"
+                                              Height="17"
+                                              Stretch="Uniform"
+                                              Stroke="{DynamicResource Accent}"
+                                              StrokeThickness="1.6"
+                                              StrokeLineCap="Round"
+                                              Data="M3,5 L17,5 L17,18 L3,18 Z M6.5,2 L6.5,8 M13.5,2 L13.5,8 M3,9 L17,9" />
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Text="{Binding StatusLabel}"
+                                           Foreground="{DynamicResource SecondaryText}"
+                                           FontSize="11" />
+
+                                <ComboBox Classes="details-status"
+                                          ItemsSource="{Binding StatusOptions}"
+                                          SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
+                                          IsEnabled="{Binding CanEdit}"
+                                          HorizontalAlignment="Stretch">
+
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:TaskDetailsStatusOption">
+                                            <TextBlock Text="{Binding Label}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Initial duration in Create mode -->
+                        <StackPanel Spacing="6"
+                                    IsVisible="{Binding IsCreateMode}">
+
+                            <TextBlock Text="{Binding PlannedTimeLabel}"
                                        Foreground="{DynamicResource SecondaryText}"
                                        FontSize="11" />
 
                             <TextBox Classes="details-input"
-                                     Text="{Binding TaskNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     IsEnabled="{Binding CanEdit}" />
+                                     Width="190"
+                                     HorizontalAlignment="Left"
+                                     Text="{Binding PlannedTimeInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="{Binding PlannedTimePlaceholder}"
+                                     ToolTip.Tip="{Binding PlannedTimeHint}"
+                                     IsEnabled="{Binding CanEditPlannedTime}"
+                                     AcceptsReturn="False" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="1" Spacing="6">
-                            <TextBlock Text="{Binding TitleLabel}"
-                                       Foreground="{DynamicResource SecondaryText}"
-                                       FontSize="11" />
-
-                            <TextBox x:Name="TitleInput"
-                                     Classes="details-input"
-                                     Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     IsEnabled="{Binding CanEdit}" />
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Date and status -->
-                    <Grid ColumnDefinitions="*,*"
-                          ColumnSpacing="12">
-
-                        <StackPanel Grid.Column="0" Spacing="6">
-                            <TextBlock Text="{Binding DateLabel}"
-                                       Foreground="{DynamicResource SecondaryText}"
-                                       FontSize="11" />
-
-                            <Grid x:Name="DateSegment"
-                                  ColumnDefinitions="*,Auto,Auto">
-
-                                <Border Grid.ColumnSpan="3"
-                                        Background="{DynamicResource Surface}"
-                                        BorderBrush="{DynamicResource Background}"
-                                        BorderThickness="1"
-                                        CornerRadius="6" />
-
-                                <TextBox Grid.Column="0"
-                                         Classes="details-input"
-                                         Classes.invalid="{Binding IsDateInputInvalid}"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         Text="{Binding DateInputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         PlaceholderText="{Binding DatePlaceholder}"
-                                         IsEnabled="{Binding CanEdit}"
-                                         AcceptsReturn="False"
-                                         KeyDown="OnDateKeyDown" />
-
-                                <Button Grid.Column="1"
-                                        Classes="details-calendar"
-                                        IsEnabled="{Binding CanEdit}"
-                                        Content="×"
-                                        Click="OnClearDateClick" />
-
-                                <Button Grid.Column="2"
-                                        Classes="details-calendar"
-                                        IsEnabled="{Binding CanEdit}"
-                                        Click="OnCalendarButtonClick">
-
-                                    <Path Width="17"
-                                          Height="17"
-                                          Stretch="Uniform"
-                                          Stroke="{DynamicResource Accent}"
-                                          StrokeThickness="1.6"
-                                          StrokeLineCap="Round"
-                                          Data="M3,5 L17,5 L17,18 L3,18 Z M6.5,2 L6.5,8 M13.5,2 L13.5,8 M3,9 L17,9" />
-                                </Button>
-                            </Grid>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="1" Spacing="6">
-                            <TextBlock Text="{Binding StatusLabel}"
-                                       Foreground="{DynamicResource SecondaryText}"
-                                       FontSize="11" />
-
-                            <ComboBox Classes="details-status"
-                                      ItemsSource="{Binding StatusOptions}"
-                                      SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
-                                      IsEnabled="{Binding CanEdit}"
-                                      HorizontalAlignment="Stretch">
-
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:TaskDetailsStatusOption">
-                                        <TextBlock Text="{Binding Label}" />
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Planned duration: Create and Edit -->
-                    <StackPanel Spacing="6">
-
-                        <TextBlock Text="{Binding PlannedTimeLabel}"
-                                   Foreground="{DynamicResource SecondaryText}"
-                                   FontSize="11" />
-
-                        <TextBox Classes="details-input"
-                                 Width="190"
-                                 HorizontalAlignment="Left"
-                                 Text="{Binding PlannedTimeInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 PlaceholderText="{Binding PlannedTimePlaceholder}"
-                                 ToolTip.Tip="{Binding PlannedTimeHint}"
-                                 IsEnabled="{Binding CanEditPlannedTime}"
-                                 AcceptsReturn="False" />
-
-                        <!-- Multiple periods are read-only here -->
-                        <TextBlock IsVisible="{Binding HasMultiplePlanningPeriods}"
-                                   Text="{Binding MultiplePlanningPeriodsHint}"
-                                   Foreground="{DynamicResource SecondaryText}"
-                                   FontSize="11"
-                                   TextWrapping="Wrap"
-                                   MaxWidth="520"
-                                   HorizontalAlignment="Left" />
-                    </StackPanel>
-
-                    <!-- Short description -->
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{Binding ShortDescriptionLabel}"
-                                   Foreground="{DynamicResource SecondaryText}"
-                                   FontSize="11" />
-
-                        <TextBox Classes="details-input"
-                                 Text="{Binding ShortDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
-                                 MinHeight="66"
-                                 MaxHeight="150"
-                                 IsEnabled="{Binding CanEdit}" />
-                    </StackPanel>
-
-                    <!-- Markdown -->
-                    <StackPanel Spacing="9">
-                        <TextBlock Text="{Binding MarkdownLabel}"
-                                   Foreground="{DynamicResource SecondaryText}"
-                                   FontFamily="Menlo, Consolas, Courier New"
-                                   FontWeight="SemiBold"
-                                   FontSize="11" />
-
-                        <Border Height="1"
-                                Background="{DynamicResource SecondaryText}"
-                                Opacity="0.25" />
-
-                        <StackPanel Orientation="Horizontal" Spacing="7">
-                            <Button Classes="details-tab"
-                                    Classes.active="{Binding IsEditMode}"
-                                    Content="{Binding EditLabel}"
-                                    Command="{Binding ShowEditCommand}" />
-
-                            <Button Classes="details-tab"
-                                    Classes.active="{Binding IsPreviewMode}"
-                                    Content="{Binding PreviewLabel}"
-                                    Command="{Binding ShowPreviewCommand}" />
-                        </StackPanel>
-
-                        <TextBox IsVisible="{Binding IsEditMode}"
-                                 Classes="details-input"
-                                 Text="{Binding DescriptionMarkdown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 FontFamily="Menlo, Consolas, Courier New"
-                                 FontSize="12"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
-                                 MinHeight="260"
-                                 MaxHeight="440"
-                                 IsEnabled="{Binding CanEdit}" />
-
-                        <Border IsVisible="{Binding IsPreviewMode}"
+                        <!-- Planning periods in Edit mode -->
+                        <Border IsVisible="{Binding !IsCreateMode}"
                                 Background="{DynamicResource Surface}"
-                                CornerRadius="6"
-                                Padding="14"
-                                MinHeight="260">
+                                BorderBrush="{DynamicResource Background}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="14">
 
-                            <ScrollViewer MaxHeight="425"
-                                          HorizontalScrollBarVisibility="Disabled"
-                                          VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="12">
 
-                                <StackPanel x:Name="PreviewBlocks"
-                                            Spacing="9" />
-                            </ScrollViewer>
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="10">
+
+                                    <TextBlock Text="{Binding PeriodsLabel}"
+                                               Foreground="{DynamicResource PrimaryText}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Spacing="8"
+                                                VerticalAlignment="Center">
+
+                                        <TextBlock Text="{Binding TotalPlannedLabel}"
+                                                   Foreground="{DynamicResource SecondaryText}"
+                                                   FontSize="11" />
+
+                                        <TextBlock Text="{Binding TotalPlannedText}"
+                                                   Foreground="{DynamicResource Accent}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Height="1"
+                                        Background="{DynamicResource SecondaryText}"
+                                        Opacity="0.2" />
+
+                                <TextBlock IsVisible="{Binding HasNoPlanningPeriods}"
+                                           Text="{Binding TotalPlannedText}"
+                                           Foreground="{DynamicResource SecondaryText}"
+                                           FontSize="12" />
+
+                                <!-- Period rows -->
+                                <ItemsControl IsVisible="{Binding HasPlanningPeriods}"
+                                              ItemsSource="{Binding PlanningPeriods}">
+
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:PlanningPeriodRowViewModel">
+
+                                            <Grid ColumnDefinitions="*,Auto,Auto,Auto"
+                                                  ColumnSpacing="10"
+                                                  Margin="0,3">
+
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding DateText}"
+                                                           Foreground="{DynamicResource PrimaryText}"
+                                                           FontSize="12"
+                                                           VerticalAlignment="Center" />
+
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding DurationText}"
+                                                           Foreground="{DynamicResource PrimaryText}"
+                                                           FontSize="12"
+                                                           MinWidth="64"
+                                                           VerticalAlignment="Center" />
+
+                                                <Button Grid.Column="2"
+                                                        Classes="details-action"
+                                                        Content="✎"
+                                                        Padding="9,5"
+                                                        MinHeight="30"
+                                                        Command="{Binding EditCommand}" />
+
+                                                <Button Grid.Column="3"
+                                                        Classes="details-action"
+                                                        Content="×"
+                                                        Padding="9,5"
+                                                        MinHeight="30"
+                                                        Command="{Binding DeleteCommand}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Add period -->
+                                <Button Classes="details-action"
+                                        HorizontalAlignment="Left"
+                                        IsVisible="{Binding !IsPeriodEditorOpen}"
+                                        IsEnabled="{Binding CanManagePlanningPeriods}"
+                                        Content="{Binding AddPeriodLabel}"
+                                        Command="{Binding AddPeriodCommand}" />
+
+                                <!-- Inline period editor -->
+                                <Border IsVisible="{Binding IsPeriodEditorOpen}"
+                                        Background="{DynamicResource Background}"
+                                        BorderBrush="{DynamicResource Accent}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="12">
+
+                                    <StackPanel Spacing="10">
+
+                                        <TextBlock Text="{Binding PeriodEditorHeading}"
+                                                   Foreground="{DynamicResource PrimaryText}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12" />
+
+                                        <Grid ColumnDefinitions="*,*"
+                                              ColumnSpacing="10">
+
+                                            <!-- Period date -->
+                                            <StackPanel Grid.Column="0" Spacing="5">
+
+                                                <TextBlock Text="{Binding PeriodDateLabel}"
+                                                           Foreground="{DynamicResource SecondaryText}"
+                                                           FontSize="11" />
+
+                                                <Grid x:Name="PeriodDateSegment"
+                                                      ColumnDefinitions="*,Auto">
+
+                                                    <Border Grid.ColumnSpan="2"
+                                                            Background="{DynamicResource Surface}"
+                                                            CornerRadius="6" />
+
+                                                    <TextBox Grid.Column="0"
+                                                             Classes="details-input"
+                                                             Classes.invalid="{Binding IsPeriodDateInputInvalid}"
+                                                             Background="Transparent"
+                                                             BorderThickness="0"
+                                                             Text="{Binding PeriodDateInputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             IsEnabled="{Binding CanSavePeriod}"
+                                                             AcceptsReturn="False"
+                                                             KeyDown="OnPeriodDateKeyDown" />
+
+                                                    <Button Grid.Column="1"
+                                                            Classes="details-calendar"
+                                                            IsEnabled="{Binding CanSavePeriod}"
+                                                            Click="OnPeriodCalendarButtonClick">
+
+                                                        <Path Width="17"
+                                                              Height="17"
+                                                              Stretch="Uniform"
+                                                              Stroke="{DynamicResource Accent}"
+                                                              StrokeThickness="1.6"
+                                                              StrokeLineCap="Round"
+                                                              Data="M3,5 L17,5 L17,18 L3,18 Z M6.5,2 L6.5,8 M13.5,2 L13.5,8 M3,9 L17,9" />
+                                                    </Button>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <!-- Period duration -->
+                                            <StackPanel Grid.Column="1" Spacing="5">
+
+                                                <TextBlock Text="{Binding PeriodDurationLabel}"
+                                                           Foreground="{DynamicResource SecondaryText}"
+                                                           FontSize="11" />
+
+                                                <TextBox Classes="details-input"
+                                                         Text="{Binding PeriodDurationInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         PlaceholderText="{Binding PlannedTimePlaceholder}"
+                                                         ToolTip.Tip="{Binding PlannedTimeHint}"
+                                                         IsEnabled="{Binding CanSavePeriod}"
+                                                         AcceptsReturn="False" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Right"
+                                                    Spacing="8">
+
+                                            <Button Classes="details-action"
+                                                    Content="{Binding CancelLabel}"
+                                                    Command="{Binding CancelPeriodCommand}" />
+
+                                            <Button Classes="details-primary"
+                                                    Content="{Binding SavePeriodLabel}"
+                                                    Command="{Binding SavePeriodCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </Border>
+
+                        <!-- Short description -->
+                        <StackPanel Spacing="6">
+
+                            <TextBlock Text="{Binding ShortDescriptionLabel}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="11" />
+
+                            <TextBox Classes="details-input"
+                                     Text="{Binding ShortDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MinHeight="66"
+                                     MaxHeight="150"
+                                     IsEnabled="{Binding CanEdit}" />
+                        </StackPanel>
+
+                        <!-- Markdown -->
+                        <StackPanel Spacing="9">
+
+                            <TextBlock Text="{Binding MarkdownLabel}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontFamily="Menlo, Consolas, Courier New"
+                                       FontWeight="SemiBold"
+                                       FontSize="11" />
+
+                            <Border Height="1"
+                                    Background="{DynamicResource SecondaryText}"
+                                    Opacity="0.25" />
+
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="7">
+
+                                <Button Classes="details-tab"
+                                        Classes.active="{Binding IsEditMode}"
+                                        Content="{Binding EditLabel}"
+                                        Command="{Binding ShowEditCommand}" />
+
+                                <Button Classes="details-tab"
+                                        Classes.active="{Binding IsPreviewMode}"
+                                        Content="{Binding PreviewLabel}"
+                                        Command="{Binding ShowPreviewCommand}" />
+                            </StackPanel>
+
+                            <TextBox IsVisible="{Binding IsEditMode}"
+                                     Classes="details-input"
+                                     Text="{Binding DescriptionMarkdown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     FontFamily="Menlo, Consolas, Courier New"
+                                     FontSize="12"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MinHeight="260"
+                                     MaxHeight="440"
+                                     IsEnabled="{Binding CanEdit}" />
+
+                            <Border IsVisible="{Binding IsPreviewMode}"
+                                    Background="{DynamicResource Surface}"
+                                    CornerRadius="6"
+                                    Padding="14"
+                                    MinHeight="260">
+
+                                <ScrollViewer MaxHeight="425"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              VerticalScrollBarVisibility="Auto">
+
+                                    <StackPanel x:Name="PreviewBlocks"
+                                                Spacing="9" />
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
+            </ScrollViewer>
 
-        <!-- Footer -->
-        <Grid Grid.Row="2"
-              ColumnDefinitions="Auto,*,Auto"
-              ColumnSpacing="12">
+            <!-- Footer -->
+            <Grid Grid.Row="2"
+                  ColumnDefinitions="Auto,*,Auto"
+                  ColumnSpacing="12">
 
-            <Button Grid.Column="0"
-                    Classes="details-action"
-                    Content="{Binding CancelLabel}"
-                    Command="{Binding CancelCommand}" />
+                <Button Grid.Column="0"
+                        Classes="details-action"
+                        Content="{Binding CancelLabel}"
+                        Command="{Binding CancelCommand}" />
 
-            <TextBlock Grid.Column="1"
-                       IsVisible="{Binding IsSaveSuccessful}"
-                       Text="{Binding SavedMessage}"
-                       Foreground="{DynamicResource Accent}"
-                       VerticalAlignment="Center"
-                       FontSize="12" />
+                <TextBlock Grid.Column="1"
+                           IsVisible="{Binding IsSaveSuccessful}"
+                           Text="{Binding SavedMessage}"
+                           Foreground="{DynamicResource Accent}"
+                           VerticalAlignment="Center"
+                           FontSize="12" />
 
-            <ProgressBar Grid.Column="2"
-                         Width="70"
-                         Height="2"
-                         IsIndeterminate="True"
-                         IsVisible="{Binding IsSaving}"
-                         VerticalAlignment="Center"
-                         Foreground="{DynamicResource Accent}" />
+                <ProgressBar Grid.Column="2"
+                             Width="70"
+                             Height="2"
+                             IsIndeterminate="True"
+                             IsVisible="{Binding IsSaving}"
+                             VerticalAlignment="Center"
+                             Foreground="{DynamicResource Accent}" />
+            </Grid>
         </Grid>
 
-        <!-- Unsaved changes confirmation -->
-        <Grid Grid.RowSpan="3"
-              ZIndex="20"
+        <!-- Unsaved changes dialog -->
+        <Grid ZIndex="20"
               IsVisible="{Binding IsDiscardConfirmationOpen}">
 
             <Border Background="#AA000000" />
@@ -449,6 +577,7 @@
                     VerticalAlignment="Center">
 
                 <StackPanel Spacing="16">
+
                     <TextBlock Text="{Binding DiscardConfirmationTitle}"
                                Foreground="{DynamicResource PrimaryText}"
                                FontWeight="SemiBold"
@@ -476,57 +605,52 @@
             </Border>
         </Grid>
 
-        <!-- Graphite & Amber calendar -->
-        <Popup x:Name="DatePopup"
-               Placement="BottomEdgeAlignedLeft"
-               IsLightDismissEnabled="True">
+        <!-- Delete planning period dialog -->
+        <Grid ZIndex="18"
+              IsVisible="{Binding IsDeletePeriodConfirmationOpen}">
+
+            <Border Background="#AA000000" />
 
             <Border Background="{DynamicResource Surface}"
                     BorderBrush="{DynamicResource Accent}"
                     BorderThickness="1"
-                    CornerRadius="9"
-                    Width="280"
-                    Padding="14">
+                    CornerRadius="10"
+                    MaxWidth="420"
+                    Margin="12"
+                    Padding="22"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
 
-                <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Spacing="16">
 
-                        <Button Grid.Column="0"
-                                Classes="calendar-nav"
-                                Content="‹"
-                                Click="OnPreviousMonthClick" />
+                    <TextBlock Text="{Binding DeletePeriodTitle}"
+                               Foreground="{DynamicResource PrimaryText}"
+                               FontWeight="SemiBold"
+                               FontSize="15"
+                               TextWrapping="Wrap" />
 
-                        <TextBlock Grid.Column="1"
-                                   x:Name="CalendarMonthTitle"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource PrimaryText}"
-                                   FontWeight="SemiBold"
-                                   FontSize="13" />
+                    <TextBlock Text="{Binding DeletePeriodMessage}"
+                               Foreground="{DynamicResource SecondaryText}"
+                               FontSize="12"
+                               TextWrapping="Wrap" />
 
-                        <Button Grid.Column="2"
-                                Classes="calendar-nav"
-                                Content="›"
-                                Click="OnNextMonthClick" />
-                    </Grid>
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Spacing="8">
 
-                    <UniformGrid x:Name="WeekdayHeader"
-                                 Columns="7" />
+                        <Button Classes="details-action"
+                                Content="{Binding CancelLabel}"
+                                Command="{Binding CancelDeletePeriodCommand}" />
 
-                    <UniformGrid x:Name="CalendarDaysGrid"
-                                 Columns="7"
-                                 Rows="6" />
-
-                    <Border Height="1"
-                            Background="{DynamicResource SecondaryText}"
-                            Opacity="0.25" />
-
-                    <Button x:Name="CalendarTodayButton"
-                            Classes="details-calendar"
-                            HorizontalAlignment="Left"
-                            Click="OnTodayClick" />
+                        <Button Classes="details-primary"
+                                Content="{Binding DeletePeriodLabel}"
+                                Command="{Binding ConfirmDeletePeriodCommand}" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
-        </Popup>
+        </Grid>
+
+        <!-- One shared calendar for both date fields -->
+        <views:DaycordCalendarView x:Name="SharedCalendar" />
     </Grid>
 </UserControl>
