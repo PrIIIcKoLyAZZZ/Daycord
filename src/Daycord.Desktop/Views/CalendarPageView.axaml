@@ -566,10 +566,8 @@
                                           ItemTemplate="{StaticResource CalendarEntryTemplate}"/>
                         </StackPanel>
                     </Border>
-
                 </StackPanel>
             </StackPanel>
-
         </StackPanel>
     </ScrollViewer>
 </UserControl>

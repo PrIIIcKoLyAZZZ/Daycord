@@ -47,6 +47,9 @@ public static class ServiceRegistration
         // Preserve the month and selected date across Task Details navigation.
         services.AddSingleton<CalendarPageViewModel>();
 
+        // Keep the Dashboard instance while navigating to Task Details.
+        services.AddSingleton<HomeDashboardViewModel>();
+
         // The Task List is a singleton so that filters,
         // sorting and selection survive navigation.
         services.AddSingleton<TaskListViewModel>(provider =>

@@ -211,4 +211,20 @@
     <data name="CalendarLoadFailed"><value>Не удалось загрузить календарь: {0}</value></data>
     <data name="CalendarRetry"><value>Повторить</value></data>
     <data name="CalendarOpenTask"><value>Открыть задачу</value></data>
+
+    <!-- Home Dashboard (DC-012) -->
+    <data name="HomeDashboardTodayTasks"><value>Задачи на сегодня</value></data>
+    <data name="HomeDashboardCompleted"><value>Завершено</value></data>
+    <data name="HomeDashboardPlannedToday"><value>Запланировано сегодня</value></data>
+    <data name="HomeDashboardActualToday"><value>Фактически сегодня</value></data>
+    <data name="HomeDashboardPlannedWork"><value>Плановая работа</value></data>
+    <data name="HomeDashboardActualWork"><value>Фактическая работа</value></data>
+    <data name="HomeDashboardNoTasks"><value>На сегодня нет назначенных задач.</value></data>
+    <data name="HomeDashboardNoPlanned"><value>На сегодня нет запланированной работы.</value></data>
+    <data name="HomeDashboardNoActual"><value>Сегодня нет записей о выполненной работе.</value></data>
+    <data name="HomeDashboardNoEntries"><value>На сегодня нет задач, планов или записей о работе.</value></data>
+    <data name="HomeDashboardLoading"><value>Загрузка главной страницы...</value></data>
+    <data name="HomeDashboardLoadFailed"><value>Не удалось загрузить главную страницу: {0}</value></data>
+    <data name="HomeDashboardRetry"><value>Повторить</value></data>
+    <data name="HomeDashboardOpenTask"><value>Открыть задачу</value></data>
 </root>
