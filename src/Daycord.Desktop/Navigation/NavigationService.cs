@@ -59,28 +59,22 @@ public sealed class NavigationService :
         {
             return;
         }
-
-        // Never replace an active editor directly.
-        // Unsaved changes must be handled by the editor first.
+        
         if (IsTaskOpen)
         {
             return;
         }
-
-        // Keep the underlying main section unchanged.
+        
         CurrentTaskId = taskId;
     }
 
     public void OpenNewTask()
     {
-        // Full creation is available from the Tasks section.
         if (CurrentPage != PageKind.Tasks || IsTaskOpen)
         {
             return;
         }
 
-        // A new task has no ID until CreateAsync succeeds.
-        // Do not create a placeholder record in SQLite.
         IsCreatingTask = true;
     }
 

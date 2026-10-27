@@ -237,8 +237,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         return periods.ToList();
     }
-
-    // DC-009: Add one independent planning period.
+    
     public async Task<bool> AddPlanningPeriodAsync(
         PlanningPeriod period,
         CancellationToken cancellationToken = default)
@@ -278,8 +277,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         return affected == 1;
     }
-
-    // DC-009: Update only the selected planning period.
+    
     public async Task<bool> UpdatePlanningPeriodAsync(
         PlanningPeriod period,
         CancellationToken cancellationToken = default)
@@ -307,8 +305,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         return affected == 1;
     }
-
-    // DC-009: Delete only the selected planning period.
+    
     public async Task<bool> DeletePlanningPeriodAsync(
         Guid taskId,
         Guid periodId,
@@ -351,8 +348,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         return affected == 1;
     }
-
-    // DC-010: Read persisted work independently of planning periods.
+    
     public async Task<IReadOnlyList<WorkEntry>> ListWorkEntriesAsync(
         Guid taskId,
         CancellationToken cancellationToken = default)
@@ -392,8 +388,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         return entries.ToList();
     }
-
-    // DC-010: Insert one entry only if its parent task still exists.
+    
     public async Task<bool> AddWorkEntryAsync(
         WorkEntry entry,
         CancellationToken cancellationToken = default)
@@ -441,8 +436,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         return affected == 1;
     }
-
-    // DC-010: Update only mutable columns of the selected entry.
+    
     public async Task<bool> UpdateWorkEntryAsync(
         WorkEntry entry,
         CancellationToken cancellationToken = default)
@@ -473,8 +467,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
 
         return affected == 1;
     }
-
-    // DC-010: Delete precisely the requested entry from the requested task.
+    
     public async Task<bool> DeleteWorkEntryAsync(
         Guid taskId,
         Guid entryId,
@@ -580,9 +573,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
         {
             TaskId = FormatGuid(task.Id)
         };
-
-        // Multiple periods must never be replaced by
-        // one aggregate duration.
+        
         var existingIds = (await connection.QueryAsync<string>(
             new CommandDefinition(
                 findSql,
@@ -701,9 +692,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
         {
             TaskId = FormatGuid(id)
         };
-
-        // Existing task deletion logic.
-        // Foreign keys use RESTRICT, not CASCADE.
+        
         await connection.ExecuteAsync(
             new CommandDefinition(
                 "DELETE FROM WorkEntries WHERE TaskId = @TaskId;",
@@ -728,6 +717,120 @@ public sealed class SqliteTaskRepository : ITaskRepository
         await transaction.CommitAsync(cancellationToken);
 
         return affectedRows == 1;
+    }
+    
+    public async Task<CalendarData> GetCalendarDataAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        if (from > to)
+        {
+            throw new ArgumentException(
+                "Calendar range start cannot be later than the end.",
+                nameof(from));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string tasksSql = """
+            SELECT
+                t.Id AS TaskId,
+                t.TaskDate,
+                t.TaskNumber,
+                t.Title AS TaskTitle,
+                t.StatusId,
+                s.Name AS StatusName,
+                CASE WHEN s.IsSystem = 1
+                    THEN s.SystemKey ELSE NULL
+                END AS StatusSystemKey,
+                s.IsCompleted
+            FROM Tasks AS t
+            INNER JOIN TaskStatuses AS s ON s.Id = t.StatusId
+            WHERE t.TaskDate >= @FromDate
+              AND t.TaskDate <= @ToDate
+            ORDER BY t.TaskDate, t.Title COLLATE NOCASE, t.Id;
+            """;
+
+        const string plannedSql = """
+            SELECT
+                p.Id,
+                p.TaskId,
+                p.PlannedDate,
+                p.PlannedMinutes,
+                t.TaskNumber,
+                t.Title AS TaskTitle,
+                t.StatusId,
+                s.Name AS StatusName,
+                CASE WHEN s.IsSystem = 1
+                    THEN s.SystemKey ELSE NULL
+                END AS StatusSystemKey,
+                s.IsCompleted
+            FROM PlanningPeriods AS p
+            INNER JOIN Tasks AS t ON t.Id = p.TaskId
+            INNER JOIN TaskStatuses AS s ON s.Id = t.StatusId
+            WHERE p.PlannedDate >= @FromDate
+              AND p.PlannedDate <= @ToDate
+            ORDER BY p.PlannedDate, t.Title COLLATE NOCASE, p.Id;
+            """;
+
+        const string actualSql = """
+            SELECT
+                w.Id,
+                w.TaskId,
+                w.WorkDate,
+                w.ActualMinutes,
+                w.WorkDescription,
+                w.Note,
+                t.TaskNumber,
+                t.Title AS TaskTitle,
+                t.StatusId,
+                s.Name AS StatusName,
+                CASE WHEN s.IsSystem = 1
+                    THEN s.SystemKey ELSE NULL
+                END AS StatusSystemKey,
+                s.IsCompleted
+            FROM WorkEntries AS w
+            INNER JOIN Tasks AS t ON t.Id = w.TaskId
+            INNER JOIN TaskStatuses AS s ON s.Id = t.StatusId
+            WHERE w.WorkDate >= @FromDate
+              AND w.WorkDate <= @ToDate
+            ORDER BY w.WorkDate, t.Title COLLATE NOCASE, w.Id;
+            """;
+
+        var parameters = new
+        {
+            FromDate = FormatDate(from),
+            ToDate = FormatDate(to)
+        };
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var tasks = (await connection.QueryAsync<CalendarTaskItem>(
+            new CommandDefinition(
+                tasksSql,
+                parameters,
+                cancellationToken: cancellationToken))).ToList();
+
+        var planned = (await connection.QueryAsync<CalendarPlanningItem>(
+            new CommandDefinition(
+                plannedSql,
+                parameters,
+                cancellationToken: cancellationToken))).ToList();
+
+        var actual = (await connection.QueryAsync<CalendarWorkItem>(
+            new CommandDefinition(
+                actualSql,
+                parameters,
+                cancellationToken: cancellationToken))).ToList();
+
+        return new CalendarData
+        {
+            Tasks = tasks,
+            PlannedWork = planned,
+            ActualWork = actual
+        };
     }
 
     public async Task<IReadOnlyList<TaskListItem>> ListAsync(
@@ -1020,8 +1123,7 @@ public sealed class SqliteTaskRepository : ITaskRepository
                 nameof(entry),
                 "Actual minutes must be greater than zero.");
         }
-
-        // Both timestamps must remain UTC when persisted.
+        
         _ = FormatUtc(entry.CreatedAtUtc);
         _ = FormatUtc(entry.UpdatedAtUtc);
     }

@@ -191,4 +191,24 @@
     <data name="WorkEntryNotFound"><value>Запись о работе не найдена: {0}</value></data>
     <data name="WorkSaveFailed"><value>Не удалось сохранить запись о работе: {0}</value></data>
     <data name="WorkDeleteFailed"><value>Не удалось удалить запись о работе: {0}</value></data>
+
+    <!-- Calendar (DC-011) -->
+    <data name="CalendarToday"><value>Сегодня</value></data>
+    <data name="CalendarPreviousMonth"><value>Предыдущий месяц</value></data>
+    <data name="CalendarNextMonth"><value>Следующий месяц</value></data>
+    <data name="CalendarSelectedDay"><value>ВЫБРАННЫЙ ДЕНЬ</value></data>
+    <data name="CalendarTasks"><value>Задачи</value></data>
+    <data name="CalendarPlannedWork"><value>Плановая работа</value></data>
+    <data name="CalendarActualWork"><value>Фактическая работа</value></data>
+    <data name="CalendarTotalPlanned"><value>Всего запланировано</value></data>
+    <data name="CalendarTotalActual"><value>Всего фактически</value></data>
+    <data name="CalendarNoEntries"><value>На этот день нет задач и записей о работе.</value></data>
+    <data name="CalendarNoMonthData"><value>В этом месяце нет задач или записей о работе.</value></data>
+    <data name="CalendarNoTasks"><value>На эту дату нет задач.</value></data>
+    <data name="CalendarNoPlanned"><value>На эту дату нет запланированной работы.</value></data>
+    <data name="CalendarNoActual"><value>На эту дату нет записей о выполненной работе.</value></data>
+    <data name="CalendarLoading"><value>Загрузка календаря...</value></data>
+    <data name="CalendarLoadFailed"><value>Не удалось загрузить календарь: {0}</value></data>
+    <data name="CalendarRetry"><value>Повторить</value></data>
+    <data name="CalendarOpenTask"><value>Открыть задачу</value></data>
 </root>

@@ -44,6 +44,9 @@ public static class ServiceRegistration
 
         services.AddSingleton<PlaceholderPageViewModel>();
 
+        // Preserve the month and selected date across Task Details navigation.
+        services.AddSingleton<CalendarPageViewModel>();
+
         // The Task List is a singleton so that filters,
         // sorting and selection survive navigation.
         services.AddSingleton<TaskListViewModel>(provider =>

@@ -30,6 +30,11 @@
             <views:TaskListView/>
         </DataTemplate>
 
+        <DataTemplate DataType="vm:CalendarPageViewModel"
+                      x:DataType="vm:CalendarPageViewModel">
+            <views:CalendarPageView/>
+        </DataTemplate>
+
         <DataTemplate DataType="vm:TaskDetailsViewModel"
                       x:DataType="vm:TaskDetailsViewModel">
             <views:TaskDetailsView/>
@@ -41,7 +46,8 @@
     <Window.Styles>
         <Style Selector="Button.sidebar-nav">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="3,0,0,0"/>
             <Setter Property="CornerRadius" Value="8"/>
@@ -53,38 +59,53 @@
         </Style>
 
         <Style Selector="Button.sidebar-nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource Background}"/>
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="Background"
+                    Value="{DynamicResource Background}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
         </Style>
 
         <Style Selector="Button.sidebar-nav.active">
-            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
         <Style Selector="Button.sidebar-nav.active /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
         </Style>
 
         <Style Selector="Button.sidebar-nav.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBackground}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedHoverBackground}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
         </Style>
 
         <Style Selector="Button.sidebar-nav.active:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBackground}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedHoverBackground}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
         </Style>
 
         <Style Selector="Button.sidebar-nav:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
         </Style>
     </Window.Styles>
 
@@ -106,7 +127,9 @@
                     MaxWidth="520">
 
                 <StackPanel Spacing="18">
-                    <Border Width="48" Height="4" CornerRadius="2"
+                    <Border Width="48"
+                            Height="4"
+                            CornerRadius="2"
                             HorizontalAlignment="Left"
                             Background="{DynamicResource Accent}"/>
 
@@ -147,7 +170,8 @@
                     MaxWidth="600">
 
                 <StackPanel Spacing="18">
-                    <Border Width="48" Height="4"
+                    <Border Width="48"
+                            Height="4"
                             CornerRadius="2"
                             HorizontalAlignment="Left"
                             Background="{DynamicResource Accent}"/>
@@ -210,7 +234,9 @@
 
                     <!-- Main navigation -->
 
-                    <StackPanel Grid.Row="2" Spacing="6">
+                    <StackPanel Grid.Row="2"
+                                Spacing="6">
+
                         <Button Classes="sidebar-nav"
                                 Classes.active="{Binding IsHomeSelected}"
                                 Content="{Binding NavHomeLabel}"
