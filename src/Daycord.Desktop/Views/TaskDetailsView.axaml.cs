@@ -14,6 +14,7 @@ public partial class TaskDetailsView : UserControl
     private readonly DaycordCalendarView _calendar;
     private readonly Grid _dateSegment;
     private readonly Grid _periodDateSegment;
+    private readonly Grid _workDateSegment;
     private readonly StackPanel _previewBlocks;
     private readonly TextBox _titleInput;
 
@@ -26,7 +27,8 @@ public partial class TaskDetailsView : UserControl
     private enum CalendarTarget
     {
         TaskDate,
-        PlanningPeriod
+        PlanningPeriod,
+        WorkEntry
     }
 
     public TaskDetailsView()
@@ -41,6 +43,9 @@ public partial class TaskDetailsView : UserControl
 
         _periodDateSegment =
             Required<Grid>("PeriodDateSegment");
+
+        _workDateSegment =
+            Required<Grid>("WorkDateSegment");
 
         _previewBlocks =
             Required<StackPanel>("PreviewBlocks");
@@ -142,22 +147,29 @@ public partial class TaskDetailsView : UserControl
             FocusTitleWhenReady(viewModel);
         }
 
-        // Close calendar whenever a modal operation begins.
+        // Close the popup when modal or busy states begin.
         if (e.PropertyName is
             nameof(TaskDetailsViewModel.IsDiscardConfirmationOpen) or
             nameof(TaskDetailsViewModel.IsSaving) or
             nameof(TaskDetailsViewModel.IsDeletePeriodConfirmationOpen) or
             nameof(TaskDetailsViewModel.IsPeriodEditorOpen) or
             nameof(TaskDetailsViewModel.IsPeriodBusy) or
+            nameof(TaskDetailsViewModel.IsDeleteWorkEntryConfirmationOpen) or
+            nameof(TaskDetailsViewModel.IsWorkEntryEditorOpen) or
+            nameof(TaskDetailsViewModel.IsWorkEntryBusy) or
             nameof(TaskDetailsViewModel.IsTaskNotFound))
         {
             if (viewModel.IsDiscardConfirmationOpen ||
                 viewModel.IsSaving ||
                 viewModel.IsDeletePeriodConfirmationOpen ||
                 viewModel.IsPeriodBusy ||
+                viewModel.IsDeleteWorkEntryConfirmationOpen ||
+                viewModel.IsWorkEntryBusy ||
                 viewModel.IsTaskNotFound ||
                 (_calendarTarget == CalendarTarget.PlanningPeriod &&
-                 !viewModel.IsPeriodEditorOpen))
+                 !viewModel.IsPeriodEditorOpen) ||
+                (_calendarTarget == CalendarTarget.WorkEntry &&
+                 !viewModel.IsWorkEntryEditorOpen))
             {
                 _calendar.Close();
             }
@@ -168,8 +180,7 @@ public partial class TaskDetailsView : UserControl
             return;
         }
 
-        // Refresh current selection without resetting
-        // the month being viewed.
+        // Keep the current month while refreshing selection.
         if (_calendarTarget == CalendarTarget.TaskDate &&
             e.PropertyName is
                 nameof(TaskDetailsViewModel.DateInputText) or
@@ -186,6 +197,15 @@ public partial class TaskDetailsView : UserControl
         {
             _calendar.Refresh(
                 PeriodSelectedDate(viewModel),
+                viewModel.DateCulture);
+        }
+        else if (_calendarTarget == CalendarTarget.WorkEntry &&
+                 e.PropertyName is
+                     nameof(TaskDetailsViewModel.WorkDateInputText) or
+                     nameof(TaskDetailsViewModel.DateCulture))
+        {
+            _calendar.Refresh(
+                WorkSelectedDate(viewModel),
                 viewModel.DateCulture);
         }
     }
@@ -224,6 +244,15 @@ public partial class TaskDetailsView : UserControl
             : null;
     }
 
+    private static DateTime? WorkSelectedDate(
+        TaskDetailsViewModel viewModel)
+    {
+        return !string.IsNullOrWhiteSpace(viewModel.WorkDateInputText) &&
+               !viewModel.IsWorkDateInputInvalid
+            ? viewModel.WorkCalendarAnchorDate.Date
+            : null;
+    }
+
     private void OnCalendarButtonClick(
         object? sender,
         RoutedEventArgs e)
@@ -244,6 +273,16 @@ public partial class TaskDetailsView : UserControl
         }
     }
 
+    private void OnWorkCalendarButtonClick(
+        object? sender,
+        RoutedEventArgs e)
+    {
+        if (_connected is { CanSaveWorkEntry: true })
+        {
+            OpenCalendar(CalendarTarget.WorkEntry);
+        }
+    }
+
     private void OpenCalendar(CalendarTarget target)
     {
         if (_connected is not { } viewModel)
@@ -251,7 +290,6 @@ public partial class TaskDetailsView : UserControl
             return;
         }
 
-        // Clicking the same calendar icon toggles it.
         if (_calendar.IsOpen && _calendarTarget == target)
         {
             _calendar.Close();
@@ -260,20 +298,29 @@ public partial class TaskDetailsView : UserControl
 
         _calendarTarget = target;
 
-        var placementTarget =
-            target == CalendarTarget.TaskDate
-                ? _dateSegment
-                : _periodDateSegment;
+        var placementTarget = target switch
+        {
+            CalendarTarget.TaskDate => _dateSegment,
+            CalendarTarget.PlanningPeriod => _periodDateSegment,
+            CalendarTarget.WorkEntry => _workDateSegment,
+            _ => throw new ArgumentOutOfRangeException(nameof(target))
+        };
 
-        var anchorDate =
-            target == CalendarTarget.TaskDate
-                ? viewModel.CalendarAnchorDate
-                : viewModel.PeriodCalendarAnchorDate;
+        var anchorDate = target switch
+        {
+            CalendarTarget.TaskDate => viewModel.CalendarAnchorDate,
+            CalendarTarget.PlanningPeriod => viewModel.PeriodCalendarAnchorDate,
+            CalendarTarget.WorkEntry => viewModel.WorkCalendarAnchorDate,
+            _ => throw new ArgumentOutOfRangeException(nameof(target))
+        };
 
-        var selectedDate =
-            target == CalendarTarget.TaskDate
-                ? TaskSelectedDate(viewModel)
-                : PeriodSelectedDate(viewModel);
+        var selectedDate = target switch
+        {
+            CalendarTarget.TaskDate => TaskSelectedDate(viewModel),
+            CalendarTarget.PlanningPeriod => PeriodSelectedDate(viewModel),
+            CalendarTarget.WorkEntry => WorkSelectedDate(viewModel),
+            _ => throw new ArgumentOutOfRangeException(nameof(target))
+        };
 
         _calendar.Open(
             placementTarget: placementTarget,
@@ -299,6 +346,13 @@ public partial class TaskDetailsView : UserControl
                 viewModel.SelectPeriodCalendarDate(e.Date);
             }
         }
+        else if (_calendarTarget == CalendarTarget.WorkEntry)
+        {
+            if (viewModel.CanSaveWorkEntry)
+            {
+                viewModel.SelectWorkCalendarDate(e.Date);
+            }
+        }
         else if (viewModel.CanEdit)
         {
             viewModel.SelectCalendarDate(e.Date);
@@ -321,7 +375,6 @@ public partial class TaskDetailsView : UserControl
         object? sender,
         KeyEventArgs e)
     {
-        // Enter in a date field must not save the task.
         if (e.Key != Key.Enter)
         {
             return;
@@ -332,6 +385,13 @@ public partial class TaskDetailsView : UserControl
     }
 
     private void OnPeriodDateKeyDown(
+        object? sender,
+        KeyEventArgs e)
+    {
+        OnDateKeyDown(sender, e);
+    }
+
+    private void OnWorkDateKeyDown(
         object? sender,
         KeyEventArgs e)
     {

@@ -48,8 +48,8 @@
     <data name="TerminalShortDescriptionPlaceholder"><value>Краткое описание (необязательно)</value></data>
     <data name="TerminalStatusLabel"><value>Статус</value></data>
     <data name="TerminalEnterHint"><value>Нажмите Enter в поле названия, чтобы создать задачу</value></data>
-    <data name="TerminalRetryStatuses"><value>Повторить загрузку статусов</value></data>
     <data name="TerminalCreating"><value>Создание...</value></data>
+    <data name="TerminalRetryStatuses"><value>Повторить загрузку статусов</value></data>
     <data name="TerminalCreateTask"><value>Создать задачу</value></data>
     <data name="TerminalTaskCreated"><value>Задача успешно создана.</value></data>
     <data name="TerminalDateRequired"><value>Выберите дату задачи.</value></data>
@@ -170,4 +170,25 @@
     <data name="TaskDetailsCreating"><value>Создание...</value></data>
     <data name="TaskDetailsCreateSuccessful"><value>Задача создана.</value></data>
     <data name="TaskDetailsCreateFailed"><value>Не удалось создать задачу: {0}</value></data>
+
+    <!-- Actual Time / Work Log (DC-010) -->
+    <data name="WorkLogTitle"><value>ФАКТИЧЕСКОЕ ВРЕМЯ / ЖУРНАЛ РАБОТ</value></data>
+    <data name="WorkEntriesLabel"><value>ЗАПИСИ О РАБОТЕ</value></data>
+    <data name="WorkAddEntry"><value>＋ Добавить запись</value></data>
+    <data name="WorkEditEntry"><value>Изменить запись</value></data>
+    <data name="WorkDate"><value>Дата выполнения</value></data>
+    <data name="WorkDuration"><value>Длительность</value></data>
+    <data name="WorkDescription"><value>Что сделано</value></data>
+    <data name="WorkNote"><value>Примечание</value></data>
+    <data name="WorkTotalActual"><value>Всего фактически</value></data>
+    <data name="WorkNoEntries"><value>Записей о выполненной работе пока нет.</value></data>
+    <data name="WorkSaveEntry"><value>Сохранить запись</value></data>
+    <data name="WorkSaveIndependentHint"><value>Записи о работе сохраняются отдельно от изменений самой задачи.</value></data>
+    <data name="WorkDeleteTitle"><value>Удалить запись о работе?</value></data>
+    <data name="WorkDeleteMessage"><value>Безвозвратно удалить эту запись? Остальные записи и плановые периоды не изменятся.</value></data>
+    <data name="WorkDeleteEntry"><value>Удалить запись</value></data>
+    <data name="WorkValidationError"><value>Укажите корректную дату и положительную длительность (например, 30м или 1ч 30м).</value></data>
+    <data name="WorkEntryNotFound"><value>Запись о работе не найдена: {0}</value></data>
+    <data name="WorkSaveFailed"><value>Не удалось сохранить запись о работе: {0}</value></data>
+    <data name="WorkDeleteFailed"><value>Не удалось удалить запись о работе: {0}</value></data>
 </root>

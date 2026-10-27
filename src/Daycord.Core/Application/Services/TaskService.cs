@@ -231,6 +231,126 @@ public sealed class TaskService
         }
     }
 
+    // DC-010: Work entries are saved independently of task edits and planning.
+    public async Task<IReadOnlyList<WorkEntry>> ListWorkEntriesAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await GetRequiredTaskAsync(taskId, cancellationToken);
+
+        return await _repository.ListWorkEntriesAsync(
+            taskId,
+            cancellationToken);
+    }
+
+    public async Task<WorkEntry> AddWorkEntryAsync(
+        Guid taskId,
+        DateOnly workDate,
+        int actualMinutes,
+        string? workDescription,
+        string? note,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        ValidateWorkEntryInput(workDate, actualMinutes);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await GetRequiredTaskAsync(taskId, cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var entry = new WorkEntry
+        {
+            Id = Guid.NewGuid(),
+            TaskId = taskId,
+            WorkDate = workDate,
+            ActualMinutes = actualMinutes,
+            WorkDescription = NormalizeOptionalText(workDescription),
+            Note = NormalizeOptionalText(note),
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now
+        };
+
+        if (!await _repository.AddWorkEntryAsync(entry, cancellationToken))
+        {
+            throw new KeyNotFoundException(
+                $"Task '{taskId}' no longer exists.");
+        }
+
+        return entry;
+    }
+
+    public async Task<WorkEntry> UpdateWorkEntryAsync(
+        Guid taskId,
+        Guid entryId,
+        DateOnly workDate,
+        int actualMinutes,
+        string? workDescription,
+        string? note,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        ValidateWorkEntryId(entryId);
+        ValidateWorkEntryInput(workDate, actualMinutes);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var entries = await _repository.ListWorkEntriesAsync(
+            taskId,
+            cancellationToken);
+
+        var existing = entries.FirstOrDefault(
+            entry => entry.Id == entryId);
+
+        if (existing is null)
+        {
+            throw new KeyNotFoundException(
+                $"Work entry '{entryId}' was not found for task '{taskId}'.");
+        }
+
+        var updatedEntry = new WorkEntry
+        {
+            Id = existing.Id,
+            TaskId = existing.TaskId,
+            WorkDate = workDate,
+            ActualMinutes = actualMinutes,
+            WorkDescription = NormalizeOptionalText(workDescription),
+            Note = NormalizeOptionalText(note),
+            CreatedAtUtc = existing.CreatedAtUtc,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        if (!await _repository.UpdateWorkEntryAsync(
+                updatedEntry,
+                cancellationToken))
+        {
+            throw new KeyNotFoundException(
+                $"Work entry '{entryId}' no longer exists for task '{taskId}'.");
+        }
+
+        return updatedEntry;
+    }
+
+    public async Task DeleteWorkEntryAsync(
+        Guid taskId,
+        Guid entryId,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateTaskId(taskId);
+        ValidateWorkEntryId(entryId);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!await _repository.DeleteWorkEntryAsync(
+                taskId,
+                entryId,
+                cancellationToken))
+        {
+            throw new KeyNotFoundException(
+                $"Work entry '{entryId}' was not found for task '{taskId}'.");
+        }
+    }
+
     // Existing callers preserve all planning records.
     public Task<TaskItem> UpdateAsync(
         UpdateTaskRequest request,
@@ -511,6 +631,40 @@ public sealed class TaskService
         }
 
         ValidatePlannedMinutes(plannedMinutes);
+    }
+
+    private static void ValidateWorkEntryInput(
+        DateOnly workDate,
+        int actualMinutes)
+    {
+        if (workDate == default)
+        {
+            throw new ArgumentException(
+                "Work date is required.",
+                nameof(workDate));
+        }
+
+        if (actualMinutes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(actualMinutes),
+                "Actual minutes must be greater than zero.");
+        }
+    }
+
+    private static void ValidateWorkEntryId(Guid entryId)
+    {
+        if (entryId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Work entry ID must not be empty.",
+                nameof(entryId));
+        }
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static void ValidatePeriodId(Guid periodId)
