@@ -187,4 +187,25 @@
     <data name="PlanningDeleteFailed"><value>Could not delete planned period: {0}</value></data>
     <data name="PlanningSave"><value>Save period</value></data>
     <data name="PlanningCancel"><value>Cancel</value></data>
+
+    <!-- Actual Time / Work Log (DC-010) -->
+    <data name="WorkLogTitle"><value>ACTUAL TIME / WORK LOG</value></data>
+    <data name="WorkEntriesLabel"><value>WORK ENTRIES</value></data>
+    <data name="WorkAddEntry"><value>＋ Add work entry</value></data>
+    <data name="WorkEditEntry"><value>Edit work entry</value></data>
+    <data name="WorkDate"><value>Work date</value></data>
+    <data name="WorkDuration"><value>Duration</value></data>
+    <data name="WorkDescription"><value>What I did</value></data>
+    <data name="WorkNote"><value>Note</value></data>
+    <data name="WorkTotalActual"><value>Total actual</value></data>
+    <data name="WorkNoEntries"><value>No work entries yet.</value></data>
+    <data name="WorkSaveEntry"><value>Save entry</value></data>
+    <data name="WorkSaveIndependentHint"><value>Work entries are saved separately from the main task.</value></data>
+    <data name="WorkDeleteTitle"><value>Delete work entry?</value></data>
+    <data name="WorkDeleteMessage"><value>Permanently delete this work entry? Other work entries and planned periods will not change.</value></data>
+    <data name="WorkDeleteEntry"><value>Delete entry</value></data>
+    <data name="WorkValidationError"><value>Enter a valid work date and a positive duration (e.g. 30m or 1h 30m).</value></data>
+    <data name="WorkEntryNotFound"><value>Work entry was not found: {0}</value></data>
+    <data name="WorkSaveFailed"><value>Could not save work entry: {0}</value></data>
+    <data name="WorkDeleteFailed"><value>Could not delete work entry: {0}</value></data>
 </root>

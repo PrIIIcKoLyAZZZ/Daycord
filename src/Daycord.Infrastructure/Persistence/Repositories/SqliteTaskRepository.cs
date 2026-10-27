@@ -352,6 +352,172 @@ public sealed class SqliteTaskRepository : ITaskRepository
         return affected == 1;
     }
 
+    // DC-010: Read persisted work independently of planning periods.
+    public async Task<IReadOnlyList<WorkEntry>> ListWorkEntriesAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default)
+    {
+        if (taskId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Task ID must not be empty.",
+                nameof(taskId));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string sql = """
+            SELECT
+                Id,
+                TaskId,
+                WorkDate,
+                ActualMinutes,
+                WorkDescription,
+                Note,
+                CreatedAtUtc,
+                UpdatedAtUtc
+            FROM WorkEntries
+            WHERE TaskId = @TaskId
+            ORDER BY WorkDate DESC, CreatedAtUtc DESC, Id ASC;
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var entries = await connection.QueryAsync<WorkEntry>(
+            new CommandDefinition(
+                sql,
+                new { TaskId = FormatGuid(taskId) },
+                cancellationToken: cancellationToken));
+
+        return entries.ToList();
+    }
+
+    // DC-010: Insert one entry only if its parent task still exists.
+    public async Task<bool> AddWorkEntryAsync(
+        WorkEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateWorkEntry(entry);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string sql = """
+            INSERT INTO WorkEntries
+            (
+                Id,
+                TaskId,
+                WorkDate,
+                ActualMinutes,
+                WorkDescription,
+                Note,
+                CreatedAtUtc,
+                UpdatedAtUtc
+            )
+            SELECT
+                @Id,
+                @TaskId,
+                @WorkDate,
+                @ActualMinutes,
+                @WorkDescription,
+                @Note,
+                @CreatedAtUtc,
+                @UpdatedAtUtc
+            WHERE EXISTS
+            (
+                SELECT 1
+                FROM Tasks
+                WHERE Id = @TaskId
+            );
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var affected = await connection.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                GetWorkEntryParameters(entry),
+                cancellationToken: cancellationToken));
+
+        return affected == 1;
+    }
+
+    // DC-010: Update only mutable columns of the selected entry.
+    public async Task<bool> UpdateWorkEntryAsync(
+        WorkEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateWorkEntry(entry);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string sql = """
+            UPDATE WorkEntries
+            SET
+                WorkDate = @WorkDate,
+                ActualMinutes = @ActualMinutes,
+                WorkDescription = @WorkDescription,
+                Note = @Note,
+                UpdatedAtUtc = @UpdatedAtUtc
+            WHERE Id = @Id
+              AND TaskId = @TaskId;
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var affected = await connection.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                GetWorkEntryParameters(entry),
+                cancellationToken: cancellationToken));
+
+        return affected == 1;
+    }
+
+    // DC-010: Delete precisely the requested entry from the requested task.
+    public async Task<bool> DeleteWorkEntryAsync(
+        Guid taskId,
+        Guid entryId,
+        CancellationToken cancellationToken = default)
+    {
+        if (taskId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Task ID must not be empty.",
+                nameof(taskId));
+        }
+
+        if (entryId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Work entry ID must not be empty.",
+                nameof(entryId));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        const string sql = """
+            DELETE FROM WorkEntries
+            WHERE Id = @Id
+              AND TaskId = @TaskId;
+            """;
+
+        await using var connection =
+            await _connections.OpenConnectionAsync(cancellationToken);
+
+        var affected = await connection.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                new
+                {
+                    Id = FormatGuid(entryId),
+                    TaskId = FormatGuid(taskId)
+                },
+                cancellationToken: cancellationToken));
+
+        return affected == 1;
+    }
+
     public async Task<bool> UpdateWithPlannedTimeAsync(
         TaskItem task,
         int? plannedMinutes,
@@ -820,6 +986,58 @@ public sealed class SqliteTaskRepository : ITaskRepository
             TaskId = FormatGuid(period.TaskId),
             PlannedDate = FormatDate(period.PlannedDate),
             period.PlannedMinutes
+        };
+    }
+
+    private static void ValidateWorkEntry(WorkEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        if (entry.Id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Work entry ID must not be empty.",
+                nameof(entry));
+        }
+
+        if (entry.TaskId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Task ID must not be empty.",
+                nameof(entry));
+        }
+
+        if (entry.WorkDate == default)
+        {
+            throw new ArgumentException(
+                "Work date is required.",
+                nameof(entry));
+        }
+
+        if (entry.ActualMinutes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(entry),
+                "Actual minutes must be greater than zero.");
+        }
+
+        // Both timestamps must remain UTC when persisted.
+        _ = FormatUtc(entry.CreatedAtUtc);
+        _ = FormatUtc(entry.UpdatedAtUtc);
+    }
+
+    private static object GetWorkEntryParameters(WorkEntry entry)
+    {
+        return new
+        {
+            Id = FormatGuid(entry.Id),
+            TaskId = FormatGuid(entry.TaskId),
+            WorkDate = FormatDate(entry.WorkDate),
+            entry.ActualMinutes,
+            entry.WorkDescription,
+            entry.Note,
+            CreatedAtUtc = FormatUtc(entry.CreatedAtUtc),
+            UpdatedAtUtc = FormatUtc(entry.UpdatedAtUtc)
         };
     }
 

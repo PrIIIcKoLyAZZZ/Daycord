@@ -39,6 +39,23 @@ public interface ITaskRepository
         Guid periodId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<WorkEntry>> ListWorkEntriesAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> AddWorkEntryAsync(
+        WorkEntry entry,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateWorkEntryAsync(
+        WorkEntry entry,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteWorkEntryAsync(
+        Guid taskId,
+        Guid entryId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> UpdateWithPlannedTimeAsync(
         TaskItem task,
         int? plannedMinutes,
