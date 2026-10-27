@@ -65,6 +65,11 @@ public interface ITaskRepository
         Guid id,
         CancellationToken cancellationToken = default);
 
+    Task<CalendarData> GetCalendarDataAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<TaskListItem>> ListAsync(
         TaskQuery query,
         CancellationToken cancellationToken = default);

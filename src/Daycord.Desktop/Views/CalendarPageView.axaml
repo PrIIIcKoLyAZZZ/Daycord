@@ -1,0 +1,575 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Daycord.Desktop.ViewModels"
+             x:Class="Daycord.Desktop.Views.CalendarPageView"
+             x:DataType="vm:CalendarPageViewModel"
+             Background="{DynamicResource Background}">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="CalendarEntryTemplate"
+                      x:DataType="vm:CalendarEntryViewModel">
+            <Button Classes="calendar-entry"
+                    Command="{Binding OpenTaskCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
+
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="12">
+
+                    <StackPanel Grid.Column="0" Spacing="5">
+
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="7">
+
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding TaskNumber}"
+                                       IsVisible="{Binding HasTaskNumber}"
+                                       Foreground="{DynamicResource Accent}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding TaskTitle}"
+                                       Foreground="{DynamicResource PrimaryText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding StatusText}"
+                                   Foreground="{DynamicResource SecondaryText}"
+                                   FontSize="11"/>
+
+                        <TextBlock Text="{Binding WorkDescription}"
+                                   IsVisible="{Binding HasDescription}"
+                                   Foreground="{DynamicResource PrimaryText}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"/>
+
+                        <TextBlock Text="{Binding Note}"
+                                   IsVisible="{Binding HasNote}"
+                                   Foreground="{DynamicResource SecondaryText}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="9"
+                                VerticalAlignment="Center">
+
+                        <TextBlock Text="{Binding DurationText}"
+                                   IsVisible="{Binding HasDuration}"
+                                   Foreground="{DynamicResource Accent}"
+                                   FontWeight="SemiBold"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+
+                        <Path Width="12"
+                              Height="12"
+                              Stretch="Uniform"
+                              Stroke="{DynamicResource SecondaryText}"
+                              StrokeThickness="1.6"
+                              StrokeLineCap="Round"
+                              Data="M4,2 L9,6 L4,10"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Button.calendar-nav">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.calendar-nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-today">
+            <Setter Property="Background"
+                    Value="{DynamicResource Surface}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Background}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style Selector="Button.calendar-today:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-cell">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Background}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="7,6"/>
+            <Setter Property="MinHeight" Value="56"/>
+            <Setter Property="HorizontalContentAlignment"
+                    Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Stretch"/>
+        </Style>
+
+        <Style Selector="Button.calendar-cell:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-cell.outside">
+            <Setter Property="Opacity" Value="0.45"/>
+        </Style>
+
+        <Style Selector="Button.calendar-cell.today">
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-cell.selected">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.calendar-cell.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-cell:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-entry">
+            <Setter Property="Background"
+                    Value="{DynamicResource Background}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="MinHeight" Value="51"/>
+        </Style>
+
+        <Style Selector="Button.calendar-entry:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-entry:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
+        </Style>
+
+        <Style Selector="Button.calendar-retry">
+            <Setter Property="Background"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Background}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,8"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+
+        <StackPanel Margin="20,20,20,28"
+                    Spacing="16"
+                    MaxWidth="1000"
+                    HorizontalAlignment="Stretch">
+
+            <Border Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource Background}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="12">
+
+                <StackPanel Spacing="12">
+
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+                          ColumnSpacing="10">
+
+                        <Button Grid.Column="0"
+                                Classes="calendar-nav"
+                                Command="{Binding PreviousMonthCommand}"
+                                IsEnabled="{Binding CanGoPrevious}"
+                                ToolTip.Tip="{Binding PreviousMonthLabel}">
+
+                            <Path Width="16"
+                                  Height="16"
+                                  Stretch="Uniform"
+                                  Stroke="{DynamicResource PrimaryText}"
+                                  StrokeThickness="1.8"
+                                  StrokeLineCap="Round"
+                                  Data="M11,3 L5,8 L11,13"/>
+                        </Button>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding MonthTitle}"
+                                   Foreground="{DynamicResource PrimaryText}"
+                                   FontWeight="SemiBold"
+                                   FontSize="17"
+                                   VerticalAlignment="Center"/>
+
+                        <Button Grid.Column="2"
+                                Classes="calendar-nav"
+                                HorizontalAlignment="Left"
+                                Command="{Binding NextMonthCommand}"
+                                IsEnabled="{Binding CanGoNext}"
+                                ToolTip.Tip="{Binding NextMonthLabel}">
+
+                            <Path Width="16"
+                                  Height="16"
+                                  Stretch="Uniform"
+                                  Stroke="{DynamicResource PrimaryText}"
+                                  StrokeThickness="1.8"
+                                  StrokeLineCap="Round"
+                                  Data="M5,3 L11,8 L5,13"/>
+                        </Button>
+
+                        <Button Grid.Column="3"
+                                Classes="calendar-today"
+                                Content="{Binding TodayLabel}"
+                                Command="{Binding GoToTodayCommand}"/>
+                    </Grid>
+
+                    <ProgressBar IsVisible="{Binding IsLoading}"
+                                 IsIndeterminate="True"
+                                 Height="2"
+                                 Foreground="{DynamicResource Accent}"/>
+
+                    <TextBlock IsVisible="{Binding IsLoading}"
+                               Text="{Binding LoadingLabel}"
+                               FontSize="11"
+                               Foreground="{DynamicResource SecondaryText}"/>
+
+                    <ItemsControl ItemsSource="{Binding WeekdayLabels}">
+
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="7"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{Binding}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SecondaryText}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,3,0,2"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ItemsControl ItemsSource="{Binding Days}">
+
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="7" Rows="6"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CalendarDayViewModel">
+
+                                <Button Classes="calendar-cell"
+                                        Classes.today="{Binding IsToday}"
+                                        Classes.selected="{Binding IsSelected}"
+                                        Classes.outside="{Binding !IsCurrentMonth}"
+                                        Command="{Binding SelectCommand}"
+                                        IsEnabled="{Binding IsSelectable}"
+                                        ToolTip.Tip="{Binding SummaryText}"
+                                        Margin="2"
+                                        HorizontalAlignment="Stretch">
+
+                                    <StackPanel Spacing="7">
+
+                                        <TextBlock Text="{Binding DayNumberText}"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource PrimaryText}"/>
+
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="4">
+
+                                            <Border Width="6"
+                                                    Height="6"
+                                                    CornerRadius="3"
+                                                    Background="{DynamicResource Accent}"
+                                                    VerticalAlignment="Center"
+                                                    IsVisible="{Binding HasTasks}"/>
+
+                                            <TextBlock Text="{Binding TaskCountText}"
+                                                       IsVisible="{Binding HasTasks}"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource SecondaryText}"/>
+
+                                            <Border Width="10"
+                                                    Height="3"
+                                                    CornerRadius="1"
+                                                    Background="{DynamicResource SecondaryText}"
+                                                    VerticalAlignment="Center"
+                                                    IsVisible="{Binding HasPlanned}"/>
+
+                                            <Border Width="6"
+                                                    Height="6"
+                                                    Background="{DynamicResource PrimaryText}"
+                                                    VerticalAlignment="Center"
+                                                    IsVisible="{Binding HasActual}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <WrapPanel Orientation="Horizontal">
+
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="5"
+                                    Margin="0,0,15,4">
+
+                            <Border Width="6"
+                                    Height="6"
+                                    CornerRadius="3"
+                                    Background="{DynamicResource Accent}"
+                                    VerticalAlignment="Center"/>
+
+                            <TextBlock Text="{Binding TasksLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryText}"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="5"
+                                    Margin="0,0,15,4">
+
+                            <Border Width="10"
+                                    Height="3"
+                                    CornerRadius="1"
+                                    Background="{DynamicResource SecondaryText}"
+                                    VerticalAlignment="Center"/>
+
+                            <TextBlock Text="{Binding PlannedLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryText}"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="5"
+                                    Margin="0,0,15,4">
+
+                            <Border Width="6"
+                                    Height="6"
+                                    Background="{DynamicResource PrimaryText}"
+                                    VerticalAlignment="Center"/>
+
+                            <TextBlock Text="{Binding ActualLabel}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SecondaryText}"/>
+                        </StackPanel>
+                    </WrapPanel>
+
+                    <TextBlock IsVisible="{Binding IsMonthEmpty}"
+                               Text="{Binding NoMonthDataLabel}"
+                               Foreground="{DynamicResource SecondaryText}"
+                               TextWrapping="Wrap"
+                               FontSize="12"/>
+
+                </StackPanel>
+            </Border>
+
+            <Border IsVisible="{Binding HasLoadError}"
+                    Background="{DynamicResource Surface}"
+                    CornerRadius="8"
+                    Padding="14">
+
+                <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding ErrorText}"
+                               Foreground="{DynamicResource Accent}"
+                               TextWrapping="Wrap"
+                               FontSize="12"/>
+
+                    <Button Classes="calendar-retry"
+                            HorizontalAlignment="Left"
+                            Content="{Binding RetryLabel}"
+                            Command="{Binding RetryCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel IsVisible="{Binding IsLoaded}"
+                        Spacing="12">
+
+                <Border Background="{DynamicResource Surface}"
+                        CornerRadius="8"
+                        Padding="14">
+
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="{Binding SelectedDayLabel}"
+                                   Foreground="{DynamicResource SecondaryText}"
+                                   FontFamily="Menlo, Consolas, Courier New"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"/>
+
+                        <TextBlock Text="{Binding SelectedDayTitle}"
+                                   Foreground="{DynamicResource PrimaryText}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+                <Border IsVisible="{Binding IsSelectedDayEmpty}"
+                        Background="{DynamicResource Surface}"
+                        CornerRadius="8"
+                        Padding="14">
+
+                    <TextBlock Text="{Binding NoEntriesLabel}"
+                               Foreground="{DynamicResource SecondaryText}"
+                               FontSize="12"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <StackPanel IsVisible="{Binding !IsSelectedDayEmpty}"
+                            Spacing="12">
+
+                    <Border Background="{DynamicResource Surface}"
+                            BorderBrush="{DynamicResource Background}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="14">
+
+                        <StackPanel Spacing="9">
+
+                            <TextBlock Text="{Binding TasksLabel}"
+                                       Foreground="{DynamicResource PrimaryText}"
+                                       FontWeight="SemiBold"
+                                       FontSize="12"/>
+
+                            <TextBlock Text="{Binding NoTasksLabel}"
+                                       IsVisible="{Binding !HasSelectedTasks}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="12"/>
+
+                            <ItemsControl ItemsSource="{Binding SelectedTasks}"
+                                          ItemTemplate="{StaticResource CalendarEntryTemplate}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource Surface}"
+                            BorderBrush="{DynamicResource Background}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="14">
+
+                        <StackPanel Spacing="9">
+
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="10">
+
+                                <TextBlock Text="{Binding PlannedLabel}"
+                                           Foreground="{DynamicResource PrimaryText}"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"/>
+
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Spacing="6">
+
+                                    <TextBlock Text="{Binding TotalPlannedLabel}"
+                                               Foreground="{DynamicResource SecondaryText}"
+                                               FontSize="11"/>
+
+                                    <TextBlock Text="{Binding SelectedPlannedText}"
+                                               Foreground="{DynamicResource Accent}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="{Binding NoPlannedLabel}"
+                                       IsVisible="{Binding !HasSelectedPlanned}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="12"/>
+
+                            <ItemsControl ItemsSource="{Binding SelectedPlanned}"
+                                          ItemTemplate="{StaticResource CalendarEntryTemplate}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource Surface}"
+                            BorderBrush="{DynamicResource Background}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="14">
+
+                        <StackPanel Spacing="9">
+
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="10">
+
+                                <TextBlock Text="{Binding ActualLabel}"
+                                           Foreground="{DynamicResource PrimaryText}"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"/>
+
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Spacing="6">
+
+                                    <TextBlock Text="{Binding TotalActualLabel}"
+                                               Foreground="{DynamicResource SecondaryText}"
+                                               FontSize="11"/>
+
+                                    <TextBlock Text="{Binding SelectedActualText}"
+                                               Foreground="{DynamicResource Accent}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="{Binding NoActualLabel}"
+                                       IsVisible="{Binding !HasSelectedActual}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="12"/>
+
+                            <ItemsControl ItemsSource="{Binding SelectedActual}"
+                                          ItemTemplate="{StaticResource CalendarEntryTemplate}"/>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

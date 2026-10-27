@@ -125,8 +125,7 @@ public sealed class TaskService
             taskId,
             cancellationToken);
     }
-
-    // DC-009: Create an independent planning period.
+    
     public async Task<PlanningPeriod> AddPlanningPeriodAsync(
         Guid taskId,
         DateOnly plannedDate,
@@ -161,8 +160,7 @@ public sealed class TaskService
 
         return period;
     }
-
-    // DC-009: Update only the selected planning period.
+    
     public async Task<PlanningPeriod> UpdatePlanningPeriodAsync(
         Guid taskId,
         Guid periodId,
@@ -208,8 +206,7 @@ public sealed class TaskService
 
         return updatedPeriod;
     }
-
-    // DC-009: Delete only the selected planning period.
+    
     public async Task DeletePlanningPeriodAsync(
         Guid taskId,
         Guid periodId,
@@ -230,8 +227,7 @@ public sealed class TaskService
                 $"Planning period '{periodId}' was not found for task '{taskId}'.");
         }
     }
-
-    // DC-010: Work entries are saved independently of task edits and planning.
+    
     public async Task<IReadOnlyList<WorkEntry>> ListWorkEntriesAsync(
         Guid taskId,
         CancellationToken cancellationToken = default)
@@ -350,8 +346,7 @@ public sealed class TaskService
                 $"Work entry '{entryId}' was not found for task '{taskId}'.");
         }
     }
-
-    // Existing callers preserve all planning records.
+    
     public Task<TaskItem> UpdateAsync(
         UpdateTaskRequest request,
         CancellationToken cancellationToken = default)
@@ -362,9 +357,7 @@ public sealed class TaskService
             plannedMinutes: null,
             cancellationToken: cancellationToken);
     }
-
-    // Legacy operation retained for compatibility with DC-008.
-    // Null means clear the single existing planning period.
+    
     public Task<TaskItem> UpdateWithPlannedTimeAsync(
         UpdateTaskRequest request,
         int? plannedMinutes,
@@ -422,8 +415,7 @@ public sealed class TaskService
         task.Title = title;
         task.ShortDescription = request.ShortDescription;
         task.DescriptionMarkdown = request.DescriptionMarkdown;
-
-        // Preserve TaskNumber for callers that do not edit it.
+        
         if (request.UpdateTaskNumber)
         {
             task.TaskNumber = NormalizeTaskNumber(
@@ -495,6 +487,26 @@ public sealed class TaskService
 
         return _repository.DeleteAsync(
             taskId,
+            cancellationToken);
+    }
+    
+    public Task<CalendarData> GetCalendarDataAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (from > to)
+        {
+            throw new ArgumentException(
+                "The calendar range start cannot be later than its end.",
+                nameof(from));
+        }
+
+        return _repository.GetCalendarDataAsync(
+            from,
+            to,
             cancellationToken);
     }
 

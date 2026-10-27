@@ -208,4 +208,24 @@
     <data name="WorkEntryNotFound"><value>Work entry was not found: {0}</value></data>
     <data name="WorkSaveFailed"><value>Could not save work entry: {0}</value></data>
     <data name="WorkDeleteFailed"><value>Could not delete work entry: {0}</value></data>
+
+    <!-- Calendar (DC-011) -->
+    <data name="CalendarToday"><value>Today</value></data>
+    <data name="CalendarPreviousMonth"><value>Previous month</value></data>
+    <data name="CalendarNextMonth"><value>Next month</value></data>
+    <data name="CalendarSelectedDay"><value>SELECTED DAY</value></data>
+    <data name="CalendarTasks"><value>Tasks</value></data>
+    <data name="CalendarPlannedWork"><value>Planned work</value></data>
+    <data name="CalendarActualWork"><value>Actual work</value></data>
+    <data name="CalendarTotalPlanned"><value>Total planned</value></data>
+    <data name="CalendarTotalActual"><value>Total actual</value></data>
+    <data name="CalendarNoEntries"><value>No tasks or work recorded for this day.</value></data>
+    <data name="CalendarNoMonthData"><value>No tasks or recorded work this month.</value></data>
+    <data name="CalendarNoTasks"><value>No tasks on this date.</value></data>
+    <data name="CalendarNoPlanned"><value>No planned work on this date.</value></data>
+    <data name="CalendarNoActual"><value>No actual work recorded on this date.</value></data>
+    <data name="CalendarLoading"><value>Loading calendar...</value></data>
+    <data name="CalendarLoadFailed"><value>Could not load calendar: {0}</value></data>
+    <data name="CalendarRetry"><value>Retry</value></data>
+    <data name="CalendarOpenTask"><value>Open task</value></data>
 </root>
