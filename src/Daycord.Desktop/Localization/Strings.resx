@@ -228,4 +228,20 @@
     <data name="CalendarLoadFailed"><value>Could not load calendar: {0}</value></data>
     <data name="CalendarRetry"><value>Retry</value></data>
     <data name="CalendarOpenTask"><value>Open task</value></data>
+
+    <!-- Home Dashboard (DC-012) -->
+    <data name="HomeDashboardTodayTasks"><value>Today's Tasks</value></data>
+    <data name="HomeDashboardCompleted"><value>Completed</value></data>
+    <data name="HomeDashboardPlannedToday"><value>Planned Today</value></data>
+    <data name="HomeDashboardActualToday"><value>Actual Today</value></data>
+    <data name="HomeDashboardPlannedWork"><value>Planned Work</value></data>
+    <data name="HomeDashboardActualWork"><value>Actual Work</value></data>
+    <data name="HomeDashboardNoTasks"><value>No tasks scheduled for today.</value></data>
+    <data name="HomeDashboardNoPlanned"><value>No planned work today.</value></data>
+    <data name="HomeDashboardNoActual"><value>No work entries for today.</value></data>
+    <data name="HomeDashboardNoEntries"><value>No tasks, planned work or recorded work today.</value></data>
+    <data name="HomeDashboardLoading"><value>Loading dashboard...</value></data>
+    <data name="HomeDashboardLoadFailed"><value>Could not load dashboard: {0}</value></data>
+    <data name="HomeDashboardRetry"><value>Retry</value></data>
+    <data name="HomeDashboardOpenTask"><value>Open task</value></data>
 </root>

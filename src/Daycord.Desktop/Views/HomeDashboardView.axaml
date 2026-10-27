@@ -1,0 +1,251 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Daycord.Desktop.ViewModels"
+             x:Class="Daycord.Desktop.Views.HomeDashboardView"
+             x:DataType="vm:HomeDashboardViewModel"
+             Background="{DynamicResource Background}">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="HomeEntryTemplate"
+                      x:DataType="vm:CalendarEntryViewModel">
+            <Button Classes="home-entry"
+                    Command="{Binding OpenTaskCommand}"
+                    ToolTip.Tip="{Binding TaskTitle}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Grid.Column="0" Spacing="5">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="7">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding TaskNumber}"
+                                       IsVisible="{Binding HasTaskNumber}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource Accent}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding TaskTitle}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource PrimaryText}"/>
+                        </Grid>
+                        <TextBlock Text="{Binding StatusText}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource SecondaryText}"/>
+                        <TextBlock Text="{Binding WorkDescription}"
+                                   IsVisible="{Binding HasDescription}"
+                                   MaxHeight="38"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource PrimaryText}"/>
+                        <TextBlock Text="{Binding Note}"
+                                   IsVisible="{Binding HasNote}"
+                                   MaxHeight="34"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource SecondaryText}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="10"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DurationText}"
+                                   IsVisible="{Binding HasDuration}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Accent}"
+                                   VerticalAlignment="Center"/>
+                        <Path Width="11" Height="11"
+                              Stretch="Uniform"
+                              Stroke="{DynamicResource SecondaryText}"
+                              StrokeThickness="1.6"
+                              StrokeLineCap="Round"
+                              Data="M4,2 L9,6 L4,10"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Button.home-entry">
+            <Setter Property="Background" Value="{DynamicResource Background}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="MinHeight" Value="48"/>
+        </Style>
+        <Style Selector="Button.home-entry:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+        <Style Selector="Button.home-entry:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+        <Style Selector="Button.home-retry">
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Background}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="14,8"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20,20,20,28"
+                    Spacing="16"
+                    MaxWidth="1000"
+                    HorizontalAlignment="Stretch">
+
+            <!-- MainWindow already renders the Home page title. -->
+            <TextBlock Text="{Binding DateText}"
+                       Foreground="{DynamicResource SecondaryText}"
+                       FontSize="14"/>
+
+            <StackPanel IsVisible="{Binding IsLoading}" Spacing="8">
+                <ProgressBar IsIndeterminate="True"
+                             Foreground="{DynamicResource Accent}"
+                             Height="3"/>
+                <TextBlock Text="{Binding LoadingLabel}"
+                           Foreground="{DynamicResource SecondaryText}"
+                           FontSize="12"/>
+            </StackPanel>
+
+            <Border IsVisible="{Binding HasLoadError}"
+                    Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource Accent}"
+                    BorderThickness="1"
+                    CornerRadius="9"
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{Binding ErrorText}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource PrimaryText}"
+                               FontSize="13"/>
+                    <Button Classes="home-retry"
+                            HorizontalAlignment="Left"
+                            Content="{Binding RetryLabel}"
+                            Command="{Binding RetryCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel IsVisible="{Binding IsLoaded}" Spacing="16">
+                <!-- Two columns remain usable at the minimum window width. -->
+                <Grid ColumnDefinitions="*,*"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="10"
+                      RowSpacing="10">
+                    <Border Grid.Row="0" Grid.Column="0"
+                            Background="{DynamicResource Surface}"
+                            CornerRadius="9" Padding="15">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding TodayTasksLabel}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="11"/>
+                            <TextBlock Text="{Binding TodayTaskCount}"
+                                       Foreground="{DynamicResource PrimaryText}"
+                                       FontSize="23" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="0" Grid.Column="1"
+                            Background="{DynamicResource Surface}"
+                            CornerRadius="9" Padding="15">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding CompletedLabel}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="11"/>
+                            <TextBlock Text="{Binding CompletedText}"
+                                       Foreground="{DynamicResource PrimaryText}"
+                                       FontSize="23" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="0"
+                            Background="{DynamicResource Surface}"
+                            CornerRadius="9" Padding="15">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding PlannedTodayLabel}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="11"/>
+                            <TextBlock Text="{Binding PlannedText}"
+                                       Foreground="{DynamicResource Accent}"
+                                       FontSize="23" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="1"
+                            Background="{DynamicResource Surface}"
+                            CornerRadius="9" Padding="15">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding ActualTodayLabel}"
+                                       Foreground="{DynamicResource SecondaryText}"
+                                       FontSize="11"/>
+                            <TextBlock Text="{Binding ActualText}"
+                                       Foreground="{DynamicResource Accent}"
+                                       FontSize="23" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <TextBlock IsVisible="{Binding IsEmpty}"
+                           Text="{Binding NoEntriesLabel}"
+                           FontSize="12"
+                           Foreground="{DynamicResource SecondaryText}"
+                           TextWrapping="Wrap"/>
+
+                <!-- TaskDate controls this section only. -->
+                <Border Background="{DynamicResource Surface}"
+                        CornerRadius="9" Padding="14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{Binding TodayTasksLabel}"
+                                   FontWeight="SemiBold" FontSize="13"
+                                   Foreground="{DynamicResource PrimaryText}"/>
+                        <TextBlock Text="{Binding NoTasksLabel}"
+                                   IsVisible="{Binding !HasTodayTasks}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SecondaryText}"/>
+                        <ItemsControl ItemsSource="{Binding TodayTasks}"
+                                      ItemTemplate="{StaticResource HomeEntryTemplate}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- PlannedDate is independent of TaskDate. -->
+                <Border Background="{DynamicResource Surface}"
+                        CornerRadius="9" Padding="14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{Binding PlannedWorkLabel}"
+                                   FontWeight="SemiBold" FontSize="13"
+                                   Foreground="{DynamicResource PrimaryText}"/>
+                        <TextBlock Text="{Binding NoPlannedLabel}"
+                                   IsVisible="{Binding !HasPlannedWork}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SecondaryText}"/>
+                        <ItemsControl ItemsSource="{Binding PlannedWork}"
+                                      ItemTemplate="{StaticResource HomeEntryTemplate}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- WorkDate is independent of both other dates. -->
+                <Border Background="{DynamicResource Surface}"
+                        CornerRadius="9" Padding="14">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{Binding ActualWorkLabel}"
+                                   FontWeight="SemiBold" FontSize="13"
+                                   Foreground="{DynamicResource PrimaryText}"/>
+                        <TextBlock Text="{Binding NoActualLabel}"
+                                   IsVisible="{Binding !HasActualWork}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SecondaryText}"/>
+                        <ItemsControl ItemsSource="{Binding ActualWork}"
+                                      ItemTemplate="{StaticResource HomeEntryTemplate}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

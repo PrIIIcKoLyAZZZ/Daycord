@@ -17,6 +17,7 @@ public partial class MainWindowViewModel :
     private readonly PlaceholderPageViewModel _placeholderPage;
     private readonly TaskListViewModel _taskListPage;
     private readonly CalendarPageViewModel _calendarPage;
+    private readonly HomeDashboardViewModel _homePage;
     private readonly Func<TerminalViewModel> _createTerminalPage;
     private readonly Func<TaskDetailsViewModel> _createTaskDetailsPage;
 
@@ -39,6 +40,7 @@ public partial class MainWindowViewModel :
         PlaceholderPageViewModel placeholderPage,
         TaskListViewModel taskListPage,
         CalendarPageViewModel calendarPage,
+        HomeDashboardViewModel homePage,
         Func<TerminalViewModel> createTerminalPage,
         Func<TaskDetailsViewModel> createTaskDetailsPage)
     {
@@ -59,6 +61,9 @@ public partial class MainWindowViewModel :
 
         _calendarPage = calendarPage
             ?? throw new ArgumentNullException(nameof(calendarPage));
+
+        _homePage = homePage
+            ?? throw new ArgumentNullException(nameof(homePage));
 
         _createTerminalPage = createTerminalPage
             ?? throw new ArgumentNullException(nameof(createTerminalPage));
@@ -140,6 +145,8 @@ public partial class MainWindowViewModel :
 
             return CurrentPage switch
             {
+                PageKind.Home => _homePage,
+
                 PageKind.Calendar => _calendarPage,
 
                 PageKind.Tasks => _taskListPage,
@@ -212,11 +219,13 @@ public partial class MainWindowViewModel :
 
         OnPropertyChanged(nameof(DatabaseStatusMessage));
 
-        if (_navigation.CurrentPage == PageKind.Calendar &&
-            !_navigation.IsTaskOpen)
-        {
+        if (_navigation.IsTaskOpen)
+            return;
+
+        if (_navigation.CurrentPage == PageKind.Home)
+            _ = _homePage.ActivateAsync();
+        else if (_navigation.CurrentPage == PageKind.Calendar)
             _ = _calendarPage.ActivateAsync();
-        }
     }
 
     public void MarkDatabaseFailed(Exception error)
@@ -289,6 +298,16 @@ public partial class MainWindowViewModel :
             return;
         }
 
+        // NavigationService does not raise CurrentPage for reselecting
+        // the active section. Refresh Home without replacing its ViewModel.
+        if (page == PageKind.Home &&
+            _navigation.CurrentPage == PageKind.Home &&
+            !_navigation.IsTaskOpen)
+        {
+            _ = _homePage.ActivateAsync();
+            return;
+        }
+
         _navigation.NavigateTo(page);
     }
 
@@ -350,6 +369,7 @@ public partial class MainWindowViewModel :
         // Keep calendar selection but stop in-flight month requests
         // while the full task editor is visible.
         _calendarPage.Deactivate();
+        _homePage.Deactivate();
 
         var details = _createTaskDetailsPage();
 
@@ -408,13 +428,14 @@ public partial class MainWindowViewModel :
 
         OnPropertyChanged(nameof(CurrentPageContent));
 
-        // Refresh even if only a PlanningPeriod or WorkEntry changed.
-        // Those independent saves do not raise TaskSaved.
-        if (!_disposed && IsDatabaseReady &&
-            _navigation.CurrentPage == PageKind.Calendar &&
-            !_navigation.IsTaskOpen)
+        // Refresh both read-only pages on return from Task Details.
+        // PlanningPeriods and WorkEntries can be saved without TaskSaved.
+        if (!_disposed && IsDatabaseReady && !_navigation.IsTaskOpen)
         {
-            _ = _calendarPage.ActivateAsync();
+            if (_navigation.CurrentPage == PageKind.Calendar)
+                _ = _calendarPage.ActivateAsync();
+            else if (_navigation.CurrentPage == PageKind.Home)
+                _ = _homePage.ActivateAsync();
         }
 
         if (shouldRefreshHistory && session is not null)
@@ -517,16 +538,19 @@ public partial class MainWindowViewModel :
 
         _placeholderPage.SetPage(page);
 
+        if (page == PageKind.Home &&
+            IsDatabaseReady &&
+            _taskDetailsPage is null)
+            _ = _homePage.ActivateAsync();
+        else
+            _homePage.Deactivate();
+
         if (page == PageKind.Calendar &&
             IsDatabaseReady &&
             _taskDetailsPage is null)
-        {
             _ = _calendarPage.ActivateAsync();
-        }
         else
-        {
             _calendarPage.Deactivate();
-        }
 
         if (page == PageKind.NewTask)
         {
@@ -596,6 +620,7 @@ public partial class MainWindowViewModel :
         _localization.PropertyChanged -= OnLocalizationChanged;
 
         _calendarPage.Deactivate();
+        _homePage.Deactivate();
         HideTaskDetails();
 
         _terminalPage?.Dispose();

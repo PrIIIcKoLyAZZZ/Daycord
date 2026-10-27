@@ -30,6 +30,11 @@
             <views:TaskListView/>
         </DataTemplate>
 
+        <DataTemplate DataType="vm:HomeDashboardViewModel"
+                      x:DataType="vm:HomeDashboardViewModel">
+            <views:HomeDashboardView/>
+        </DataTemplate>
+
         <DataTemplate DataType="vm:CalendarPageViewModel"
                       x:DataType="vm:CalendarPageViewModel">
             <views:CalendarPageView/>
