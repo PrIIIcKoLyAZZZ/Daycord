@@ -658,6 +658,7 @@ public partial class MainWindowViewModel :
         OnPropertyChanged(nameof(NavHomeLabel));
         OnPropertyChanged(nameof(NavCalendarLabel));
         OnPropertyChanged(nameof(NavTasksLabel));
+        OnPropertyChanged(nameof(NavNewTaskLabel));
         OnPropertyChanged(nameof(NavReportsLabel));
         OnPropertyChanged(nameof(NavSettingsLabel));
 

@@ -85,14 +85,34 @@ public sealed class ClosedXmlWorkReportExporter : IWorkReportExporter
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Use the application's selected language,
-        // not the operating system language.
-        var labels = GetLabels(_getLanguage());
+        // Snapshot the selected language once per export.
+        // Standard column tokens and summary labels must
+        // never be localized in different languages.
+        var language = _getLanguage();
+        var labels = GetLabels(language);
+
+        // Create an export-only copy. The original preset,
+        // including its @daycord:* tokens and custom headers,
+        // is never modified or written back to SQLite.
+        var localizedColumns = preset.Columns
+            .Select(column => new WorkReportColumn(
+                column.Field,
+                WorkReportColumnLabels.Resolve(
+                    column.Field,
+                    column.Header,
+                    language)))
+            .ToArray();
+
+        var exportPreset = new WorkReportPreset(
+            preset.Id,
+            preset.Name,
+            preset.IsBuiltIn,
+            localizedColumns);
 
         using var buffer = await Task.Run(
             () => BuildWorkbook(
                 report,
-                preset,
+                exportPreset,
                 labels,
                 cancellationToken),
             cancellationToken).ConfigureAwait(false);

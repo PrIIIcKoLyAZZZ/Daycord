@@ -15,7 +15,7 @@ internal static class PlannedDuration
         @"\s*$",
         RegexOptions.IgnoreCase |
         RegexOptions.CultureInvariant);
-    
+
     public static bool TryParse(
         string? input,
         out int? plannedMinutes)
@@ -41,7 +41,7 @@ internal static class PlannedDuration
 
         var value = input.Trim();
 
-        // A plain number represents hours.
+        // A plain number always represents hours.
         if (int.TryParse(
                 value,
                 NumberStyles.None,
@@ -94,20 +94,79 @@ internal static class PlannedDuration
         plannedMinutes = (int)totalMinutes;
         return true;
     }
-    
+
     public static bool TryParseRequired(
         string? input,
         out int plannedMinutes)
     {
+        return TryParseRequired(
+            input,
+            DefaultMinutesPerDay,
+            out plannedMinutes);
+    }
+
+    public static bool TryParseRequired(
+        string? input,
+        int minutesPerDay,
+        out int plannedMinutes)
+    {
         plannedMinutes = 0;
 
-        if (!TryParse(input, out var parsed) ||
+        if (!TryParse(
+                input,
+                minutesPerDay,
+                out var parsed) ||
             !parsed.HasValue)
         {
             return false;
         }
 
         plannedMinutes = parsed.Value;
+        return true;
+    }
+
+    /// <summary>
+    /// Parses the user-defined length of one day.
+    ///
+    /// The 'd' unit is forbidden because its meaning depends
+    /// on the setting currently being edited.
+    ///
+    /// Uses the existing duration parser and limits the result
+    /// to 1..1440 minutes.
+    /// </summary>
+    public static bool TryParseDayLength(
+        string? input,
+        out int minutes)
+    {
+        minutes = 0;
+
+        if (string.IsNullOrWhiteSpace(input))
+            return false;
+
+        var value = input.Trim();
+        var match = DurationExpression.Match(value);
+
+        // Explicit days are never allowed in this setting.
+        if (match.Success &&
+            match.Groups["days"].Success)
+        {
+            return false;
+        }
+
+        if (!TryParseRequired(
+                value,
+                DefaultMinutesPerDay,
+                out var parsed))
+        {
+            return false;
+        }
+
+        if (parsed is < 1 or > DefaultMinutesPerDay)
+        {
+            return false;
+        }
+
+        minutes = parsed;
         return true;
     }
 
@@ -120,14 +179,10 @@ internal static class PlannedDuration
         var remainingMinutes = minutes % 60;
 
         if (hours == 0)
-        {
             return $"{remainingMinutes}m";
-        }
 
         if (remainingMinutes == 0)
-        {
             return $"{hours}h";
-        }
 
         return $"{hours}h {remainingMinutes}m";
     }

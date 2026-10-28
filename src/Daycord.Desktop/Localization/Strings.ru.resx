@@ -64,6 +64,7 @@
     <data name="TerminalMarkdownLabel"><value>ОПИСАНИЕ MARKDOWN</value></data>
     <data name="TerminalMarkdownPlaceholder"><value>Добавьте подробное описание в Markdown...</value></data>
     <data name="TerminalSaving"><value>Сохранение...</value></data>
+    <data name="TerminalSavingMarkdown"><value>Сохранение...</value></data>
     <data name="TerminalSaveMarkdown"><value>Сохранить описание</value></data>
     <data name="TerminalMarkdownSaveError"><value>Не удалось сохранить описание: {0}</value></data>
     <data name="TerminalMarkdownSaved"><value>Описание сохранено.</value></data>
@@ -170,6 +171,23 @@
     <data name="TaskDetailsCreating"><value>Создание...</value></data>
     <data name="TaskDetailsCreateSuccessful"><value>Задача создана.</value></data>
     <data name="TaskDetailsCreateFailed"><value>Не удалось создать задачу: {0}</value></data>
+
+    <!-- Planning time management (DC-009) -->
+    <data name="PlanningPeriods"><value>ПЛАНОВЫЕ ПЕРИОДЫ</value></data>
+    <data name="PlanningNoPeriods"><value>Плановых периодов пока нет.</value></data>
+    <data name="PlanningAddPeriod"><value>＋ Добавить период</value></data>
+    <data name="PlanningEditPeriod"><value>Изменить период</value></data>
+    <data name="PlanningDeletePeriod"><value>Удалить период</value></data>
+    <data name="PlanningDate"><value>Дата</value></data>
+    <data name="PlanningDuration"><value>Длительность</value></data>
+    <data name="PlanningTotal"><value>Всего запланировано</value></data>
+    <data name="PlanningDeleteTitle"><value>Удалить плановый период?</value></data>
+    <data name="PlanningDeleteMessage"><value>Плановый период будет безвозвратно удалён. Другие периоды и учтённое время не изменятся.</value></data>
+    <data name="PlanningValidationError"><value>Проверьте дату и длительность.</value></data>
+    <data name="PlanningSaveFailed"><value>Не удалось сохранить плановый период: {0}</value></data>
+    <data name="PlanningDeleteFailed"><value>Не удалось удалить плановый период: {0}</value></data>
+    <data name="PlanningSave"><value>Сохранить период</value></data>
+    <data name="PlanningCancel"><value>Отмена</value></data>
 
     <!-- Actual Time / Work Log (DC-010) -->
     <data name="WorkLogTitle"><value>ФАКТИЧЕСКОЕ ВРЕМЯ / ЖУРНАЛ РАБОТ</value></data>
@@ -302,4 +320,23 @@
     <data name="BackupOperationInProgress"><value>Уже выполняется резервное копирование или восстановление.</value></data>
     <data name="BackupRetry"><value>Повторить</value></data>
     <data name="BackupRestoreCancelled"><value>Восстановление отменено. Текущие данные не изменены.</value></data>
+
+    <!-- Application Settings (DC-015) -->
+    <data name="SettingsGeneralHeading"><value>Настройки приложения</value></data>
+    <data name="SettingsLanguageTitle"><value>Язык</value></data>
+    <data name="SettingsLanguageDescription"><value>Язык интерфейса приложения</value></data>
+    <data name="SettingsAppearanceTitle"><value>Оформление</value></data>
+    <data name="SettingsAppearanceDescription"><value>Тема оформления приложения</value></data>
+    <data name="SettingsTimeTrackingHeading"><value>УЧЁТ ВРЕМЕНИ</value></data>
+    <data name="SettingsDayLengthTitle"><value>Продолжительность одного дня</value></data>
+    <data name="SettingsDayLengthDescription"><value>Используется для интерпретации 1d при вводе длительности. Например: 24h, 8h или 7h 30m.</value></data>
+    <data name="SettingsSaveDuration"><value>Сохранить</value></data>
+    <data name="SettingsDataHeading"><value>ДАННЫЕ</value></data>
+    <data name="SettingsDayEquivalent"><value>1d = {0}</value></data>
+    <data name="SettingsThemeSystem"><value>Системная</value></data>
+    <data name="SettingsThemeLight"><value>Светлая</value></data>
+    <data name="SettingsThemeDark"><value>Тёмная</value></data>
+    <data name="SettingsSaved"><value>Настройки сохранены.</value></data>
+    <data name="SettingsSaveFailed"><value>Не удалось сохранить настройки. Предыдущие значения остаются активными.</value></data>
+    <data name="SettingsInvalidDuration"><value>Введите длительность от 1m до 24h (например, 8h или 7h 30m). Единица d здесь не допускается.</value></data>
 </root>

@@ -7,6 +7,7 @@ using Daycord.Core.Application.Models;
 using Daycord.Core.Application.Services;
 using Daycord.Desktop.Localization;
 using Daycord.Desktop.Navigation;
+using Daycord.Desktop.Settings;
 
 namespace Daycord.Desktop.ViewModels;
 
@@ -21,6 +22,7 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
     private readonly TaskService _taskService;
     private readonly ILocalizationService _localization;
     private readonly INavigationService _navigation;
+    private readonly IAppSettingsService _appSettings;
     private readonly CancellationTokenSource _sessionCancellation = new();
 
     private string? _formErrorKey;
@@ -49,7 +51,8 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
     public TerminalViewModel(
         TaskService taskService,
         ILocalizationService localization,
-        INavigationService navigation)
+        INavigationService navigation,
+        IAppSettingsService appSettings)
     {
         _taskService = taskService
             ?? throw new ArgumentNullException(nameof(taskService));
@@ -59,6 +62,9 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
 
         _navigation = navigation
             ?? throw new ArgumentNullException(nameof(navigation));
+
+        _appSettings = appSettings
+            ?? throw new ArgumentNullException(nameof(appSettings));
 
         _localization.PropertyChanged += OnLocalizationChanged;
     }
@@ -197,8 +203,21 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // DC-015:
+        // Read the current persisted day length for every
+        // new task creation.
+        //
+        // Do not cache MinutesPerDay in the constructor:
+        // the user can change it while Daycord is running.
+        //
+        // Previously stored durations remain untouched.
+
+        var minutesPerDay =
+            _appSettings.Current.MinutesPerDay;
+
         if (!PlannedDuration.TryParse(
                 PlannedTimeInput,
+                minutesPerDay,
                 out var plannedMinutes))
         {
             SetFormError("QuickTaskInvalidTime");

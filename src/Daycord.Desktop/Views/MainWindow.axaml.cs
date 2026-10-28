@@ -9,7 +9,9 @@ namespace Daycord.Desktop.Views;
 public partial class MainWindow : Window
 {
     private ReportsViewModel? _reportsViewModel;
+    private Func<SettingsViewModel>? _createSettingsViewModel;
     private Func<BackupSettingsViewModel>? _createBackupSettingsViewModel;
+    private SettingsViewModel? _settingsViewModel;
     private BackupSettingsViewModel? _backupSettingsViewModel;
 
     private bool _isSavingReportsBeforeClose;
@@ -36,18 +38,28 @@ public partial class MainWindow : Window
     public MainWindow(
         MainWindowViewModel viewModel,
         ReportsViewModel reportsViewModel,
+        Func<SettingsViewModel> createSettingsViewModel,
         Func<BackupSettingsViewModel> createBackupSettingsViewModel)
         : this()
     {
-        DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        DataContext = viewModel
+            ?? throw new ArgumentNullException(nameof(viewModel));
+
         _reportsViewModel = reportsViewModel
             ?? throw new ArgumentNullException(nameof(reportsViewModel));
+
+        _createSettingsViewModel = createSettingsViewModel
+            ?? throw new ArgumentNullException(
+                nameof(createSettingsViewModel));
+
         _createBackupSettingsViewModel = createBackupSettingsViewModel
-            ?? throw new ArgumentNullException(nameof(createBackupSettingsViewModel));
+            ?? throw new ArgumentNullException(
+                nameof(createBackupSettingsViewModel));
 
         // Lazy construction: on a restart with PendingRestore, the VM must
         // read the manifest AFTER the startup coordinator has finalized it.
         viewModel.PropertyChanged += OnMainViewModelPropertyChanged;
+
         Closed += (_, _) =>
             viewModel.PropertyChanged -= OnMainViewModelPropertyChanged;
     }
@@ -60,28 +72,40 @@ public partial class MainWindow : Window
             e.PropertyName is nameof(MainWindowViewModel.IsSettingsSelected)
                               or nameof(MainWindowViewModel.IsDatabaseReady))
         {
-            EnsureBackupSettingsViewModel();
+            EnsureSettingsViewModels();
         }
     }
 
-    private void EnsureBackupSettingsViewModel()
+    private void EnsureSettingsViewModels()
     {
-        if (_backupSettingsViewModel is not null ||
-            DataContext is not MainWindowViewModel vm ||
+        // Settings must not instantiate database-dependent ViewModels
+        // before pending restoration and migrations are finished.
+        if (DataContext is not MainWindowViewModel vm ||
             !vm.IsDatabaseReady ||
             !vm.IsSettingsSelected ||
+            _createSettingsViewModel is null ||
             _createBackupSettingsViewModel is null)
         {
             return;
         }
 
-        _backupSettingsViewModel = _createBackupSettingsViewModel();
-
-        var page = this.FindControl<BackupSettingsView>("BackupSettingsPage")
+        var page = this.FindControl<SettingsView>("SettingsPage")
             ?? throw new InvalidOperationException(
-                "The Backup & Restore view was not found.");
+                "The Settings view was not found.");
 
-        page.DataContext = _backupSettingsViewModel;
+        // Both ViewModels are singletons and are created only on the
+        // first visit to Settings. Their state survives navigation.
+        _settingsViewModel ??= _createSettingsViewModel();
+        _backupSettingsViewModel ??= _createBackupSettingsViewModel();
+
+        if (!ReferenceEquals(page.DataContext, _settingsViewModel))
+        {
+            page.DataContext = _settingsViewModel;
+        }
+
+        // Keep DC-014 dialogs, validation and operation lifecycle
+        // inside its existing dedicated view and ViewModel.
+        page.SetBackupViewModel(_backupSettingsViewModel);
     }
 
     /// <summary>

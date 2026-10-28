@@ -1,0 +1,223 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Daycord.Desktop.ViewModels"
+             xmlns:views="using:Daycord.Desktop.Views"
+             x:Class="Daycord.Desktop.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel"
+             Background="{DynamicResource Background}">
+
+    <UserControl.Styles>
+        <Style Selector="ComboBox.settings-select">
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="MinWidth" Value="220"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style Selector="ComboBox.settings-select:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+
+        <Style Selector="ComboBox.settings-select:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+
+        <Style Selector="TextBox.settings-duration">
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style Selector="TextBox.settings-duration:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+
+        <Style Selector="Button.settings-primary">
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Background}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="Button.settings-primary:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+
+        <Grid Margin="30,26,30,36">
+
+            <StackPanel MaxWidth="760"
+                        HorizontalAlignment="Left"
+                        Spacing="22">
+
+                <!-- Application Settings -->
+
+                <StackPanel Spacing="11">
+                    <Border Width="36"
+                            Height="3"
+                            CornerRadius="2"
+                            HorizontalAlignment="Left"
+                            Background="{DynamicResource Accent}"/>
+
+                    <TextBlock Text="{Binding GeneralHeading}"
+                               FontSize="19"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryText}"/>
+                </StackPanel>
+
+                <!-- Language -->
+
+                <Border Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource SidebarSelectedBackground}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="22">
+
+                    <StackPanel Spacing="15">
+                        <StackPanel Spacing="7">
+                            <TextBlock Text="{Binding LanguageTitle}"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryText}"/>
+
+                            <TextBlock Text="{Binding LanguageDescription}"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SecondaryText}"/>
+                        </StackPanel>
+
+                        <ComboBox Classes="settings-select"
+                                  HorizontalAlignment="Left"
+                                  ItemsSource="{Binding Languages}"
+                                  SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
+                                  IsEnabled="{Binding CanChangePreferences}">
+
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SettingsLanguageOption">
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               FontSize="13"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- Appearance -->
+
+                <Border Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource SidebarSelectedBackground}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="22">
+
+                    <StackPanel Spacing="15">
+                        <StackPanel Spacing="7">
+                            <TextBlock Text="{Binding AppearanceTitle}"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryText}"/>
+
+                            <TextBlock Text="{Binding AppearanceDescription}"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SecondaryText}"/>
+                        </StackPanel>
+
+                        <ComboBox Classes="settings-select"
+                                  HorizontalAlignment="Left"
+                                  ItemsSource="{Binding Themes}"
+                                  SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                                  IsEnabled="{Binding CanChangePreferences}">
+
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SettingsThemeOption">
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               FontSize="13"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- Duration of one day -->
+
+                <Border Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource SidebarSelectedBackground}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="22">
+
+                    <StackPanel Spacing="15">
+                        <StackPanel Spacing="7">
+                            <TextBlock Text="{Binding DayLengthTitle}"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryText}"/>
+
+                            <TextBlock Text="{Binding DayLengthDescription}"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SecondaryText}"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="10">
+
+                            <TextBox Classes="settings-duration"
+                                     Width="165"
+                                     Text="{Binding DurationInput, Mode=TwoWay}"
+                                     PlaceholderText="8h"/>
+
+                            <Button Classes="settings-primary"
+                                    Content="{Binding SaveDurationLabel}"
+                                    Command="{Binding SaveDurationCommand}"
+                                    IsEnabled="{Binding CanSaveDuration}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding DayEquivalent}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Accent}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Save feedback -->
+
+                <TextBlock IsVisible="{Binding HasStatus}"
+                           Text="{Binding StatusMessage}"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryText}"/>
+
+                <ProgressBar IsVisible="{Binding IsBusy}"
+                             IsIndeterminate="True"
+                             Height="3"
+                             Foreground="{DynamicResource Accent}"/>
+
+                <!-- Backup & Restore -->
+
+                <views:BackupSettingsView x:Name="BackupSettingsPage"/>
+
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

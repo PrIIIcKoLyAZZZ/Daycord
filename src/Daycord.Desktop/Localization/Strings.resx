@@ -63,6 +63,7 @@
     <data name="TerminalCollapseTask"><value>Collapse task details</value></data>
     <data name="TerminalMarkdownLabel"><value>MARKDOWN DESCRIPTION</value></data>
     <data name="TerminalMarkdownPlaceholder"><value>Add detailed Markdown description...</value></data>
+    <data name="TerminalSaving"><value>Saving...</value></data>
     <data name="TerminalSavingMarkdown"><value>Saving...</value></data>
     <data name="TerminalSaveMarkdown"><value>Save Description</value></data>
     <data name="TerminalMarkdownSaveError"><value>Could not save description: {0}</value></data>
@@ -319,4 +320,23 @@
     <data name="BackupOperationInProgress"><value>Another backup or restore operation is in progress.</value></data>
     <data name="BackupRetry"><value>Retry</value></data>
     <data name="BackupRestoreCancelled"><value>Restore cancelled. Current data was not changed.</value></data>
+
+    <!-- Application Settings (DC-015) -->
+    <data name="SettingsGeneralHeading"><value>Application Settings</value></data>
+    <data name="SettingsLanguageTitle"><value>Language</value></data>
+    <data name="SettingsLanguageDescription"><value>Interface language</value></data>
+    <data name="SettingsAppearanceTitle"><value>Appearance</value></data>
+    <data name="SettingsAppearanceDescription"><value>Application theme</value></data>
+    <data name="SettingsTimeTrackingHeading"><value>TIME TRACKING</value></data>
+    <data name="SettingsDayLengthTitle"><value>Duration of one day</value></data>
+    <data name="SettingsDayLengthDescription"><value>Used to interpret 1d when entering durations. Enter 24h, 8h or 7h 30m.</value></data>
+    <data name="SettingsSaveDuration"><value>Save</value></data>
+    <data name="SettingsDataHeading"><value>DATA</value></data>
+    <data name="SettingsDayEquivalent"><value>1d = {0}</value></data>
+    <data name="SettingsThemeSystem"><value>System</value></data>
+    <data name="SettingsThemeLight"><value>Light</value></data>
+    <data name="SettingsThemeDark"><value>Dark</value></data>
+    <data name="SettingsSaved"><value>Settings saved.</value></data>
+    <data name="SettingsSaveFailed"><value>Could not save settings. Previous values remain active.</value></data>
+    <data name="SettingsInvalidDuration"><value>Enter a duration from 1m to 24h (e.g. 8h or 7h 30m). The d unit is not allowed here.</value></data>
 </root>
