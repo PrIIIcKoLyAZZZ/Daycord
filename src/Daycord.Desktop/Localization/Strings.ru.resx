@@ -63,7 +63,7 @@
     <data name="TerminalCollapseTask"><value>Свернуть сведения о задаче</value></data>
     <data name="TerminalMarkdownLabel"><value>ОПИСАНИЕ MARKDOWN</value></data>
     <data name="TerminalMarkdownPlaceholder"><value>Добавьте подробное описание в Markdown...</value></data>
-    <data name="TerminalSavingMarkdown"><value>Сохранение...</value></data>
+    <data name="TerminalSaving"><value>Сохранение...</value></data>
     <data name="TerminalSaveMarkdown"><value>Сохранить описание</value></data>
     <data name="TerminalMarkdownSaveError"><value>Не удалось сохранить описание: {0}</value></data>
     <data name="TerminalMarkdownSaved"><value>Описание сохранено.</value></data>
@@ -227,4 +227,43 @@
     <data name="HomeDashboardLoadFailed"><value>Не удалось загрузить главную страницу: {0}</value></data>
     <data name="HomeDashboardRetry"><value>Повторить</value></data>
     <data name="HomeDashboardOpenTask"><value>Открыть задачу</value></data>
+
+    <!-- Monthly Excel Reports (DC-013) -->
+    <data name="ReportsMonthlyWorkReport"><value>Ежемесячный отчёт о работе</value></data>
+    <data name="ReportsReportingPeriod"><value>Отчётный период</value></data>
+    <data name="ReportsPreviousMonth"><value>Предыдущий месяц</value></data>
+    <data name="ReportsNextMonth"><value>Следующий месяц</value></data>
+    <data name="ReportsCurrentMonth"><value>Текущий месяц</value></data>
+    <data name="ReportsWorkEntries"><value>Записи о работе</value></data>
+    <data name="ReportsTotalActualTime"><value>Всего фактического времени</value></data>
+    <data name="ReportsExportToExcel"><value>Экспортировать в Excel</value></data>
+    <data name="ReportsExporting"><value>Экспорт в Excel...</value></data>
+    <data name="ReportsLoading"><value>Загрузка отчёта...</value></data>
+    <data name="ReportsNoWorkEntries"><value>В этом месяце нет записей о выполненной работе. Можно экспортировать пустой отчёт.</value></data>
+    <data name="ReportsRetry"><value>Повторить</value></data>
+    <data name="ReportsLoadFailed"><value>Не удалось загрузить отчёт: {0}</value></data>
+    <data name="ReportsExportFailed"><value>Не удалось экспортировать отчёт: {0}</value></data>
+    <data name="ReportsExportCompleted"><value>Отчёт успешно сохранён: {0}</value></data>
+    <data name="ReportsInvalidPeriod"><value>Выбран некорректный отчётный период.</value></data>
+    <data name="ReportsFileSaveFailed"><value>Не удалось сохранить файл Excel: {0}</value></data>
+
+    <!-- Configurable Reports (DC-013 extension) -->
+    <data name="ReportsDateFrom"><value>С</value></data>
+    <data name="ReportsDateTo"><value>По</value></data>
+    <data name="ReportsReportRows"><value>Строки отчёта</value></data>
+    <data name="ReportsTotalPlannedTime"><value>Всего планового времени</value></data>
+    <data name="ReportsPreset"><value>Пресет отчёта</value></data>
+    <data name="ReportsPresetName"><value>Название пресета</value></data>
+    <data name="ReportsNewPresetNamePlaceholder"><value>Название нового пресета</value></data>
+    <data name="ReportsCreatePreset"><value>Создать пресет</value></data>
+    <data name="ReportsDeletePreset"><value>Удалить пресет</value></data>
+    <data name="ReportsResetToDefault"><value>Сбросить настройки</value></data>
+    <data name="ReportsColumnsAndOrder"><value>Столбцы и порядок</value></data>
+    <data name="ReportsColumnsDescription"><value>Выберите поля, измените заголовки и порядок столбцов.</value></data>
+    <data name="ReportsMoveUp"><value>Переместить вверх</value></data>
+    <data name="ReportsMoveDown"><value>Переместить вниз</value></data>
+    <data name="ReportsUnsavedChanges"><value>Несохранённые изменения</value></data>
+    <data name="ReportsSaveColumnSettings"><value>Сохранить настройки столбцов</value></data>
+    <data name="ReportsNoReportRows"><value>За выбранный период нет строк для отчёта.</value></data>
+    <data name="ReportsPresetFailed"><value>Не удалось загрузить или сохранить пресеты: {0}</value></data>
 </root>

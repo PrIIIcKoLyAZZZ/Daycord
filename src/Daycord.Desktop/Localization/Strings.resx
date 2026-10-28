@@ -244,4 +244,43 @@
     <data name="HomeDashboardLoadFailed"><value>Could not load dashboard: {0}</value></data>
     <data name="HomeDashboardRetry"><value>Retry</value></data>
     <data name="HomeDashboardOpenTask"><value>Open task</value></data>
+
+    <!-- Monthly Excel Reports (DC-013) -->
+    <data name="ReportsMonthlyWorkReport"><value>Monthly Work Report</value></data>
+    <data name="ReportsReportingPeriod"><value>Reporting period</value></data>
+    <data name="ReportsPreviousMonth"><value>Previous month</value></data>
+    <data name="ReportsNextMonth"><value>Next month</value></data>
+    <data name="ReportsCurrentMonth"><value>Current month</value></data>
+    <data name="ReportsWorkEntries"><value>Work entries</value></data>
+    <data name="ReportsTotalActualTime"><value>Total actual time</value></data>
+    <data name="ReportsExportToExcel"><value>Export to Excel</value></data>
+    <data name="ReportsExporting"><value>Exporting to Excel...</value></data>
+    <data name="ReportsLoading"><value>Loading report...</value></data>
+    <data name="ReportsNoWorkEntries"><value>No work entries recorded for this month. You can still export an empty report.</value></data>
+    <data name="ReportsRetry"><value>Retry</value></data>
+    <data name="ReportsLoadFailed"><value>Could not load report: {0}</value></data>
+    <data name="ReportsExportFailed"><value>Could not export report: {0}</value></data>
+    <data name="ReportsExportCompleted"><value>Report saved successfully: {0}</value></data>
+    <data name="ReportsInvalidPeriod"><value>The selected reporting period is invalid.</value></data>
+    <data name="ReportsFileSaveFailed"><value>Could not save the Excel file: {0}</value></data>
+
+    <!-- Configurable Reports (DC-013 extension) -->
+    <data name="ReportsDateFrom"><value>From</value></data>
+    <data name="ReportsDateTo"><value>To</value></data>
+    <data name="ReportsReportRows"><value>Report rows</value></data>
+    <data name="ReportsTotalPlannedTime"><value>Total planned time</value></data>
+    <data name="ReportsPreset"><value>Report preset</value></data>
+    <data name="ReportsPresetName"><value>Preset name</value></data>
+    <data name="ReportsNewPresetNamePlaceholder"><value>Name for a new preset</value></data>
+    <data name="ReportsCreatePreset"><value>Create preset</value></data>
+    <data name="ReportsDeletePreset"><value>Delete preset</value></data>
+    <data name="ReportsResetToDefault"><value>Reset to default</value></data>
+    <data name="ReportsColumnsAndOrder"><value>Columns and order</value></data>
+    <data name="ReportsColumnsDescription"><value>Select fields, rename headers and change their order.</value></data>
+    <data name="ReportsMoveUp"><value>Move up</value></data>
+    <data name="ReportsMoveDown"><value>Move down</value></data>
+    <data name="ReportsUnsavedChanges"><value>Unsaved changes</value></data>
+    <data name="ReportsSaveColumnSettings"><value>Save column settings</value></data>
+    <data name="ReportsNoReportRows"><value>No report rows for the selected period.</value></data>
+    <data name="ReportsPresetFailed"><value>Could not save or load report presets: {0}</value></data>
 </root>

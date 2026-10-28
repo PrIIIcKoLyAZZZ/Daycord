@@ -18,6 +18,7 @@ public partial class MainWindowViewModel :
     private readonly TaskListViewModel _taskListPage;
     private readonly CalendarPageViewModel _calendarPage;
     private readonly HomeDashboardViewModel _homePage;
+    private readonly ReportsViewModel _reportsPage;
     private readonly Func<TerminalViewModel> _createTerminalPage;
     private readonly Func<TaskDetailsViewModel> _createTaskDetailsPage;
 
@@ -26,6 +27,7 @@ public partial class MainWindowViewModel :
 
     private string? _databaseErrorDetails;
     private bool _disposed;
+    private bool _isSavingReportsBeforeNavigation;
 
     [ObservableProperty]
     private bool _isDatabaseReady;
@@ -41,6 +43,7 @@ public partial class MainWindowViewModel :
         TaskListViewModel taskListPage,
         CalendarPageViewModel calendarPage,
         HomeDashboardViewModel homePage,
+        ReportsViewModel reportsPage,
         Func<TerminalViewModel> createTerminalPage,
         Func<TaskDetailsViewModel> createTaskDetailsPage)
     {
@@ -64,6 +67,9 @@ public partial class MainWindowViewModel :
 
         _homePage = homePage
             ?? throw new ArgumentNullException(nameof(homePage));
+
+        _reportsPage = reportsPage
+            ?? throw new ArgumentNullException(nameof(reportsPage));
 
         _createTerminalPage = createTerminalPage
             ?? throw new ArgumentNullException(nameof(createTerminalPage));
@@ -151,6 +157,8 @@ public partial class MainWindowViewModel :
 
                 PageKind.Tasks => _taskListPage,
 
+                PageKind.Reports => _reportsPage,
+
                 PageKind.NewTask when _terminalPage is not null =>
                     _terminalPage,
 
@@ -226,6 +234,8 @@ public partial class MainWindowViewModel :
             _ = _homePage.ActivateAsync();
         else if (_navigation.CurrentPage == PageKind.Calendar)
             _ = _calendarPage.ActivateAsync();
+        else if (_navigation.CurrentPage == PageKind.Reports)
+            _ = _reportsPage.ActivateAsync();
     }
 
     public void MarkDatabaseFailed(Exception error)
@@ -255,32 +265,33 @@ public partial class MainWindowViewModel :
     // Sidebar navigation
 
     [RelayCommand]
-    private void NavigateHome() =>
-        NavigateTo(PageKind.Home);
+    private Task NavigateHome() =>
+        NavigateToAsync(PageKind.Home);
 
     [RelayCommand]
-    private void NavigateCalendar() =>
-        NavigateTo(PageKind.Calendar);
+    private Task NavigateCalendar() =>
+        NavigateToAsync(PageKind.Calendar);
 
     [RelayCommand]
-    private void NavigateTasks() =>
-        NavigateTo(PageKind.Tasks);
+    private Task NavigateTasks() =>
+        NavigateToAsync(PageKind.Tasks);
 
     [RelayCommand]
-    private void NavigateNewTask() =>
-        NavigateTo(PageKind.NewTask);
+    private Task NavigateNewTask() =>
+        NavigateToAsync(PageKind.NewTask);
 
     [RelayCommand]
-    private void NavigateReports() =>
-        NavigateTo(PageKind.Reports);
+    private Task NavigateReports() =>
+        NavigateToAsync(PageKind.Reports);
 
     [RelayCommand]
-    private void NavigateSettings() =>
-        NavigateTo(PageKind.Settings);
+    private Task NavigateSettings() =>
+        NavigateToAsync(PageKind.Settings);
 
-    private void NavigateTo(PageKind page)
+    private async Task NavigateToAsync(PageKind page)
     {
-        if (_disposed || !IsDatabaseReady)
+        if (_disposed || !IsDatabaseReady ||
+            _isSavingReportsBeforeNavigation)
         {
             return;
         }
@@ -298,17 +309,68 @@ public partial class MainWindowViewModel :
             return;
         }
 
-        // NavigationService does not raise CurrentPage for reselecting
-        // the active section. Refresh Home without replacing its ViewModel.
-        if (page == PageKind.Home &&
-            _navigation.CurrentPage == PageKind.Home &&
-            !_navigation.IsTaskOpen)
+        // Reselecting the active section does not change CurrentPage.
+        if (_navigation.CurrentPage == page && !_navigation.IsTaskOpen)
         {
-            _ = _homePage.ActivateAsync();
-            return;
+            if (page == PageKind.Home)
+            {
+                _ = _homePage.ActivateAsync();
+                return;
+            }
+
+            if (page == PageKind.Reports)
+            {
+                _ = _reportsPage.ActivateAsync();
+                return;
+            }
         }
 
-        _navigation.NavigateTo(page);
+        // Save pending report settings before leaving Reports.
+        //
+        // The existing ReportsViewModel.Deactivate() cancels its
+        // session. Therefore, persistence must finish BEFORE
+        // the navigation service changes CurrentPage.
+
+        if (_navigation.CurrentPage == PageKind.Reports &&
+            page != PageKind.Reports)
+        {
+            // Do not interrupt a preset operation or Excel export.
+            if (_reportsPage.IsPresetBusy || _reportsPage.IsExporting)
+                return;
+
+            if (_reportsPage.HasUnsavedChanges)
+            {
+                _isSavingReportsBeforeNavigation = true;
+
+                try
+                {
+                    if (!_reportsPage.SaveColumnsCommand.CanExecute(null))
+                        return;
+
+                    await _reportsPage.SaveColumnsCommand.ExecuteAsync(null);
+
+                    // The Reports command handles validation and
+                    // database errors internally. If saving failed,
+                    // remain on Reports so the user can correct
+                    // the configuration.
+                    if (_disposed ||
+                        !IsDatabaseReady ||
+                        _navigation.CurrentPage != PageKind.Reports ||
+                        _reportsPage.HasUnsavedChanges ||
+                        _reportsPage.HasPresetError)
+                    {
+                        return;
+                    }
+                }
+                finally
+                {
+                    _isSavingReportsBeforeNavigation = false;
+                }
+            }
+        }
+
+        if (!_disposed && IsDatabaseReady)
+            _navigation.NavigateTo(page);
     }
 
     // Navigation notifications
@@ -366,10 +428,9 @@ public partial class MainWindowViewModel :
     {
         HideTaskDetails();
 
-        // Keep calendar selection but stop in-flight month requests
-        // while the full task editor is visible.
         _calendarPage.Deactivate();
         _homePage.Deactivate();
+        _reportsPage.Deactivate();
 
         var details = _createTaskDetailsPage();
 
@@ -400,7 +461,6 @@ public partial class MainWindowViewModel :
 
         OnPropertyChanged(nameof(CurrentPageContent));
 
-        // No INSERT occurs until the user presses Save.
         _ = details.InitializeForCreateAsync();
     }
 
@@ -413,10 +473,12 @@ public partial class MainWindowViewModel :
 
         _taskDetailsPage = null;
 
-        // Refresh when leaving Task Details even if only a planning
-        // period was saved. These operations do not raise TaskSaved.
+        // PlanningPeriods and WorkEntries can be saved separately
+        // from TaskSaved, so refresh on return from Task Details.
+
         var session = _terminalPage;
         var closedTaskId = details.TaskId;
+
         var shouldRefreshHistory = !_disposed &&
             session is not null &&
             _navigation.CurrentPage == PageKind.NewTask &&
@@ -428,14 +490,14 @@ public partial class MainWindowViewModel :
 
         OnPropertyChanged(nameof(CurrentPageContent));
 
-        // Refresh both read-only pages on return from Task Details.
-        // PlanningPeriods and WorkEntries can be saved without TaskSaved.
         if (!_disposed && IsDatabaseReady && !_navigation.IsTaskOpen)
         {
             if (_navigation.CurrentPage == PageKind.Calendar)
                 _ = _calendarPage.ActivateAsync();
             else if (_navigation.CurrentPage == PageKind.Home)
                 _ = _homePage.ActivateAsync();
+            else if (_navigation.CurrentPage == PageKind.Reports)
+                _ = _reportsPage.ActivateAsync();
         }
 
         if (shouldRefreshHistory && session is not null)
@@ -443,9 +505,6 @@ public partial class MainWindowViewModel :
             _ = RefreshSessionHistoryAsync(closedTaskId, session);
         }
     }
-
-    // Reload persisted values after closing the editor.
-    // SQLite is the source of truth for the planned duration.
 
     private async Task RefreshSessionHistoryAsync(
         Guid taskId,
@@ -517,8 +576,6 @@ public partial class MainWindowViewModel :
                 continue;
             }
 
-            // Preserve the displayed duration until the database
-            // refresh replaces it with the current aggregate.
             history[i] = new SessionTaskItemViewModel(
                 e.Task,
                 current.PlannedMinutes,
@@ -526,8 +583,6 @@ public partial class MainWindowViewModel :
 
             break;
         }
-
-        // TaskListView reloads SQLite when returning to the visual tree.
     }
 
     // Main section lifecycle
@@ -551,6 +606,13 @@ public partial class MainWindowViewModel :
             _ = _calendarPage.ActivateAsync();
         else
             _calendarPage.Deactivate();
+
+        if (page == PageKind.Reports &&
+            IsDatabaseReady &&
+            _taskDetailsPage is null)
+            _ = _reportsPage.ActivateAsync();
+        else
+            _reportsPage.Deactivate();
 
         if (page == PageKind.NewTask)
         {
@@ -621,9 +683,12 @@ public partial class MainWindowViewModel :
 
         _calendarPage.Deactivate();
         _homePage.Deactivate();
+        _reportsPage.Deactivate();
         HideTaskDetails();
 
         _terminalPage?.Dispose();
         _terminalPage = null;
+
+        _reportsPage.Dispose();
     }
 }

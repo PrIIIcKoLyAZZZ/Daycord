@@ -6,6 +6,7 @@ using Daycord.Desktop.ViewModels;
 using Daycord.Desktop.Views;
 using Daycord.Infrastructure.Persistence;
 using Daycord.Infrastructure.Persistence.Repositories;
+using Daycord.Infrastructure.Reports;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Daycord.Desktop.Bootstrap;
@@ -15,6 +16,8 @@ public static class ServiceRegistration
     public static ServiceProvider CreateServiceProvider()
     {
         var services = new ServiceCollection();
+
+        // Database
 
         services.AddSingleton<AppDataPaths>();
 
@@ -28,11 +31,15 @@ public static class ServiceRegistration
             IDatabaseInitializer,
             DatabaseInitializer>();
 
+        // Task data
+
         services.AddTransient<
             ITaskRepository,
             SqliteTaskRepository>();
 
         services.AddTransient<TaskService>();
+
+        // Shared desktop services
 
         services.AddSingleton<
             INavigationService,
@@ -42,16 +49,49 @@ public static class ServiceRegistration
             ILocalizationService,
             LocalizationService>();
 
+        // Legacy monthly export
+
+        services.AddSingleton<MonthlyWorkReportService>();
+
+        services.AddSingleton<
+            IMonthlyReportExporter,
+            ClosedXmlMonthlyReportExporter>();
+
+        // Configurable reports
+
+        services.AddTransient<
+            IWorkReportPresetRepository,
+            SqliteWorkReportPresetRepository>();
+
+        services.AddSingleton<WorkReportPresetService>();
+
+        services.AddSingleton<WorkReportService>();
+
+        // The localization delegate is evaluated on EVERY export.
+        // Therefore changing the Daycord language does not
+        // require restarting or recreating ReportsViewModel.
+
+        services.AddSingleton<IWorkReportExporter>(provider =>
+        {
+            var localization = provider
+                .GetRequiredService<ILocalizationService>();
+
+            return new ClosedXmlWorkReportExporter(
+                () => localization.CurrentLanguage);
+        });
+
+        services.AddSingleton<ReportsViewModel>();
+
+        // Views and ViewModels
+
         services.AddSingleton<PlaceholderPageViewModel>();
 
-        // Preserve the month and selected date across Task Details navigation.
+        // Preserve selected month and date during navigation.
         services.AddSingleton<CalendarPageViewModel>();
 
-        // Keep the Dashboard instance while navigating to Task Details.
         services.AddSingleton<HomeDashboardViewModel>();
 
-        // The Task List is a singleton so that filters,
-        // sorting and selection survive navigation.
+        // Preserve task filters, sorting and selection.
         services.AddSingleton<TaskListViewModel>(provider =>
         {
             var taskList = ActivatorUtilities
@@ -60,27 +100,21 @@ public static class ServiceRegistration
             var navigation = provider
                 .GetRequiredService<INavigationService>();
 
-            // Open an existing task by its ID.
             taskList.TaskOpenRequested += navigation.OpenTask;
-
-            // Request the full creation editor.
-            // No database record is created here.
             taskList.TaskCreationRequested += navigation.OpenNewTask;
 
             return taskList;
         });
 
-        // Each Quick Task session is created separately.
-        // MainWindowViewModel controls its lifetime.
+        // Separate Quick Task sessions.
         services.AddSingleton<Func<TerminalViewModel>>(provider =>
-            () => ActivatorUtilities.CreateInstance<TerminalViewModel>(
-                provider));
+            () => ActivatorUtilities
+                .CreateInstance<TerminalViewModel>(provider));
 
-        // Each full task editor receives a fresh ViewModel.
-        // It is disposed when the editor is closed.
+        // Fresh full task editor for each opening.
         services.AddSingleton<Func<TaskDetailsViewModel>>(provider =>
-            () => ActivatorUtilities.CreateInstance<TaskDetailsViewModel>(
-                provider));
+            () => ActivatorUtilities
+                .CreateInstance<TaskDetailsViewModel>(provider));
 
         services.AddSingleton<MainWindowViewModel>();
 
