@@ -120,7 +120,7 @@
     <data name="TaskListSortTitle"><value>Title</value></data>
     <data name="TaskListSortStatus"><value>Status</value></data>
 
-    <!-- Task List actions (DC-007, package 7.3) -->
+    <!-- Task List actions (DC-007) -->
     <data name="TaskListShowFilters"><value>Filters</value></data>
     <data name="TaskListHideFilters"><value>Hide filters</value></data>
     <data name="TaskListFiltersActive"><value>Filters active</value></data>
@@ -161,10 +161,10 @@
     <data name="TaskDetailsValidationError"><value>Invalid task data: {0}</value></data>
     <data name="TaskDetailsSaveFailed"><value>Could not save task: {0}</value></data>
 
-    <!-- Quick Task: open existing task (DC-008) -->
+    <!-- Quick Task: open existing task -->
     <data name="QuickTaskOpenDetails"><value>Open task details</value></data>
 
-    <!-- Full task creation (DC-008) -->
+    <!-- Full task creation -->
     <data name="TaskDetailsCreateHeading"><value>CREATE TASK</value></data>
     <data name="TaskDetailsCreateAction"><value>Create Task</value></data>
     <data name="TaskDetailsCreating"><value>Creating...</value></data>
@@ -283,4 +283,40 @@
     <data name="ReportsSaveColumnSettings"><value>Save column settings</value></data>
     <data name="ReportsNoReportRows"><value>No report rows for the selected period.</value></data>
     <data name="ReportsPresetFailed"><value>Could not save or load report presets: {0}</value></data>
+
+    <!-- Backup & Restore (DC-014) -->
+    <data name="BackupSectionTitle"><value>Backup &amp; Restore</value></data>
+    <data name="BackupSectionDescription"><value>Keep a copy of your Daycord data and restore it when needed.</value></data>
+    <data name="BackupCreateTitle"><value>Create backup</value></data>
+    <data name="BackupCreateDescription"><value>Save a complete copy of tasks, planned and actual work, report presets, and settings.</value></data>
+    <data name="BackupCreateButton"><value>Create backup</value></data>
+    <data name="BackupRestoreTitle"><value>Restore from backup</value></data>
+    <data name="BackupRestoreDescription"><value>Select a Daycord SQLite backup to replace current data after restarting the app.</value></data>
+    <data name="BackupChooseFile"><value>Choose backup file</value></data>
+    <data name="BackupConfirmationTitle"><value>Restore data?</value></data>
+    <data name="BackupConfirmationWarning"><value>Restoring this backup will replace your current tasks, work entries, planning periods, report presets and report settings.</value></data>
+    <data name="BackupSafetyWarning"><value>Daycord will save a safety copy of the current database before applying the restore at the next launch.</value></data>
+    <data name="BackupCancel"><value>Cancel</value></data>
+    <data name="BackupConfirmRestore"><value>Restore</value></data>
+    <data name="BackupLastOperation"><value>LAST OPERATION</value></data>
+    <data name="BackupWorking"><value>Working with the database...</value></data>
+    <data name="BackupRestartRequired"><value>Close Daycord normally, then open it again to apply the prepared restore.</value></data>
+    <data name="BackupSaveDialogTitle"><value>Save Daycord backup</value></data>
+    <data name="BackupOpenDialogTitle"><value>Choose a Daycord backup</value></data>
+    <data name="BackupRestorePrepared"><value>Restore prepared. Restart Daycord to apply it.</value></data>
+    <data name="BackupCreated"><value>Backup created successfully: {0}</value></data>
+    <data name="BackupCorrupted"><value>The selected SQLite backup is corrupted. No data was changed.</value></data>
+    <data name="BackupIncompatible"><value>This backup is incompatible with the current Daycord database schema. No data was changed.</value></data>
+    <data name="BackupInvalid"><value>The selected file is not a valid Daycord backup.</value></data>
+    <data name="BackupReportsBusy"><value>Finish exporting or save report settings before preparing a restore.</value></data>
+    <data name="BackupRestoreFailed"><value>Could not prepare the restore. Current data was not replaced.</value></data>
+    <data name="BackupPermissionDenied"><value>Access denied. Check your permissions for the selected file or folder.</value></data>
+    <data name="BackupFileUnavailable"><value>The selected file or folder is unavailable.</value></data>
+    <data name="BackupStorageError"><value>Could not read or write the backup. Check available space, access rights, and file locks.</value></data>
+    <data name="BackupFailed"><value>Could not create the backup.</value></data>
+    <data name="BackupRestoreCompleted"><value>Restore completed successfully.</value></data>
+    <data name="BackupRestoreSafetyCopy"><value>A safety copy of your previous data has been retained.</value></data>
+    <data name="BackupOperationInProgress"><value>Another backup or restore operation is in progress.</value></data>
+    <data name="BackupRetry"><value>Retry</value></data>
+    <data name="BackupRestoreCancelled"><value>Restore cancelled. Current data was not changed.</value></data>
 </root>

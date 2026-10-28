@@ -1,0 +1,233 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Daycord.Desktop.ViewModels"
+             x:Class="Daycord.Desktop.Views.BackupSettingsView"
+             x:DataType="vm:BackupSettingsViewModel"
+             Background="{DynamicResource Background}">
+
+    <UserControl.Styles>
+        <Style Selector="Button.backup-primary">
+            <Setter Property="Background"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Background}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="Button.backup-secondary">
+            <Setter Property="Background"
+                    Value="{DynamicResource Surface}"/>
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="MinHeight" Value="40"/>
+        </Style>
+
+        <Style Selector="Button.backup-secondary:pointerover">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+
+        <Style Selector="Button.backup-primary:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+
+        <Style Selector="Button.backup-secondary:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+
+        <StackPanel Margin="30,26,30,36"
+                    MaxWidth="760"
+                    HorizontalAlignment="Left"
+                    Spacing="22">
+
+            <!-- Section introduction -->
+
+            <StackPanel Spacing="11">
+                <Border Width="36"
+                        Height="3"
+                        CornerRadius="2"
+                        HorizontalAlignment="Left"
+                        Background="{DynamicResource Accent}"/>
+
+                <TextBlock Text="{Binding SectionTitle}"
+                           FontSize="19"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryText}"/>
+
+                <TextBlock Text="{Binding SectionDescription}"
+                           FontSize="13"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryText}"/>
+            </StackPanel>
+
+            <!-- Create backup -->
+
+            <Border Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource SidebarSelectedBackground}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="22">
+
+                <StackPanel Spacing="15">
+                    <StackPanel Spacing="7">
+                        <TextBlock Text="{Binding CreateTitle}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryText}"/>
+
+                        <TextBlock Text="{Binding CreateDescription}"
+                                   FontSize="13"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryText}"/>
+                    </StackPanel>
+
+                    <Button Classes="backup-primary"
+                            HorizontalAlignment="Left"
+                            Content="{Binding CreateButtonLabel}"
+                            IsEnabled="{Binding CanStartOperation}"
+                            Click="OnCreateBackupClicked"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Restore backup -->
+
+            <Border Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource SidebarSelectedBackground}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="22">
+
+                <StackPanel Spacing="15">
+                    <StackPanel Spacing="7">
+                        <TextBlock Text="{Binding RestoreTitle}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryText}"/>
+
+                        <TextBlock Text="{Binding RestoreDescription}"
+                                   FontSize="13"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryText}"/>
+                    </StackPanel>
+
+                    <Button Classes="backup-secondary"
+                            HorizontalAlignment="Left"
+                            Content="{Binding ChooseButtonLabel}"
+                            IsEnabled="{Binding CanStartOperation}"
+                            Click="OnChooseBackupClicked"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Restore confirmation -->
+
+            <Border IsVisible="{Binding HasRestoreConfirmation}"
+                    Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource Accent}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="22">
+
+                <StackPanel Spacing="16">
+                    <TextBlock Text="{Binding ConfirmationTitle}"
+                               FontSize="17"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryText}"/>
+
+                    <TextBlock Text="{Binding ConfirmationWarning}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource PrimaryText}"/>
+
+                    <TextBlock Text="{Binding SafetyWarning}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SecondaryText}"/>
+
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10">
+
+                        <Button Classes="backup-secondary"
+                                Content="{Binding CancelLabel}"
+                                IsEnabled="{Binding CanConfirmRestore}"
+                                Click="OnCancelRestoreClicked"/>
+
+                        <Button Classes="backup-primary"
+                                Content="{Binding ConfirmLabel}"
+                                IsEnabled="{Binding CanConfirmRestore}"
+                                Click="OnConfirmRestoreClicked"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Operation progress -->
+
+            <Border IsVisible="{Binding IsBusy}"
+                    Background="{DynamicResource Surface}"
+                    CornerRadius="10"
+                    Padding="20">
+
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{Binding WorkingLabel}"
+                               FontSize="13"
+                               Foreground="{DynamicResource PrimaryText}"/>
+
+                    <ProgressBar IsIndeterminate="True"
+                                 Height="3"
+                                 Foreground="{DynamicResource Accent}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Last operation -->
+
+            <Border IsVisible="{Binding HasStatus}"
+                    Background="{DynamicResource Surface}"
+                    CornerRadius="10"
+                    Padding="20">
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding LastOperationLabel}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SecondaryText}"/>
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource PrimaryText}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Restart instruction -->
+
+            <Border IsVisible="{Binding IsRestartRequired}"
+                    Background="{DynamicResource SidebarSelectedBackground}"
+                    BorderBrush="{DynamicResource Accent}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="20">
+
+                <TextBlock Text="{Binding RestartMessage}"
+                           FontSize="13"
+                           FontWeight="Medium"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource PrimaryText}"/>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
