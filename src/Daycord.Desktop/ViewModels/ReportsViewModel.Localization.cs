@@ -12,10 +12,6 @@ public sealed partial class ReportsViewModel
     public ReportUiLabels UiLabels =>
         _uiLabels ??= new ReportUiLabels(_localization);
 
-    /// <summary>
-    /// Keeps the shared calendar in the same language
-    /// as the rest of Daycord.
-    /// </summary>
     public CultureInfo CalendarCulture => Culture;
 }
 
@@ -23,7 +19,8 @@ public sealed class ReportUiLabels : ObservableObject
 {
     private readonly ILocalizationService _localization;
 
-    public ReportUiLabels(ILocalizationService localization)
+    public ReportUiLabels(
+        ILocalizationService localization)
     {
         _localization = localization
             ?? throw new ArgumentNullException(nameof(localization));
@@ -34,8 +31,6 @@ public sealed class ReportUiLabels : ObservableObject
     private string Text(string key) =>
         _localization.GetString(key);
 
-    // Fallbacks let the new visual layout work before
-    // the new keys are added to both RESX files.
     private string Label(
         string key,
         string english,
@@ -44,7 +39,9 @@ public sealed class ReportUiLabels : ObservableObject
         var value = Text(key);
 
         if (value != key)
+        {
             return value;
+        }
 
         return _localization.CurrentLanguage == "ru"
             ? russian
@@ -52,16 +49,20 @@ public sealed class ReportUiLabels : ObservableObject
     }
 
     public string DateFrom => Text("ReportsDateFrom");
+
     public string DateTo => Text("ReportsDateTo");
+
     public string ReportRows => Text("ReportsReportRows");
 
     public string Preset => Text("ReportsPreset");
+
     public string PresetName => Text("ReportsPresetName");
 
     public string NewPresetNamePlaceholder =>
         Text("ReportsNewPresetNamePlaceholder");
 
     public string CreatePreset => Text("ReportsCreatePreset");
+
     public string DeletePreset => Text("ReportsDeletePreset");
 
     public string ResetToDefault =>
@@ -74,6 +75,7 @@ public sealed class ReportUiLabels : ObservableObject
         Text("ReportsColumnsDescription");
 
     public string MoveUp => Text("ReportsMoveUp");
+
     public string MoveDown => Text("ReportsMoveDown");
 
     public string UnsavedChanges =>
@@ -85,7 +87,13 @@ public sealed class ReportUiLabels : ObservableObject
     public string NoReportRows =>
         Text("ReportsNoReportRows");
 
-    // New labels for the nested Export settings page.
+    // The built-in preset retains its stable name in SQLite.
+    // Only its displayed caption is localized.
+    public string DefaultPreset =>
+        Label(
+            "ReportsDefaultPreset",
+            "Default",
+            "По умолчанию");
 
     public string ExportSettings =>
         Label(
@@ -156,6 +164,7 @@ public sealed class ReportUiLabels : ObservableObject
         OnPropertyChanged(nameof(SaveColumnSettings));
         OnPropertyChanged(nameof(NoReportRows));
 
+        OnPropertyChanged(nameof(DefaultPreset));
         OnPropertyChanged(nameof(ExportSettings));
         OnPropertyChanged(nameof(BackToReport));
         OnPropertyChanged(nameof(CreateNewPreset));

@@ -8,6 +8,7 @@ using Daycord.Core.Application.Services;
 using Daycord.Core.Domain.Entities;
 using Daycord.Desktop.Localization;
 using Daycord.Desktop.Navigation;
+using Daycord.Desktop.Settings;
 
 namespace Daycord.Desktop.ViewModels;
 
@@ -22,6 +23,13 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
     private readonly TaskService _tasks;
     private readonly ILocalizationService _localization;
     private readonly INavigationService _navigation;
+    private readonly IAppSettingsService _appSettings;
+
+    // Freeze the interpretation of "1d" for each active editor.
+    // Changing preferences must never reinterpret an unsaved draft.
+    private int _createInputMinutesPerDay = AppSettings.DefaultMinutesPerDay;
+    private int _periodInputMinutesPerDay = AppSettings.DefaultMinutesPerDay;
+    private int _workEntryInputMinutesPerDay = AppSettings.DefaultMinutesPerDay;
     private readonly CancellationTokenSource _lifetime = new();
 
     private Guid? _taskId;
@@ -44,9 +52,11 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
 
     // DC-010: Unsaved drafts are independent for each WorkEntry.
     private readonly Dictionary<Guid, WorkEntrySnapshot> _workEntryDrafts = new();
+    private readonly Dictionary<Guid, int> _workEntryDraftDayLengths = new();
 
     // Separate draft for creating a new WorkEntry.
     private WorkEntrySnapshot? _newWorkEntryDraft;
+    private int? _newWorkEntryDraftDayLength;
     private WorkEntrySnapshot _newWorkEntryBaseline = new(
         string.Empty, string.Empty, string.Empty, string.Empty);
 
@@ -95,13 +105,16 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
     public TaskDetailsViewModel(
         TaskService tasks,
         ILocalizationService localization,
-        INavigationService navigation)
+        INavigationService navigation,
+        IAppSettingsService appSettings)
     {
         _tasks = tasks ?? throw new ArgumentNullException(nameof(tasks));
         _localization = localization
             ?? throw new ArgumentNullException(nameof(localization));
         _navigation = navigation
             ?? throw new ArgumentNullException(nameof(navigation));
+        _appSettings = appSettings
+            ?? throw new ArgumentNullException(nameof(appSettings));
 
         _localization.PropertyChanged += OnLocalizationChanged;
     }
@@ -452,6 +465,10 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
     {
         _initializationStarted = true;
         _taskId = id;
+        if (mode == TaskDetailsEditorMode.Create)
+        {
+            _createInputMinutesPerDay = _appSettings.Current.MinutesPerDay;
+        }
         EditorMode = mode;
         IsLoaded = false;
         IsTaskNotFound = false;
@@ -871,6 +888,8 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
 
     private void OpenPeriodEditor()
     {
+        // One editor session, one meaning for the "d" unit.
+        _periodInputMinutesPerDay = _appSettings.Current.MinutesPerDay;
         _periodBaseline = CurrentPeriodSnapshot();
         IsPeriodDraftDirty = false;
         SetError(null);
@@ -902,6 +921,7 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         if (!TryGetPeriodDate(out var date) ||
             !PlannedDuration.TryParseRequired(
                 PeriodDurationInput,
+                _periodInputMinutesPerDay,
                 out var minutes))
         {
             SetError("PlanningValidationError");
@@ -1139,13 +1159,22 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         if (_editingWorkEntryId is Guid entryId)
         {
             if (dirty)
+            {
                 _workEntryDrafts[entryId] = snapshot;
+                _workEntryDraftDayLengths[entryId] = _workEntryInputMinutesPerDay;
+            }
             else
+            {
                 _workEntryDrafts.Remove(entryId);
+                _workEntryDraftDayLengths.Remove(entryId);
+            }
         }
         else
         {
             _newWorkEntryDraft = dirty ? snapshot : null;
+            _newWorkEntryDraftDayLength = dirty
+                ? _workEntryInputMinutesPerDay
+                : null;
         }
 
         NotifyWorkEntryDraftState();
@@ -1154,7 +1183,8 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
     private void SetWorkEntryEditor(
         Guid? entryId,
         WorkEntrySnapshot baseline,
-        WorkEntrySnapshot current)
+        WorkEntrySnapshot current,
+        int minutesPerDay)
     {
         // Property changes during context switching must not
         // overwrite the previously selected entry's draft.
@@ -1164,6 +1194,7 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         {
             _editingWorkEntryId = entryId;
             _workEntryBaseline = baseline;
+            _workEntryInputMinutesPerDay = minutesPerDay;
 
             WorkDateInputText = current.Date;
             WorkDurationInput = current.Duration;
@@ -1218,7 +1249,11 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
             current = baseline;
         }
 
-        SetWorkEntryEditor(null, baseline, current);
+        var minutesPerDay = _newWorkEntryDraft.HasValue
+            ? _newWorkEntryDraftDayLength ?? _appSettings.Current.MinutesPerDay
+            : _appSettings.Current.MinutesPerDay;
+
+        SetWorkEntryEditor(null, baseline, current, minutesPerDay);
     }
 
     private void EditWorkEntry(
@@ -1248,7 +1283,12 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
             ? draft
             : baseline;
 
-        SetWorkEntryEditor(entry.Id, baseline, current);
+        var minutesPerDay = _workEntryDrafts.ContainsKey(entry.Id)
+            ? _workEntryDraftDayLengths.GetValueOrDefault(
+                entry.Id, _appSettings.Current.MinutesPerDay)
+            : _appSettings.Current.MinutesPerDay;
+
+        SetWorkEntryEditor(entry.Id, baseline, current, minutesPerDay);
     }
 
     private void OnWorkEntryDraftEdited()
@@ -1268,14 +1308,23 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         if (_editingWorkEntryId is Guid entryId)
         {
             if (IsWorkEntryDraftDirty)
+            {
                 _workEntryDrafts[entryId] = snapshot;
+                _workEntryDraftDayLengths[entryId] = _workEntryInputMinutesPerDay;
+            }
             else
+            {
                 _workEntryDrafts.Remove(entryId);
+                _workEntryDraftDayLengths.Remove(entryId);
+            }
         }
         else
         {
             _newWorkEntryDraft = IsWorkEntryDraftDirty
                 ? snapshot
+                : null;
+            _newWorkEntryDraftDayLength = IsWorkEntryDraftDirty
+                ? _workEntryInputMinutesPerDay
                 : null;
         }
 
@@ -1295,6 +1344,7 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         if (!TryGetWorkDate(out var date) ||
             !PlannedDuration.TryParseRequired(
                 WorkDurationInput,
+                _workEntryInputMinutesPerDay,
                 out var minutes))
         {
             SetError("WorkValidationError");
@@ -1337,9 +1387,15 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
             // Only remove the draft confirmed as saved.
             // Other entries' drafts must remain intact.
             if (savingEntryId is Guid persistedId)
+            {
                 _workEntryDrafts.Remove(persistedId);
+                _workEntryDraftDayLengths.Remove(persistedId);
+            }
             else
+            {
                 _newWorkEntryDraft = null;
+                _newWorkEntryDraftDayLength = null;
+            }
 
             NotifyWorkEntryDraftState();
 
@@ -1397,9 +1453,15 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         if (discardCurrentDraft)
         {
             if (_editingWorkEntryId is Guid entryId)
+            {
                 _workEntryDrafts.Remove(entryId);
+                _workEntryDraftDayLengths.Remove(entryId);
+            }
             else
+            {
                 _newWorkEntryDraft = null;
+                _newWorkEntryDraftDayLength = null;
+            }
         }
 
         _editingWorkEntryId = null;
@@ -1463,6 +1525,7 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
 
             // Remove any unsaved draft of the deleted entry.
             _workEntryDrafts.Remove(id);
+            _workEntryDraftDayLengths.Remove(id);
 
             _workEntryPendingDeletionId = null;
             IsDeleteWorkEntryConfirmationOpen = false;
@@ -1540,6 +1603,7 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         {
             if (!PlannedDuration.TryParse(
                 PlannedTimeInput,
+                _createInputMinutesPerDay,
                 out minutes))
             {
                 SetError("QuickTaskInvalidTime");
@@ -1820,7 +1884,9 @@ public sealed partial class TaskDetailsViewModel : ObservableObject, IDisposable
         _workEntryPendingDeletionId = null;
 
         _workEntryDrafts.Clear();
+        _workEntryDraftDayLengths.Clear();
         _newWorkEntryDraft = null;
+        _newWorkEntryDraftDayLength = null;
 
         _localization.PropertyChanged -= OnLocalizationChanged;
 

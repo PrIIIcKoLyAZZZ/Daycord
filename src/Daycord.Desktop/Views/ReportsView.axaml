@@ -592,7 +592,7 @@
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate x:DataType="models:WorkReportPreset">
                                             <Grid>
-                                                <TextBlock Text="Default"
+                                                <TextBlock Text="{ReflectionBinding $parent[UserControl].DataContext.UiLabels.DefaultPreset}"
                                                            IsVisible="{Binding IsBuiltIn}"/>
 
                                                 <TextBlock Text="{Binding Name}"

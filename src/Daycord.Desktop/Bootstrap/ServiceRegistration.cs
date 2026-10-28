@@ -2,6 +2,7 @@ using Daycord.Core.Application.Contracts;
 using Daycord.Core.Application.Services;
 using Daycord.Desktop.Localization;
 using Daycord.Desktop.Navigation;
+using Daycord.Desktop.Settings;
 using Daycord.Desktop.ViewModels;
 using Daycord.Desktop.Views;
 using Daycord.Infrastructure.Persistence;
@@ -31,9 +32,23 @@ public static class ServiceRegistration
             IDatabaseInitializer,
             DatabaseInitializer>();
 
-        // User Backup & Restore (DC-014)
-        services.AddSingleton<IUserBackupService, UserBackupService>();
+        // Backup & Restore — DC-014
+
+        services.AddSingleton<
+            IUserBackupService,
+            UserBackupService>();
+
         services.AddSingleton<PendingRestoreCoordinator>();
+
+        // Application Settings — DC-015
+
+        services.AddSingleton<
+            IAppSettingsRepository,
+            SqliteAppSettingsRepository>();
+
+        services.AddSingleton<
+            IAppSettingsService,
+            AppSettingsService>();
 
         // Task data
 
@@ -43,7 +58,7 @@ public static class ServiceRegistration
 
         services.AddTransient<TaskService>();
 
-        // Shared desktop services
+        // Desktop services
 
         services.AddSingleton<
             INavigationService,
@@ -53,7 +68,7 @@ public static class ServiceRegistration
             ILocalizationService,
             LocalizationService>();
 
-        // Configurable reports
+        // Reports
 
         services.AddTransient<
             IWorkReportPresetRepository,
@@ -62,10 +77,6 @@ public static class ServiceRegistration
         services.AddSingleton<WorkReportPresetService>();
 
         services.AddSingleton<WorkReportService>();
-
-        // The localization delegate is evaluated on EVERY export.
-        // Therefore changing the Daycord language does not
-        // require restarting or recreating ReportsViewModel.
 
         services.AddSingleton<IWorkReportExporter>(provider =>
         {
@@ -78,21 +89,35 @@ public static class ServiceRegistration
 
         services.AddSingleton<ReportsViewModel>();
 
-        // Settings is initialized lazily, after startup restoration completes.
-        services.AddSingleton<BackupSettingsViewModel>();
-        services.AddSingleton<Func<BackupSettingsViewModel>>(provider =>
-            () => provider.GetRequiredService<BackupSettingsViewModel>());
+        // Backup & Restore.
+        // Keep lazy initialization after PendingRestore.
 
-        // Views and ViewModels
+        services.AddSingleton<BackupSettingsViewModel>();
+
+        services.AddSingleton<Func<BackupSettingsViewModel>>(
+            provider =>
+                () => provider.GetRequiredService<
+                    BackupSettingsViewModel>());
+
+        // Settings.
+        // The SettingsViewModel requires loaded AppSettings,
+        // so it must not be constructed during initial DI setup.
+
+        services.AddSingleton<SettingsViewModel>();
+
+        services.AddSingleton<Func<SettingsViewModel>>(
+            provider =>
+                () => provider.GetRequiredService<
+                    SettingsViewModel>());
+
+        // Existing views and ViewModels
 
         services.AddSingleton<PlaceholderPageViewModel>();
 
-        // Preserve selected month and date during navigation.
         services.AddSingleton<CalendarPageViewModel>();
 
         services.AddSingleton<HomeDashboardViewModel>();
 
-        // Preserve task filters, sorting and selection.
         services.AddSingleton<TaskListViewModel>(provider =>
         {
             var taskList = ActivatorUtilities
@@ -107,12 +132,10 @@ public static class ServiceRegistration
             return taskList;
         });
 
-        // Separate Quick Task sessions.
         services.AddSingleton<Func<TerminalViewModel>>(provider =>
             () => ActivatorUtilities
                 .CreateInstance<TerminalViewModel>(provider));
 
-        // Fresh full task editor for each opening.
         services.AddSingleton<Func<TaskDetailsViewModel>>(provider =>
             () => ActivatorUtilities
                 .CreateInstance<TaskDetailsViewModel>(provider));

@@ -989,31 +989,6 @@ public sealed partial class ReportsViewModel :
         _selectedPreset is not null &&
         _saveDialog is not null;
 
-    /// <summary>
-    /// Builds a display-only copy of the preset.
-    /// SQLite retains the language-independent header tokens.
-    /// </summary>
-    private static WorkReportPreset LocalizePresetForExport(
-        WorkReportPreset preset,
-        string language)
-    {
-        var localizedColumns = preset.Columns
-            .Select(column =>
-                new WorkReportColumn(
-                    column.Field,
-                    WorkReportColumnLabels.Resolve(
-                        column.Field,
-                        column.Header,
-                        language)))
-            .ToArray();
-
-        return new WorkReportPreset(
-            preset.Id,
-            preset.Name,
-            preset.IsBuiltIn,
-            localizedColumns);
-    }
-
     [RelayCommand(CanExecute = nameof(CanExecuteExport))]
     private async Task ExportAsync()
     {
@@ -1081,19 +1056,16 @@ public sealed partial class ReportsViewModel :
 
             ApplyReport(freshReport);
 
-            // Resolve headers at export time. The preset
-            // stored in SQLite remains unchanged.
-            var localizedPreset = LocalizePresetForExport(
-                preset,
-                _localization.CurrentLanguage);
-
+            // The exporter captures the language once and uses
+            // that snapshot for both the automatic headers and
+            // the report totals. SQLite tokens stay unchanged.
             await using (var stream = await target.OpenWriteAsync())
             {
                 source.Token.ThrowIfCancellationRequested();
 
                 await _exporter.ExportAsync(
                     freshReport,
-                    localizedPreset,
+                    preset,
                     stream,
                     source.Token);
             }

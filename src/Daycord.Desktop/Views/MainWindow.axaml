@@ -322,10 +322,11 @@
                                     VerticalContentAlignment="Stretch"
                                     Content="{Binding CurrentPageContent}"/>
 
-                    <!-- DC-014: standalone backup section, hosted only in Settings.
-                         MainWindow retains the single shared page header. -->
+                    <!-- DC-015: Settings hosts the existing DC-014 backup UI.
+                         The shared page header remains in MainWindow. -->
                     <Border IsVisible="{Binding IsSettingsSelected}">
-                        <views:BackupSettingsView x:Name="BackupSettingsPage"/>
+                        <views:SettingsView x:Name="SettingsPage"
+                                            DataContext="{x:Null}"/>
                     </Border>
                 </Grid>
             </Grid>

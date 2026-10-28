@@ -13,9 +13,6 @@ public sealed class MigrationRunner
     private const string ResourcePrefix =
         "Daycord.Infrastructure.Persistence.Migrations.";
 
-    private const string LegacyUtcFormat =
-        "yyyy-MM-dd HH:mm:ss.FFFFFFF";
-
     private const string IsoUtcFormat =
         "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'";
 
@@ -128,24 +125,6 @@ public sealed class MigrationRunner
             var pending = migrations
                 .Skip(applied.Count)
                 .ToList();
-
-            // DC-003 rework:
-            // Before applying 002 to an existing database, verify
-            // that the old timestamp has a recognized representation.
-            //
-            // The original MigrationRunner supplied DateTime.UtcNow
-            // directly to Microsoft.Data.Sqlite. That code path
-            // explains the known legacy UTC representation.
-            //
-            // A value with an unknown format is not assumed to be UTC.
-            if (pending.Any(m => m.Version == 2) &&
-                applied.Count > 0)
-            {
-                await ValidateLegacyMigrationTimesAsync(
-                    connection,
-                    transaction,
-                    cancellationToken);
-            }
 
             if (pending.Count > 0)
             {
@@ -378,75 +357,6 @@ public sealed class MigrationRunner
                     "changed after being applied.");
             }
         }
-    }
-
-    private static async Task ValidateLegacyMigrationTimesAsync(
-        SqliteConnection connection,
-        SqliteTransaction transaction,
-        CancellationToken cancellationToken)
-    {
-        var rows = (await connection.QueryAsync<MigrationTime>(
-            new CommandDefinition(
-                """
-                SELECT Version, AppliedAtUtc
-                FROM __SchemaMigrations
-                ORDER BY Version;
-                """,
-                transaction: transaction,
-                cancellationToken: cancellationToken))).ToList();
-
-        // Only version 001 can precede the UTC normalization migration.
-        if (rows.Count != 1 || rows[0].Version != 1)
-        {
-            throw new InvalidOperationException(
-                "Unexpected migration history before UTC normalization.");
-        }
-
-        var timestamp = rows[0].AppliedAtUtc;
-
-        if (IsKnownLegacyUtc(timestamp) ||
-            IsExplicitUtc(timestamp))
-        {
-            return;
-        }
-
-        throw new InvalidOperationException(
-            "Migration 001 contains an unrecognized timestamp format. " +
-            "Automatic UTC conversion was cancelled to protect " +
-            "the original value.");
-    }
-
-    private static bool IsKnownLegacyUtc(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return false;
-        }
-
-        // The original DC-003 implementation supplied DateTime.UtcNow
-        // to Microsoft.Data.Sqlite. The resulting provider format
-        // uses a space separator and up to seven fractional digits.
-        //
-        // We accept only this specific historical representation.
-        if (!Regex.IsMatch(
-                value,
-                @"^[0-9]{4}-[0-9]{2}-[0-9]{2} " +
-                @"[0-9]{2}:[0-9]{2}:[0-9]{2}" +
-                @"(\.[0-9]{1,7})?$",
-                RegexOptions.CultureInvariant))
-        {
-            return false;
-        }
-
-        return DateTime.TryParseExact(
-            value,
-            [
-                LegacyUtcFormat,
-                "yyyy-MM-dd HH:mm:ss"
-            ],
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.None,
-            out _);
     }
 
     private static bool IsExplicitUtc(string? value)
