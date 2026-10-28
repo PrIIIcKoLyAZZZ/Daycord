@@ -1,6 +1,5 @@
 -- DAYCORD
--- Initial database schema
--- Baseline: DC-006 / Quick Task
+-- Consolidated initial schema, pre-release.
 
 -- ============================================
 -- TASK STATUSES
@@ -40,7 +39,6 @@ CREATE UNIQUE INDEX UX_TaskStatuses_SystemKey
     ON TaskStatuses(SystemKey)
     WHERE SystemKey IS NOT NULL;
 
-
 -- ============================================
 -- TASKS
 -- ============================================
@@ -48,20 +46,14 @@ CREATE UNIQUE INDEX UX_TaskStatuses_SystemKey
 CREATE TABLE Tasks (
                        Id TEXT NOT NULL PRIMARY KEY,
 
-    -- Optional task date.
-    -- Default "today" is provided by the UI,
-    -- not by the database.
                        TaskDate TEXT NULL,
 
-    -- Optional external issue number:
-    -- KREMD-1122, DEV-24, etc.
                        TaskNumber TEXT NULL
         CHECK (
             TaskNumber IS NULL
             OR length(trim(TaskNumber)) > 0
         ),
 
-    -- Required human-readable title.
                        Title TEXT NOT NULL
                            CHECK (length(trim(Title)) > 0),
 
@@ -92,7 +84,6 @@ CREATE INDEX IX_Tasks_TaskNumber
 CREATE INDEX IX_Tasks_StatusId
     ON Tasks(StatusId);
 
-
 -- ============================================
 -- PLANNING PERIODS
 -- ============================================
@@ -117,7 +108,6 @@ CREATE INDEX IX_PlanningPeriods_TaskId
 
 CREATE INDEX IX_PlanningPeriods_PlannedDate
     ON PlanningPeriods(PlannedDate);
-
 
 -- ============================================
 -- WORK ENTRIES
@@ -152,7 +142,6 @@ CREATE INDEX IX_WorkEntries_TaskId
 CREATE INDEX IX_WorkEntries_WorkDate
     ON WorkEntries(WorkDate);
 
-
 -- ============================================
 -- BUILT-IN TASK STATUSES
 -- ============================================
@@ -182,3 +171,88 @@ VALUES
         1,
         1
     );
+
+-- ============================================
+-- REPORT PRESETS
+-- ============================================
+
+CREATE TABLE ReportPresets (
+                               Id TEXT NOT NULL PRIMARY KEY,
+
+                               Name TEXT NOT NULL
+                                   CHECK (length(trim(Name)) BETWEEN 1 AND 120),
+
+                               IsBuiltIn INTEGER NOT NULL
+                                   CHECK (IsBuiltIn IN (0, 1)),
+
+                               ColumnsJson TEXT NOT NULL
+                                   CHECK (json_valid(ColumnsJson)),
+
+                               CreatedAtUtc TEXT NOT NULL,
+
+                               UpdatedAtUtc TEXT NOT NULL,
+
+                               CONSTRAINT CK_ReportPresets_DefaultIdentity CHECK (
+                                   (
+                                       Id = '7b9f3e18-6fc7-449e-9a12-e59063d58101'
+                                           AND IsBuiltIn = 1
+                                       )
+                                       OR
+                                   (
+                                       Id <> '7b9f3e18-6fc7-449e-9a12-e59063d58101'
+                                           AND IsBuiltIn = 0
+                                       )
+                                   )
+);
+
+CREATE UNIQUE INDEX UX_ReportPresets_Name
+    ON ReportPresets(Name COLLATE NOCASE);
+
+-- ============================================
+-- ACTIVE REPORT SETTINGS
+-- ============================================
+
+CREATE TABLE ReportSettings (
+                                SingletonId INTEGER NOT NULL PRIMARY KEY
+                                    CHECK (SingletonId = 1),
+
+                                ActivePresetId TEXT NOT NULL,
+
+                                FOREIGN KEY (ActivePresetId)
+                                    REFERENCES ReportPresets(Id)
+                                    ON DELETE RESTRICT
+);
+
+-- ============================================
+-- BUILT-IN DEFAULT REPORT PRESET
+-- ============================================
+--
+-- Header tokens are language-independent.
+-- The application resolves them to RU/EN labels.
+-- Custom headers are stored as literal text.
+
+INSERT INTO ReportPresets (
+    Id,
+    Name,
+    IsBuiltIn,
+    ColumnsJson,
+    CreatedAtUtc,
+    UpdatedAtUtc
+)
+VALUES (
+           '7b9f3e18-6fc7-449e-9a12-e59063d58101',
+           'Default',
+           1,
+           '[{"Field":1,"Header":"@daycord:Date"},{"Field":2,"Header":"@daycord:TaskNumber"},{"Field":3,"Header":"@daycord:TaskTitle"},{"Field":4,"Header":"@daycord:PlannedTime"}]',
+           strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
+           strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       );
+
+INSERT INTO ReportSettings (
+    SingletonId,
+    ActivePresetId
+)
+VALUES (
+           1,
+           '7b9f3e18-6fc7-449e-9a12-e59063d58101'
+       );

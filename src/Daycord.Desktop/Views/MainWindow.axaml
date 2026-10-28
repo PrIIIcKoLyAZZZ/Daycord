@@ -40,6 +40,13 @@
             <views:CalendarPageView/>
         </DataTemplate>
 
+        <!-- Monthly Excel Reports (DC-013) -->
+
+        <DataTemplate DataType="vm:ReportsViewModel"
+                      x:DataType="vm:ReportsViewModel">
+            <views:ReportsView/>
+        </DataTemplate>
+
         <DataTemplate DataType="vm:TaskDetailsViewModel"
                       x:DataType="vm:TaskDetailsViewModel">
             <views:TaskDetailsView/>
