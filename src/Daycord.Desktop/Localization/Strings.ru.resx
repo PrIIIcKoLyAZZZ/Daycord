@@ -266,4 +266,40 @@
     <data name="ReportsSaveColumnSettings"><value>Сохранить настройки столбцов</value></data>
     <data name="ReportsNoReportRows"><value>За выбранный период нет строк для отчёта.</value></data>
     <data name="ReportsPresetFailed"><value>Не удалось загрузить или сохранить пресеты: {0}</value></data>
+
+    <!-- Backup & Restore (DC-014) -->
+    <data name="BackupSectionTitle"><value>Резервное копирование и восстановление</value></data>
+    <data name="BackupSectionDescription"><value>Сохраняйте резервную копию данных Daycord и восстанавливайте их при необходимости.</value></data>
+    <data name="BackupCreateTitle"><value>Создание резервной копии</value></data>
+    <data name="BackupCreateDescription"><value>Сохраните полную копию задач, планового и фактического времени, пресетов и настроек отчётов.</value></data>
+    <data name="BackupCreateButton"><value>Создать копию</value></data>
+    <data name="BackupRestoreTitle"><value>Восстановление из копии</value></data>
+    <data name="BackupRestoreDescription"><value>Выберите резервную копию SQLite. Данные будут заменены при следующем запуске Daycord.</value></data>
+    <data name="BackupChooseFile"><value>Выбрать файл копии</value></data>
+    <data name="BackupConfirmationTitle"><value>Восстановить данные?</value></data>
+    <data name="BackupConfirmationWarning"><value>Восстановление заменит текущие задачи, записи о работе, плановые периоды, пресеты и настройки отчётов данными из выбранной копии.</value></data>
+    <data name="BackupSafetyWarning"><value>Перед заменой Daycord сохранит страховочную копию текущей базы данных. Восстановление будет применено при следующем запуске.</value></data>
+    <data name="BackupCancel"><value>Отмена</value></data>
+    <data name="BackupConfirmRestore"><value>Восстановить</value></data>
+    <data name="BackupLastOperation"><value>ПОСЛЕДНЯЯ ОПЕРАЦИЯ</value></data>
+    <data name="BackupWorking"><value>Выполняется операция с базой данных...</value></data>
+    <data name="BackupRestartRequired"><value>Закройте Daycord обычным способом и запустите его снова, чтобы применить подготовленное восстановление.</value></data>
+    <data name="BackupSaveDialogTitle"><value>Сохранить резервную копию Daycord</value></data>
+    <data name="BackupOpenDialogTitle"><value>Выбрать резервную копию Daycord</value></data>
+    <data name="BackupRestorePrepared"><value>Восстановление подготовлено. Перезапустите Daycord для его применения.</value></data>
+    <data name="BackupCreated"><value>Резервная копия успешно создана: {0}</value></data>
+    <data name="BackupCorrupted"><value>Выбранная резервная копия SQLite повреждена. Данные не изменены.</value></data>
+    <data name="BackupIncompatible"><value>Эта копия несовместима с текущей схемой базы данных Daycord. Данные не изменены.</value></data>
+    <data name="BackupInvalid"><value>Выбранный файл не является корректной резервной копией Daycord.</value></data>
+    <data name="BackupReportsBusy"><value>Завершите экспорт или сохраните изменения настроек отчётов перед подготовкой восстановления.</value></data>
+    <data name="BackupRestoreFailed"><value>Не удалось подготовить восстановление. Текущая база данных не заменена.</value></data>
+    <data name="BackupPermissionDenied"><value>Доступ запрещён. Проверьте права на выбранный файл или папку.</value></data>
+    <data name="BackupFileUnavailable"><value>Выбранный файл или папка недоступны.</value></data>
+    <data name="BackupStorageError"><value>Не удалось прочитать или записать резервную копию. Проверьте свободное место, права доступа и блокировки файлов.</value></data>
+    <data name="BackupFailed"><value>Не удалось создать резервную копию.</value></data>
+    <data name="BackupRestoreCompleted"><value>Данные успешно восстановлены.</value></data>
+    <data name="BackupRestoreSafetyCopy"><value>Страховочная копия предыдущих данных сохранена.</value></data>
+    <data name="BackupOperationInProgress"><value>Уже выполняется резервное копирование или восстановление.</value></data>
+    <data name="BackupRetry"><value>Повторить</value></data>
+    <data name="BackupRestoreCancelled"><value>Восстановление отменено. Текущие данные не изменены.</value></data>
 </root>

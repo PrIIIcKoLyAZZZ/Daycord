@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Platform;
@@ -8,6 +9,8 @@ namespace Daycord.Desktop.Views;
 public partial class MainWindow : Window
 {
     private ReportsViewModel? _reportsViewModel;
+    private Func<BackupSettingsViewModel>? _createBackupSettingsViewModel;
+    private BackupSettingsViewModel? _backupSettingsViewModel;
 
     private bool _isSavingReportsBeforeClose;
     private bool _allowCloseAfterSaving;
@@ -32,14 +35,53 @@ public partial class MainWindow : Window
 
     public MainWindow(
         MainWindowViewModel viewModel,
-        ReportsViewModel reportsViewModel)
+        ReportsViewModel reportsViewModel,
+        Func<BackupSettingsViewModel> createBackupSettingsViewModel)
         : this()
     {
-        DataContext = viewModel;
-
+        DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         _reportsViewModel = reportsViewModel
-            ?? throw new ArgumentNullException(
-                nameof(reportsViewModel));
+            ?? throw new ArgumentNullException(nameof(reportsViewModel));
+        _createBackupSettingsViewModel = createBackupSettingsViewModel
+            ?? throw new ArgumentNullException(nameof(createBackupSettingsViewModel));
+
+        // Lazy construction: on a restart with PendingRestore, the VM must
+        // read the manifest AFTER the startup coordinator has finalized it.
+        viewModel.PropertyChanged += OnMainViewModelPropertyChanged;
+        Closed += (_, _) =>
+            viewModel.PropertyChanged -= OnMainViewModelPropertyChanged;
+    }
+
+    private void OnMainViewModelPropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName) ||
+            e.PropertyName is nameof(MainWindowViewModel.IsSettingsSelected)
+                              or nameof(MainWindowViewModel.IsDatabaseReady))
+        {
+            EnsureBackupSettingsViewModel();
+        }
+    }
+
+    private void EnsureBackupSettingsViewModel()
+    {
+        if (_backupSettingsViewModel is not null ||
+            DataContext is not MainWindowViewModel vm ||
+            !vm.IsDatabaseReady ||
+            !vm.IsSettingsSelected ||
+            _createBackupSettingsViewModel is null)
+        {
+            return;
+        }
+
+        _backupSettingsViewModel = _createBackupSettingsViewModel();
+
+        var page = this.FindControl<BackupSettingsView>("BackupSettingsPage")
+            ?? throw new InvalidOperationException(
+                "The Backup & Restore view was not found.");
+
+        page.DataContext = _backupSettingsViewModel;
     }
 
     /// <summary>
@@ -53,6 +95,14 @@ public partial class MainWindow : Window
         object? sender,
         WindowClosingEventArgs e)
     {
+        // Do not dispose the database services while a backup or restore
+        // preparation is still writing files.
+        if (_backupSettingsViewModel?.IsBusy == true)
+        {
+            e.Cancel = true;
+            return;
+        }
+
         if (_allowCloseAfterSaving)
             return;
 

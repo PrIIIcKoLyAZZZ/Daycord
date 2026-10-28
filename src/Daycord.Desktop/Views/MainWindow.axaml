@@ -316,10 +316,18 @@
 
                 <!-- Page content -->
 
-                <ContentControl Grid.Row="1"
-                                HorizontalContentAlignment="Stretch"
-                                VerticalContentAlignment="Stretch"
-                                Content="{Binding CurrentPageContent}"/>
+                <Grid Grid.Row="1">
+                    <ContentControl IsVisible="{Binding !IsSettingsSelected}"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch"
+                                    Content="{Binding CurrentPageContent}"/>
+
+                    <!-- DC-014: standalone backup section, hosted only in Settings.
+                         MainWindow retains the single shared page header. -->
+                    <Border IsVisible="{Binding IsSettingsSelected}">
+                        <views:BackupSettingsView x:Name="BackupSettingsPage"/>
+                    </Border>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

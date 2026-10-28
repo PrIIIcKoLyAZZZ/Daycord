@@ -31,6 +31,10 @@ public static class ServiceRegistration
             IDatabaseInitializer,
             DatabaseInitializer>();
 
+        // User Backup & Restore (DC-014)
+        services.AddSingleton<IUserBackupService, UserBackupService>();
+        services.AddSingleton<PendingRestoreCoordinator>();
+
         // Task data
 
         services.AddTransient<
@@ -48,14 +52,6 @@ public static class ServiceRegistration
         services.AddSingleton<
             ILocalizationService,
             LocalizationService>();
-
-        // Legacy monthly export
-
-        services.AddSingleton<MonthlyWorkReportService>();
-
-        services.AddSingleton<
-            IMonthlyReportExporter,
-            ClosedXmlMonthlyReportExporter>();
 
         // Configurable reports
 
@@ -81,6 +77,11 @@ public static class ServiceRegistration
         });
 
         services.AddSingleton<ReportsViewModel>();
+
+        // Settings is initialized lazily, after startup restoration completes.
+        services.AddSingleton<BackupSettingsViewModel>();
+        services.AddSingleton<Func<BackupSettingsViewModel>>(provider =>
+            () => provider.GetRequiredService<BackupSettingsViewModel>());
 
         // Views and ViewModels
 
