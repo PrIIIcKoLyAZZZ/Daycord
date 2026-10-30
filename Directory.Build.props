@@ -1,0 +1,10 @@
+<Project>
+    <PropertyGroup>
+        <DaycordVersion>0.1.0</DaycordVersion>
+        <Version>$(DaycordVersion)</Version>
+        <AssemblyVersion>$(DaycordVersion).0</AssemblyVersion>
+        <FileVersion>$(DaycordVersion).0</FileVersion>
+        <InformationalVersion>$(DaycordVersion)</InformationalVersion>
+    </PropertyGroup>
+
+</Project>
