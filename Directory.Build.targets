@@ -1,0 +1,150 @@
+<Project>
+
+    <!-- One entry point for release packaging.
+         MSBuild executes dependencies in the declared order. -->
+    <Target Name="CreateDaycordReleaseDistribution"
+            AfterTargets="Publish"
+            DependsOnTargets="BundleDaycordMacApp;CleanDaycordPublishMetadata;CreateDaycordMacDmg;CreateDaycordWindowsInstaller;CreateDaycordReleaseArchives"
+            Condition="'$(MSBuildProjectName)' == 'Daycord.Desktop'
+                And '$(Configuration)' == 'Release'
+                And ('$(RuntimeIdentifier)' == 'osx-arm64'
+                     Or '$(RuntimeIdentifier)' == 'win-x64')
+                And $([MSBuild]::IsOSPlatform('OSX'))">
+
+        <Message
+                Text="Daycord Release $(DaycordVersion) ($(RuntimeIdentifier)): packaging completed."
+                Importance="High" />
+
+    </Target>
+
+    <!-- Remove Finder service files from the published output. -->
+    <Target Name="CleanDaycordPublishMetadata"
+            Condition="'$(MSBuildProjectName)' == 'Daycord.Desktop'
+                And '$(Configuration)' == 'Release'
+                And ('$(RuntimeIdentifier)' == 'osx-arm64'
+                     Or '$(RuntimeIdentifier)' == 'win-x64')
+                And $([MSBuild]::IsOSPlatform('OSX'))">
+
+        <PropertyGroup>
+            <_DaycordPublishForCleanup>$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))</_DaycordPublishForCleanup>
+        </PropertyGroup>
+
+        <Error
+                Condition="'$(PublishDir)' == ''"
+                Text="PublishDir must be defined." />
+
+        <Error
+                Condition="!Exists('$(_DaycordPublishForCleanup)')"
+                Text="Publish directory is missing." />
+
+        <ItemGroup>
+            <_DaycordFinderMetadata
+                    Include="$(_DaycordPublishForCleanup)**/.DS_Store;$(_DaycordPublishForCleanup)**/._*" />
+        </ItemGroup>
+
+        <Delete Files="@(_DaycordFinderMetadata)" />
+
+        <Message
+                Condition="'@(_DaycordFinderMetadata)' != ''"
+                Text="Removed Finder metadata: @(_DaycordFinderMetadata, ', ')"
+                Importance="High" />
+
+    </Target>
+
+    <!-- macOS: create a branded DMG from the completed .app. -->
+    <Target Name="CreateDaycordMacDmg"
+            Condition="'$(MSBuildProjectName)' == 'Daycord.Desktop'
+                And '$(Configuration)' == 'Release'
+                And '$(RuntimeIdentifier)' == 'osx-arm64'
+                And $([MSBuild]::IsOSPlatform('OSX'))">
+
+        <PropertyGroup>
+            <_DaycordAppForDmg>$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))Daycord.app</_DaycordAppForDmg>
+
+            <_DaycordDmgOutput>$(MSBuildProjectDirectory)/../../artifacts/release/$(DaycordVersion)/Daycord-$(DaycordVersion)-osx-arm64.dmg</_DaycordDmgOutput>
+        </PropertyGroup>
+
+        <Error
+                Condition="'$(DaycordVersion)' == ''"
+                Text="DaycordVersion is missing from Directory.Build.props." />
+
+        <Error
+                Condition="!Exists('$(_DaycordAppForDmg)/Contents/Info.plist')"
+                Text="Release Daycord.app was not created; cannot build DMG." />
+
+        <Error
+                Condition="!Exists('$(MSBuildProjectDirectory)/../../scripts/create-macos-dmg.sh')"
+                Text="Missing scripts/create-macos-dmg.sh." />
+
+        <Exec
+                WorkingDirectory="$(MSBuildProjectDirectory)"
+                Command="/bin/bash &quot;$(MSBuildProjectDirectory)/../../scripts/create-macos-dmg.sh&quot; &quot;$(_DaycordAppForDmg)&quot; &quot;$(_DaycordDmgOutput)&quot;" />
+
+    </Target>
+
+    <!-- Windows: build Setup.exe before the ZIP and checksums. -->
+    <Target Name="CreateDaycordWindowsInstaller"
+            Condition="'$(MSBuildProjectName)' == 'Daycord.Desktop'
+                And '$(Configuration)' == 'Release'
+                And '$(RuntimeIdentifier)' == 'win-x64'
+                And $([MSBuild]::IsOSPlatform('OSX'))">
+
+        <PropertyGroup>
+            <_DaycordWindowsPublish>$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))</_DaycordWindowsPublish>
+
+            <_DaycordWindowsSetup>$(MSBuildProjectDirectory)/../../artifacts/release/$(DaycordVersion)/Daycord-Setup-$(DaycordVersion)-win-x64.exe</_DaycordWindowsSetup>
+        </PropertyGroup>
+
+        <Error
+                Condition="'$(DaycordVersion)' == ''"
+                Text="DaycordVersion is missing from Directory.Build.props." />
+
+        <Error
+                Condition="!Exists('$(_DaycordWindowsPublish)Daycord.Desktop.exe')"
+                Text="Windows executable missing from Release publish output." />
+
+        <Error
+                Condition="!Exists('$(MSBuildProjectDirectory)/../../scripts/create-windows-installer.sh')"
+                Text="Missing scripts/create-windows-installer.sh." />
+
+        <Error
+                Condition="!Exists('$(MSBuildProjectDirectory)/../../scripts/windows/daycord-installer.nsi')"
+                Text="Missing scripts/windows/daycord-installer.nsi." />
+
+        <Exec
+                WorkingDirectory="$(MSBuildProjectDirectory)"
+                Command="/bin/bash &quot;$(MSBuildProjectDirectory)/../../scripts/create-windows-installer.sh&quot; &quot;$(_DaycordWindowsPublish)&quot; &quot;$(DaycordVersion)&quot; &quot;$(_DaycordWindowsSetup)&quot;" />
+
+    </Target>
+
+    <!-- ZIP and SHA-256 always run after the platform installer. -->
+    <Target Name="CreateDaycordReleaseArchives"
+            Condition="'$(MSBuildProjectName)' == 'Daycord.Desktop'
+                And '$(Configuration)' == 'Release'
+                And ('$(RuntimeIdentifier)' == 'osx-arm64'
+                     Or '$(RuntimeIdentifier)' == 'win-x64')
+                And $([MSBuild]::IsOSPlatform('OSX'))">
+
+        <PropertyGroup>
+            <_DaycordArchivePublishDir>$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))</_DaycordArchivePublishDir>
+
+            <_DaycordReleaseArtifacts>$(MSBuildProjectDirectory)/../../artifacts/release/$(DaycordVersion)</_DaycordReleaseArtifacts>
+
+            <_DaycordArchiveScript>$(MSBuildProjectDirectory)/../../scripts/create-release-archives.sh</_DaycordArchiveScript>
+        </PropertyGroup>
+
+        <Error
+                Condition="'$(DaycordVersion)' == ''"
+                Text="DaycordVersion must be set before creating release archives." />
+
+        <Error
+                Condition="!Exists('$(_DaycordArchiveScript)')"
+                Text="Missing scripts/create-release-archives.sh." />
+
+        <Exec
+                WorkingDirectory="$(MSBuildProjectDirectory)"
+                Command="/bin/bash &quot;$(_DaycordArchiveScript)&quot; &quot;$(RuntimeIdentifier)&quot; &quot;$(DaycordVersion)&quot; &quot;$(_DaycordArchivePublishDir)&quot; &quot;$(_DaycordReleaseArtifacts)&quot;" />
+
+    </Target>
+
+</Project>

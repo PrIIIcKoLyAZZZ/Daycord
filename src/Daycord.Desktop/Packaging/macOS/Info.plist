@@ -26,11 +26,12 @@
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
 
+        <!-- These values are replaced from Directory.Build.props during Debug build and Release publish. -->
         <key>CFBundleVersion</key>
-        <string>1</string>
+        <string>0.1.0</string>
 
         <key>CFBundleShortVersionString</key>
-        <string>1.0.0</string>
+        <string>0.1.0</string>
 
         <key>NSHighResolutionCapable</key>
         <true/>
