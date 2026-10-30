@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>2.0</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+
+    <!-- Приложение -->
+    <data name="AppName"><value>Daycord</value></data>
+    <data name="AppWordmark"><value>DAYCORD</value></data>
+    <data name="WelcomeMessage"><value>Добро пожаловать в Daycord</value></data>
+
+    <!-- Навигация -->
+    <data name="NavigationHeading"><value>Навигация</value></data>
+    <data name="NavHome"><value>Главная</value></data>
+    <data name="NavCalendar"><value>Календарь</value></data>
+    <data name="NavTasks"><value>Задачи</value></data>
+    <data name="NavNewTask"><value>Быстрая задача</value></data>
+    <data name="NavReports"><value>Отчёты</value></data>
+    <data name="NavSettings"><value>Настройки</value></data>
+
+    <!-- Временные экраны -->
+    <data name="PlaceholderHeading"><value>Скоро появится</value></data>
+    <data name="PlaceholderDescription"><value>Этот раздел станет доступен в одном из следующих обновлений.</value></data>
+
+    <!-- Инициализация БД -->
+    <data name="DatabaseInitializing"><value>Инициализация локальной базы данных...</value></data>
+    <data name="DatabaseReady"><value>Локальная база данных готова.</value></data>
+    <data name="DatabaseInitializationFailed"><value>Не удалось инициализировать базу данных: {0}</value></data>
+    <data name="DatabaseUnavailable"><value>Данные задач недоступны. Закройте Daycord и проверьте базу данных или её резервные копии.</value></data>
+
+    <!-- Сохранённые строки предыдущей версии DC-006 -->
+    <data name="TerminalRecentlyCreated"><value>НЕДАВНО СОЗДАННЫЕ</value></data>
+    <data name="TerminalEmptySession"><value>В этом сеансе ещё нет созданных задач.</value></data>
+    <data name="TerminalCreateHeading"><value>СОЗДАТЬ ЗАДАЧУ</value></data>
+    <data name="TerminalDateLabel"><value>Дата</value></data>
+    <data name="TerminalTitleLabel"><value>Название</value></data>
+    <data name="TerminalTitlePlaceholder"><value>Введите название задачи...</value></data>
+    <data name="TerminalShortDescriptionLabel"><value>Описание</value></data>
+    <data name="TerminalShortDescriptionPlaceholder"><value>Краткое описание (необязательно)</value></data>
+    <data name="TerminalStatusLabel"><value>Статус</value></data>
+    <data name="TerminalEnterHint"><value>Нажмите Enter в поле названия, чтобы создать задачу</value></data>
+    <data name="TerminalCreating"><value>Создание...</value></data>
+    <data name="TerminalRetryStatuses"><value>Повторить загрузку статусов</value></data>
+    <data name="TerminalCreateTask"><value>Создать задачу</value></data>
+    <data name="TerminalTaskCreated"><value>Задача успешно создана.</value></data>
+    <data name="TerminalDateRequired"><value>Выберите дату задачи.</value></data>
+    <data name="TerminalTitleRequired"><value>Введите название задачи.</value></data>
+    <data name="TerminalStatusRequired"><value>Выберите статус задачи.</value></data>
+    <data name="TerminalCreateError"><value>Не удалось создать задачу: {0}</value></data>
+    <data name="TerminalStatusLoadError"><value>Не удалось загрузить статусы задач: {0}</value></data>
+    <data name="TerminalStatusOpen"><value>Открыта</value></data>
+    <data name="TerminalStatusCompleted"><value>Завершена</value></data>
+    <data name="TerminalExpandTask"><value>Развернуть сведения о задаче</value></data>
+    <data name="TerminalCollapseTask"><value>Свернуть сведения о задаче</value></data>
+    <data name="TerminalMarkdownLabel"><value>ОПИСАНИЕ MARKDOWN</value></data>
+    <data name="TerminalMarkdownPlaceholder"><value>Добавьте подробное описание в Markdown...</value></data>
+    <data name="TerminalSaving"><value>Сохранение...</value></data>
+    <data name="TerminalSavingMarkdown"><value>Сохранение...</value></data>
+    <data name="TerminalSaveMarkdown"><value>Сохранить описание</value></data>
+    <data name="TerminalMarkdownSaveError"><value>Не удалось сохранить описание: {0}</value></data>
+    <data name="TerminalMarkdownSaved"><value>Описание сохранено.</value></data>
+
+    <!-- Quick Task -->
+    <data name="QuickTaskRecentHeading"><value>НЕДАВНО СОЗДАННЫЕ</value></data>
+    <data name="QuickTaskEmptySession"><value>В этом сеансе пока нет созданных задач.</value></data>
+    <data name="QuickTaskDateLabel"><value>Дата</value></data>
+    <data name="QuickTaskNumberLabel"><value>Номер задачи (необязательно)</value></data>
+    <data name="QuickTaskTitleLabel"><value>Заголовок</value></data>
+    <data name="QuickTaskTimeLabel"><value>Плановое время (необязательно)</value></data>
+    <data name="QuickTaskNumberPlaceholder"><value>KREMD-1122</value></data>
+    <data name="QuickTaskTitlePlaceholder"><value>Заголовок задачи...</value></data>
+    <data name="QuickTaskTimePlaceholder"><value>1ч</value></data>
+    <data name="QuickTaskEnterHint"><value>Нажмите Enter, чтобы создать задачу</value></data>
+    <data name="QuickTaskToday"><value>сегодня</value></data>
+    <data name="QuickTaskTomorrow"><value>завтра</value></data>
+    <data name="QuickTaskCreating"><value>Создание...</value></data>
+    <data name="QuickTaskCreateAction"><value>Создать задачу</value></data>
+    <data name="QuickTaskCreated"><value>Задача создана.</value></data>
+    <data name="QuickTaskDateRequired"><value>Выберите дату.</value></data>
+    <data name="QuickTaskTitleRequired"><value>Введите заголовок задачи.</value></data>
+    <data name="QuickTaskInvalidTime"><value>Введите длительность, например 30м или 1ч 30м.</value></data>
+    <data name="QuickTaskCreateError"><value>Не удалось создать задачу: {0}</value></data>
+
+    <!-- Список задач (DC-007) -->
+    <data name="TaskListHeading"><value>Задачи</value></data>
+    <data name="TaskListSearchPlaceholder"><value>Поиск по названию или краткому описанию...</value></data>
+    <data name="TaskListStatusFilter"><value>Статус</value></data>
+    <data name="TaskListDateFrom"><value>От</value></data>
+    <data name="TaskListDateTo"><value>До</value></data>
+    <data name="TaskListSortLabel"><value>Сортировка</value></data>
+    <data name="TaskListDescending"><value>По убыванию</value></data>
+    <data name="TaskListAscending"><value>По возрастанию</value></data>
+    <data name="TaskListRefresh"><value>Обновить</value></data>
+    <data name="TaskListResetFilters"><value>Сбросить фильтры</value></data>
+    <data name="TaskListLoading"><value>Загрузка задач...</value></data>
+    <data name="TaskListEmpty"><value>Задач пока нет. Создайте задачу через «Быструю задачу», чтобы она появилась здесь.</value></data>
+    <data name="TaskListNoResults"><value>По заданным условиям задачи не найдены.</value></data>
+    <data name="TaskListColumnDate"><value>Дата</value></data>
+    <data name="TaskListColumnTitle"><value>Название</value></data>
+    <data name="TaskListColumnDescription"><value>Краткое описание</value></data>
+    <data name="TaskListColumnPlanned"><value>План</value></data>
+    <data name="TaskListColumnActual"><value>Факт</value></data>
+    <data name="TaskListColumnStatus"><value>Статус</value></data>
+    <data name="TaskListInvalidDateRange"><value>Начальная дата не может быть позже конечной.</value></data>
+    <data name="TaskListLoadError"><value>Не удалось загрузить задачи: {0}</value></data>
+    <data name="TaskListStatusOpen"><value>Открыта</value></data>
+    <data name="TaskListStatusCompleted"><value>Завершена</value></data>
+    <data name="TaskListHoursUnit"><value>ч</value></data>
+    <data name="TaskListMinutesUnit"><value>м</value></data>
+    <data name="TaskListAllStatuses"><value>Все статусы</value></data>
+    <data name="TaskListSortDate"><value>Дата</value></data>
+    <data name="TaskListSortTitle"><value>Название</value></data>
+    <data name="TaskListSortStatus"><value>Статус</value></data>
+
+    <!-- Task List actions (DC-007, package 7.3) -->
+    <data name="TaskListShowFilters"><value>Фильтры</value></data>
+    <data name="TaskListHideFilters"><value>Скрыть фильтры</value></data>
+    <data name="TaskListFiltersActive"><value>Фильтры активны</value></data>
+    <data name="TaskListDelete"><value>Удалить</value></data>
+    <data name="TaskListDeleteConfirmationTitle"><value>Удалить задачу?</value></data>
+    <data name="TaskListDeleteConfirmationMessage"><value>Удалить задачу «{0}» вместе со всем плановым и учтённым временем? Это действие нельзя отменить.</value></data>
+    <data name="TaskListConfirmDelete"><value>Удалить задачу</value></data>
+    <data name="TaskListCancelDelete"><value>Отмена</value></data>
+    <data name="TaskListDeleting"><value>Удаление задачи...</value></data>
+    <data name="TaskListDeleteError"><value>Не удалось удалить задачу: {0}</value></data>
+
+    <!-- Task Details (DC-008) -->
+    <data name="TaskDetailsHeading"><value>КАРТОЧКА ЗАДАЧИ</value></data>
+    <data name="TaskDetailsBack"><value>← Назад</value></data>
+    <data name="TaskDetailsSave"><value>Сохранить изменения</value></data>
+    <data name="TaskDetailsCancel"><value>Отмена</value></data>
+    <data name="TaskDetailsNumber"><value>Номер задачи</value></data>
+    <data name="TaskDetailsTitle"><value>Название</value></data>
+    <data name="TaskDetailsDate"><value>Дата</value></data>
+    <data name="TaskDetailsStatus"><value>Статус</value></data>
+    <data name="TaskDetailsShortDescription"><value>Краткое описание</value></data>
+    <data name="TaskDetailsMarkdown"><value>ОПИСАНИЕ MARKDOWN</value></data>
+    <data name="TaskDetailsEdit"><value>Редактирование</value></data>
+    <data name="TaskDetailsPreview"><value>Просмотр</value></data>
+    <data name="TaskDetailsLoading"><value>Загрузка задачи...</value></data>
+    <data name="TaskDetailsSaving"><value>Сохранение...</value></data>
+    <data name="TaskDetailsSaveSuccessful"><value>Изменения сохранены.</value></data>
+    <data name="TaskDetailsTaskNotFound"><value>Эта задача больше не существует.</value></data>
+    <data name="TaskDetailsDatePlaceholder"><value>дд.мм.гггг (необязательно)</value></data>
+    <data name="TaskDetailsDiscardTitle"><value>Отменить изменения?</value></data>
+    <data name="TaskDetailsDiscardMessage"><value>Есть несохранённые изменения. Выйти из карточки без сохранения?</value></data>
+    <data name="TaskDetailsDiscard"><value>Не сохранять</value></data>
+    <data name="TaskDetailsKeepEditing"><value>Продолжить редактирование</value></data>
+    <data name="TaskDetailsLoadFailed"><value>Не удалось загрузить задачу: {0}</value></data>
+    <data name="TaskDetailsTitleRequired"><value>Введите название задачи.</value></data>
+    <data name="TaskDetailsDateInvalid"><value>Введите корректную дату или оставьте поле пустым.</value></data>
+    <data name="TaskDetailsStatusRequired"><value>Выберите статус задачи.</value></data>
+    <data name="TaskDetailsValidationError"><value>Некорректные данные задачи: {0}</value></data>
+    <data name="TaskDetailsSaveFailed"><value>Не удалось сохранить задачу: {0}</value></data>
+
+    <!-- Quick Task: open existing task (DC-008) -->
+    <data name="QuickTaskOpenDetails"><value>Открыть карточку задачи</value></data>
+
+    <!-- Full task creation (DC-008) -->
+    <data name="TaskDetailsCreateHeading"><value>СОЗДАНИЕ ЗАДАЧИ</value></data>
+    <data name="TaskDetailsCreateAction"><value>Создать задачу</value></data>
+    <data name="TaskDetailsCreating"><value>Создание...</value></data>
+    <data name="TaskDetailsCreateSuccessful"><value>Задача создана.</value></data>
+    <data name="TaskDetailsCreateFailed"><value>Не удалось создать задачу: {0}</value></data>
+
+    <!-- Planning time management (DC-009) -->
+    <data name="PlanningPeriods"><value>ПЛАНОВЫЕ ПЕРИОДЫ</value></data>
+    <data name="PlanningNoPeriods"><value>Плановых периодов пока нет.</value></data>
+    <data name="PlanningAddPeriod"><value>＋ Добавить период</value></data>
+    <data name="PlanningEditPeriod"><value>Изменить период</value></data>
+    <data name="PlanningDeletePeriod"><value>Удалить период</value></data>
+    <data name="PlanningDate"><value>Дата</value></data>
+    <data name="PlanningDuration"><value>Длительность</value></data>
+    <data name="PlanningTotal"><value>Всего запланировано</value></data>
+    <data name="PlanningDeleteTitle"><value>Удалить плановый период?</value></data>
+    <data name="PlanningDeleteMessage"><value>Плановый период будет безвозвратно удалён. Другие периоды и учтённое время не изменятся.</value></data>
+    <data name="PlanningValidationError"><value>Проверьте дату и длительность.</value></data>
+    <data name="PlanningSaveFailed"><value>Не удалось сохранить плановый период: {0}</value></data>
+    <data name="PlanningDeleteFailed"><value>Не удалось удалить плановый период: {0}</value></data>
+    <data name="PlanningSave"><value>Сохранить период</value></data>
+    <data name="PlanningCancel"><value>Отмена</value></data>
+
+    <!-- Actual Time / Work Log (DC-010) -->
+    <data name="WorkLogTitle"><value>ФАКТИЧЕСКОЕ ВРЕМЯ / ЖУРНАЛ РАБОТ</value></data>
+    <data name="WorkEntriesLabel"><value>ЗАПИСИ О РАБОТЕ</value></data>
+    <data name="WorkAddEntry"><value>＋ Добавить запись</value></data>
+    <data name="WorkEditEntry"><value>Изменить запись</value></data>
+    <data name="WorkDate"><value>Дата выполнения</value></data>
+    <data name="WorkDuration"><value>Длительность</value></data>
+    <data name="WorkDescription"><value>Что сделано</value></data>
+    <data name="WorkNote"><value>Примечание</value></data>
+    <data name="WorkTotalActual"><value>Всего фактически</value></data>
+    <data name="WorkNoEntries"><value>Записей о выполненной работе пока нет.</value></data>
+    <data name="WorkSaveEntry"><value>Сохранить запись</value></data>
+    <data name="WorkSaveIndependentHint"><value>Записи о работе сохраняются отдельно от изменений самой задачи.</value></data>
+    <data name="WorkDeleteTitle"><value>Удалить запись о работе?</value></data>
+    <data name="WorkDeleteMessage"><value>Безвозвратно удалить эту запись? Остальные записи и плановые периоды не изменятся.</value></data>
+    <data name="WorkDeleteEntry"><value>Удалить запись</value></data>
+    <data name="WorkValidationError"><value>Укажите корректную дату и положительную длительность (например, 30м или 1ч 30м).</value></data>
+    <data name="WorkEntryNotFound"><value>Запись о работе не найдена: {0}</value></data>
+    <data name="WorkSaveFailed"><value>Не удалось сохранить запись о работе: {0}</value></data>
+    <data name="WorkDeleteFailed"><value>Не удалось удалить запись о работе: {0}</value></data>
+
+    <!-- Calendar (DC-011) -->
+    <data name="CalendarToday"><value>Сегодня</value></data>
+    <data name="CalendarPreviousMonth"><value>Предыдущий месяц</value></data>
+    <data name="CalendarNextMonth"><value>Следующий месяц</value></data>
+    <data name="CalendarSelectedDay"><value>ВЫБРАННЫЙ ДЕНЬ</value></data>
+    <data name="CalendarTasks"><value>Задачи</value></data>
+    <data name="CalendarPlannedWork"><value>Плановая работа</value></data>
+    <data name="CalendarActualWork"><value>Фактическая работа</value></data>
+    <data name="CalendarTotalPlanned"><value>Всего запланировано</value></data>
+    <data name="CalendarTotalActual"><value>Всего фактически</value></data>
+    <data name="CalendarNoEntries"><value>На этот день нет задач и записей о работе.</value></data>
+    <data name="CalendarNoMonthData"><value>В этом месяце нет задач или записей о работе.</value></data>
+    <data name="CalendarNoTasks"><value>На эту дату нет задач.</value></data>
+    <data name="CalendarNoPlanned"><value>На эту дату нет запланированной работы.</value></data>
+    <data name="CalendarNoActual"><value>На эту дату нет записей о выполненной работе.</value></data>
+    <data name="CalendarLoading"><value>Загрузка календаря...</value></data>
+    <data name="CalendarLoadFailed"><value>Не удалось загрузить календарь: {0}</value></data>
+    <data name="CalendarRetry"><value>Повторить</value></data>
+    <data name="CalendarOpenTask"><value>Открыть задачу</value></data>
+
+    <!-- Home Dashboard (DC-012) -->
+    <data name="HomeDashboardTodayTasks"><value>Задачи на сегодня</value></data>
+    <data name="HomeDashboardCompleted"><value>Завершено</value></data>
+    <data name="HomeDashboardPlannedToday"><value>Запланировано сегодня</value></data>
+    <data name="HomeDashboardActualToday"><value>Фактически сегодня</value></data>
+    <data name="HomeDashboardPlannedWork"><value>Плановая работа</value></data>
+    <data name="HomeDashboardActualWork"><value>Фактическая работа</value></data>
+    <data name="HomeDashboardNoTasks"><value>На сегодня нет назначенных задач.</value></data>
+    <data name="HomeDashboardNoPlanned"><value>На сегодня нет запланированной работы.</value></data>
+    <data name="HomeDashboardNoActual"><value>Сегодня нет записей о выполненной работе.</value></data>
+    <data name="HomeDashboardNoEntries"><value>На сегодня нет задач, планов или записей о работе.</value></data>
+    <data name="HomeDashboardLoading"><value>Загрузка главной страницы...</value></data>
+    <data name="HomeDashboardLoadFailed"><value>Не удалось загрузить главную страницу: {0}</value></data>
+    <data name="HomeDashboardRetry"><value>Повторить</value></data>
+    <data name="HomeDashboardOpenTask"><value>Открыть задачу</value></data>
+
+    <!-- Monthly Excel Reports (DC-013) -->
+    <data name="ReportsMonthlyWorkReport"><value>Ежемесячный отчёт о работе</value></data>
+    <data name="ReportsReportingPeriod"><value>Отчётный период</value></data>
+    <data name="ReportsPreviousMonth"><value>Предыдущий месяц</value></data>
+    <data name="ReportsNextMonth"><value>Следующий месяц</value></data>
+    <data name="ReportsCurrentMonth"><value>Текущий месяц</value></data>
+    <data name="ReportsWorkEntries"><value>Записи о работе</value></data>
+    <data name="ReportsTotalActualTime"><value>Всего фактического времени</value></data>
+    <data name="ReportsExportToExcel"><value>Экспортировать в Excel</value></data>
+    <data name="ReportsExporting"><value>Экспорт в Excel...</value></data>
+    <data name="ReportsLoading"><value>Загрузка отчёта...</value></data>
+    <data name="ReportsNoWorkEntries"><value>В этом месяце нет записей о выполненной работе. Можно экспортировать пустой отчёт.</value></data>
+    <data name="ReportsRetry"><value>Повторить</value></data>
+    <data name="ReportsLoadFailed"><value>Не удалось загрузить отчёт: {0}</value></data>
+    <data name="ReportsExportFailed"><value>Не удалось экспортировать отчёт: {0}</value></data>
+    <data name="ReportsExportCompleted"><value>Отчёт успешно сохранён: {0}</value></data>
+    <data name="ReportsInvalidPeriod"><value>Выбран некорректный отчётный период.</value></data>
+    <data name="ReportsFileSaveFailed"><value>Не удалось сохранить файл Excel: {0}</value></data>
+
+    <!-- Configurable Reports (DC-013 extension) -->
+    <data name="ReportsDateFrom"><value>С</value></data>
+    <data name="ReportsDateTo"><value>По</value></data>
+    <data name="ReportsReportRows"><value>Строки отчёта</value></data>
+    <data name="ReportsTotalPlannedTime"><value>Всего планового времени</value></data>
+    <data name="ReportsPreset"><value>Пресет отчёта</value></data>
+    <data name="ReportsPresetName"><value>Название пресета</value></data>
+    <data name="ReportsNewPresetNamePlaceholder"><value>Название нового пресета</value></data>
+    <data name="ReportsCreatePreset"><value>Создать пресет</value></data>
+    <data name="ReportsDeletePreset"><value>Удалить пресет</value></data>
+    <data name="ReportsResetToDefault"><value>Сбросить настройки</value></data>
+    <data name="ReportsColumnsAndOrder"><value>Столбцы и порядок</value></data>
+    <data name="ReportsColumnsDescription"><value>Выберите поля, измените заголовки и порядок столбцов.</value></data>
+    <data name="ReportsMoveUp"><value>Переместить вверх</value></data>
+    <data name="ReportsMoveDown"><value>Переместить вниз</value></data>
+    <data name="ReportsUnsavedChanges"><value>Несохранённые изменения</value></data>
+    <data name="ReportsSaveColumnSettings"><value>Сохранить настройки столбцов</value></data>
+    <data name="ReportsNoReportRows"><value>За выбранный период нет строк для отчёта.</value></data>
+    <data name="ReportsPresetFailed"><value>Не удалось загрузить или сохранить пресеты: {0}</value></data>
+
+    <!-- Backup & Restore (DC-014) -->
+    <data name="BackupSectionTitle"><value>Резервное копирование и восстановление</value></data>
+    <data name="BackupSectionDescription"><value>Сохраняйте резервную копию данных Daycord и восстанавливайте их при необходимости.</value></data>
+    <data name="BackupCreateTitle"><value>Создание резервной копии</value></data>
+    <data name="BackupCreateDescription"><value>Сохраните полную копию задач, планового и фактического времени, пресетов и настроек отчётов.</value></data>
+    <data name="BackupCreateButton"><value>Создать копию</value></data>
+    <data name="BackupRestoreTitle"><value>Восстановление из копии</value></data>
+    <data name="BackupRestoreDescription"><value>Выберите резервную копию SQLite. Данные будут заменены при следующем запуске Daycord.</value></data>
+    <data name="BackupChooseFile"><value>Выбрать файл копии</value></data>
+    <data name="BackupConfirmationTitle"><value>Восстановить данные?</value></data>
+    <data name="BackupConfirmationWarning"><value>Восстановление заменит текущие задачи, записи о работе, плановые периоды, пресеты и настройки отчётов данными из выбранной копии.</value></data>
+    <data name="BackupSafetyWarning"><value>Перед заменой Daycord сохранит страховочную копию текущей базы данных. Восстановление будет применено при следующем запуске.</value></data>
+    <data name="BackupCancel"><value>Отмена</value></data>
+    <data name="BackupConfirmRestore"><value>Восстановить</value></data>
+    <data name="BackupLastOperation"><value>ПОСЛЕДНЯЯ ОПЕРАЦИЯ</value></data>
+    <data name="BackupWorking"><value>Выполняется операция с базой данных...</value></data>
+    <data name="BackupRestartRequired"><value>Закройте Daycord обычным способом и запустите его снова, чтобы применить подготовленное восстановление.</value></data>
+    <data name="BackupSaveDialogTitle"><value>Сохранить резервную копию Daycord</value></data>
+    <data name="BackupOpenDialogTitle"><value>Выбрать резервную копию Daycord</value></data>
+    <data name="BackupRestorePrepared"><value>Восстановление подготовлено. Перезапустите Daycord для его применения.</value></data>
+    <data name="BackupCreated"><value>Резервная копия успешно создана: {0}</value></data>
+    <data name="BackupCorrupted"><value>Выбранная резервная копия SQLite повреждена. Данные не изменены.</value></data>
+    <data name="BackupIncompatible"><value>Эта копия несовместима с текущей схемой базы данных Daycord. Данные не изменены.</value></data>
+    <data name="BackupInvalid"><value>Выбранный файл не является корректной резервной копией Daycord.</value></data>
+    <data name="BackupReportsBusy"><value>Завершите экспорт или сохраните изменения настроек отчётов перед подготовкой восстановления.</value></data>
+    <data name="BackupRestoreFailed"><value>Не удалось подготовить восстановление. Текущая база данных не заменена.</value></data>
+    <data name="BackupPermissionDenied"><value>Доступ запрещён. Проверьте права на выбранный файл или папку.</value></data>
+    <data name="BackupFileUnavailable"><value>Выбранный файл или папка недоступны.</value></data>
+    <data name="BackupStorageError"><value>Не удалось прочитать или записать резервную копию. Проверьте свободное место, права доступа и блокировки файлов.</value></data>
+    <data name="BackupFailed"><value>Не удалось создать резервную копию.</value></data>
+    <data name="BackupRestoreCompleted"><value>Данные успешно восстановлены.</value></data>
+    <data name="BackupRestoreSafetyCopy"><value>Страховочная копия предыдущих данных сохранена.</value></data>
+    <data name="BackupOperationInProgress"><value>Уже выполняется резервное копирование или восстановление.</value></data>
+    <data name="BackupRetry"><value>Повторить</value></data>
+    <data name="BackupRestoreCancelled"><value>Восстановление отменено. Текущие данные не изменены.</value></data>
+
+    <!-- Application Settings (DC-015) -->
+    <data name="SettingsGeneralHeading"><value>Настройки приложения</value></data>
+    <data name="SettingsLanguageTitle"><value>Язык</value></data>
+    <data name="SettingsLanguageDescription"><value>Язык интерфейса приложения</value></data>
+    <data name="SettingsAppearanceTitle"><value>Оформление</value></data>
+    <data name="SettingsAppearanceDescription"><value>Тема оформления приложения</value></data>
+    <data name="SettingsTimeTrackingHeading"><value>УЧЁТ ВРЕМЕНИ</value></data>
+    <data name="SettingsDayLengthTitle"><value>Продолжительность одного дня</value></data>
+    <data name="SettingsDayLengthDescription"><value>Используется для интерпретации 1d при вводе длительности. Например: 24h, 8h или 7h 30m.</value></data>
+    <data name="SettingsSaveDuration"><value>Сохранить</value></data>
+    <data name="SettingsDataHeading"><value>ДАННЫЕ</value></data>
+    <data name="SettingsDayEquivalent"><value>1d = {0}</value></data>
+    <data name="SettingsThemeSystem"><value>Системная</value></data>
+    <data name="SettingsThemeLight"><value>Светлая</value></data>
+    <data name="SettingsThemeDark"><value>Тёмная</value></data>
+    <data name="SettingsSaved"><value>Настройки сохранены.</value></data>
+    <data name="SettingsSaveFailed"><value>Не удалось сохранить настройки. Предыдущие значения остаются активными.</value></data>
+    <data name="SettingsInvalidDuration"><value>Введите длительность от 1m до 24h (например, 8h или 7h 30m). Единица d здесь не допускается.</value></data>
+</root>

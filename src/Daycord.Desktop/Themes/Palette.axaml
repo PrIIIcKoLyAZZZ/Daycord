@@ -1,0 +1,81 @@
+<ResourceDictionary
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- LIGHT THEME -->
+
+        <ResourceDictionary x:Key="Light">
+
+            <SolidColorBrush
+                x:Key="Background"
+                Color="#F8F7F4" />
+
+            <SolidColorBrush
+                x:Key="Surface"
+                Color="#FFFFFF" />
+
+            <SolidColorBrush
+                x:Key="PrimaryText"
+                Color="#292825" />
+
+            <SolidColorBrush
+                x:Key="SecondaryText"
+                Color="#79766F" />
+
+            <SolidColorBrush
+                x:Key="Accent"
+                Color="#BF8533" />
+
+            <!-- Sidebar selection -->
+
+            <SolidColorBrush
+                x:Key="SidebarSelectedBackground"
+                Color="#F6E9D7" />
+
+            <SolidColorBrush
+                x:Key="SidebarSelectedHoverBackground"
+                Color="#F0DAB8" />
+
+        </ResourceDictionary>
+
+        <!-- DARK THEME -->
+
+        <ResourceDictionary x:Key="Dark">
+
+            <SolidColorBrush
+                x:Key="Background"
+                Color="#191918" />
+
+            <SolidColorBrush
+                x:Key="Surface"
+                Color="#262522" />
+
+            <SolidColorBrush
+                x:Key="PrimaryText"
+                Color="#F2EFE9" />
+
+            <SolidColorBrush
+                x:Key="SecondaryText"
+                Color="#AAA7A0" />
+
+            <SolidColorBrush
+                x:Key="Accent"
+                Color="#E8AD58" />
+
+            <!-- Sidebar selection -->
+
+            <SolidColorBrush
+                x:Key="SidebarSelectedBackground"
+                Color="#3C3225" />
+
+            <SolidColorBrush
+                x:Key="SidebarSelectedHoverBackground"
+                Color="#493924" />
+
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

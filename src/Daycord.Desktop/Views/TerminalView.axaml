@@ -1,0 +1,330 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Daycord.Desktop.ViewModels"
+             xmlns:views="using:Daycord.Desktop.Views"
+             x:Class="Daycord.Desktop.Views.TerminalView"
+             x:DataType="vm:TerminalViewModel"
+             Background="{DynamicResource Background}">
+
+    <UserControl.Styles>
+        <Style Selector="TextBox.quick-input">
+            <Setter Property="FontFamily"
+                    Value="Menlo, Consolas, Courier New" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Background"
+                    Value="{DynamicResource Background}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Background}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="7,9" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBox.quick-input:focus">
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}" />
+        </Style>
+
+        <Style Selector="Button.calendar-trigger">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="MinHeight" Value="32" />
+        </Style>
+
+        <Style Selector="Button.quick-history-open">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.quick-submit">
+            <Setter Property="Background"
+                    Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Background}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Margin="18,22,18,24"
+          RowDefinitions="Auto,*,Auto"
+          RowSpacing="16"
+          HorizontalAlignment="Stretch"
+          MaxWidth="1000">
+
+        <!-- History heading -->
+        <StackPanel Grid.Row="0" Spacing="12">
+            <TextBlock Text="{Binding RecentHeading}"
+                       Foreground="{DynamicResource SecondaryText}"
+                       FontFamily="Menlo, Consolas, Courier New"
+                       FontSize="11"
+                       FontWeight="SemiBold" />
+
+            <Border Height="1"
+                    Background="{DynamicResource SecondaryText}"
+                    Opacity="0.25" />
+        </StackPanel>
+
+        <!-- Current-session history -->
+        <ScrollViewer x:Name="HistoryScrollViewer"
+                      Grid.Row="1"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto"
+                      VerticalContentAlignment="Bottom">
+
+            <StackPanel Spacing="8"
+                        VerticalAlignment="Bottom">
+
+                <TextBlock IsVisible="{Binding IsSessionEmpty}"
+                           Text="{Binding EmptySessionText}"
+                           Foreground="{DynamicResource SecondaryText}"
+                           FontSize="12"
+                           Margin="2,8"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding SessionTasks}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SessionTaskItemViewModel">
+
+                            <Border Background="{DynamicResource Surface}"
+                                    CornerRadius="5"
+                                    Padding="10"
+                                    Margin="0,0,0,5">
+
+                                <Grid ColumnDefinitions="14,134,90,*,74,52"
+                                      ColumnSpacing="8">
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="·"
+                                               Foreground="{DynamicResource Accent}"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Date -->
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TaskDateText}"
+                                               Foreground="{DynamicResource SecondaryText}"
+                                               FontFamily="Menlo, Consolas, Courier New"
+                                               FontSize="11"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Task number -->
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding TaskNumberText}"
+                                               Foreground="{DynamicResource Accent}"
+                                               FontFamily="Menlo, Consolas, Courier New"
+                                               FontSize="11"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Title -->
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding Title}"
+                                               Foreground="{DynamicResource PrimaryText}"
+                                               FontSize="12"
+                                               TextWrapping="NoWrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Planned time -->
+                                    <TextBlock Grid.Column="4"
+                                               Text="{Binding PlannedTimeText}"
+                                               Foreground="{DynamicResource SecondaryText}"
+                                               FontFamily="Menlo, Consolas, Courier New"
+                                               FontSize="11"
+                                               TextAlignment="Right"
+                                               VerticalAlignment="Center" />
+
+                                    <!-- Open Task Details -->
+                                    <Button Grid.Column="5"
+                                            Classes="quick-history-open"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            ToolTip.Tip="{Binding $parent[ItemsControl].((vm:TerminalViewModel)DataContext).OpenDetailsLabel}"
+                                            IsEnabled="{Binding $parent[ItemsControl].((vm:TerminalViewModel)DataContext).CanEditForm}"
+                                            Command="{Binding $parent[ItemsControl].((vm:TerminalViewModel)DataContext).OpenSessionTaskCommand}"
+                                            CommandParameter="{Binding}">
+
+                                        <Path Width="18"
+                                              Height="18"
+                                              Stretch="Uniform"
+                                              Stroke="{DynamicResource Accent}"
+                                              StrokeThickness="1.8"
+                                              StrokeLineCap="Round"
+                                              Data="M5,15 L15,5 M7,5 L15,5 L15,13" />
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Quick Task input -->
+        <StackPanel Grid.Row="2"
+                    Spacing="9">
+
+            <TextBlock Text="{Binding FormErrorMessage}"
+                       Foreground="{DynamicResource Accent}"
+                       FontSize="12"
+                       TextWrapping="Wrap" />
+
+            <Border Background="{DynamicResource Surface}"
+                    CornerRadius="8"
+                    Padding="10">
+
+                <Grid ColumnDefinitions="14,134,90,*,74,52"
+                      ColumnSpacing="8">
+
+                    <!-- Prompt -->
+                    <TextBlock Grid.Column="0"
+                               Text="&gt;"
+                               Foreground="{DynamicResource Accent}"
+                               FontFamily="Menlo, Consolas, Courier New"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+
+                    <!-- Date -->
+                    <Grid x:Name="DateSegment"
+                          Grid.Column="1"
+                          ColumnDefinitions="*,Auto"
+                          Background="{DynamicResource Background}">
+
+                        <TextBox x:Name="DateInput"
+                                 Grid.Column="0"
+                                 Classes="quick-input"
+                                 Text="{Binding DateInputText, Mode=TwoWay}"
+                                 PlaceholderText="{Binding DatePlaceholder}"
+                                 ToolTip.Tip="{Binding DateLabel}"
+                                 BorderThickness="0"
+                                 Padding="6,9,0,9"
+                                 IsEnabled="{Binding CanEditForm}"
+                                 AcceptsReturn="False"
+                                 KeyDown="OnDateKeyDown" />
+
+                        <Button x:Name="CalendarButton"
+                                Grid.Column="1"
+                                Classes="calendar-trigger"
+                                IsEnabled="{Binding CanEditForm}"
+                                ToolTip.Tip="{Binding DateLabel}"
+                                Click="OnCalendarButtonClick">
+
+                            <Path Width="17"
+                                  Height="17"
+                                  Stretch="Uniform"
+                                  Stroke="{DynamicResource Accent}"
+                                  StrokeThickness="1.6"
+                                  StrokeLineCap="Round"
+                                  Data="M3,5 L17,5 L17,18 L3,18 Z M6.5,2 L6.5,8 M13.5,2 L13.5,8 M3,9 L17,9" />
+                        </Button>
+
+                        <!-- Shared calendar -->
+                        <views:DaycordCalendarView
+                            x:Name="SharedCalendar"
+                            Grid.ColumnSpan="2" />
+                    </Grid>
+
+                    <!-- Number -->
+                    <TextBox x:Name="NumberInput"
+                             Grid.Column="2"
+                             Classes="quick-input"
+                             Text="{Binding TaskNumber, Mode=TwoWay}"
+                             PlaceholderText="{Binding NumberPlaceholder}"
+                             ToolTip.Tip="{Binding NumberLabel}"
+                             IsEnabled="{Binding CanEditForm}"
+                             AcceptsReturn="False"
+                             KeyDown="OnNumberKeyDown" />
+
+                    <!-- Title -->
+                    <TextBox x:Name="TitleInput"
+                             Grid.Column="3"
+                             Classes="quick-input"
+                             Text="{Binding Title, Mode=TwoWay}"
+                             PlaceholderText="{Binding TitlePlaceholder}"
+                             ToolTip.Tip="{Binding TitleLabel}"
+                             IsEnabled="{Binding CanEditForm}"
+                             AcceptsReturn="False"
+                             KeyDown="OnTitleKeyDown" />
+
+                    <!-- Duration -->
+                    <TextBox x:Name="TimeInput"
+                             Grid.Column="4"
+                             Classes="quick-input"
+                             Text="{Binding PlannedTimeInput, Mode=TwoWay}"
+                             PlaceholderText="{Binding TimePlaceholder}"
+                             ToolTip.Tip="{Binding TimeLabel}"
+                             IsEnabled="{Binding CanEditForm}"
+                             AcceptsReturn="False"
+                             KeyDown="OnTimeKeyDown" />
+
+                    <!-- Submit -->
+                    <Button Grid.Column="5"
+                            Classes="quick-submit"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            MinWidth="52"
+                            ToolTip.Tip="{Binding EnterHint}"
+                            Command="{Binding CreateTaskCommand}">
+
+                        <Path Width="20"
+                              Height="20"
+                              Stretch="Uniform"
+                              Stroke="{DynamicResource Background}"
+                              StrokeThickness="2"
+                              StrokeLineCap="Round"
+                              Data="M17,4 L17,12 Q17,16 13,16 L4,16 M9,11 L4,16 L9,21" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <ProgressBar Height="2"
+                         IsIndeterminate="True"
+                         IsVisible="{Binding IsCreating}"
+                         Foreground="{DynamicResource Accent}" />
+
+            <!-- Hint and success -->
+            <Grid ColumnDefinitions="*,Auto">
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding EnterHint}"
+                           Foreground="{DynamicResource SecondaryText}"
+                           FontFamily="Menlo, Consolas, Courier New"
+                           FontSize="10"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center" />
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding CreatedMessage}"
+                           Foreground="{DynamicResource Accent}"
+                           FontSize="11"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,30 +1,192 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-  </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <Folder Include="Models\" />
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
 
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.4" />
-    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
-      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
-      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-  </ItemGroup>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <UseAppHost>true</UseAppHost>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Daycord.Core\Daycord.Core.csproj" />
-    <ProjectReference Include="..\Daycord.Infrastructure\Daycord.Infrastructure.csproj" />
-  </ItemGroup>
+    <!-- Reliable Release publishing; individual platforms still select their own RID. -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <PublishTrimmed>false</PublishTrimmed>
+        <PublishAot>false</PublishAot>
+        <PublishSingleFile>false</PublishSingleFile>
+        <PublishReadyToRun>false</PublishReadyToRun>
+    </PropertyGroup>
+
+    <!-- Self-contained macOS ARM64 Release, also when publishing from Rider. -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release' And '$(RuntimeIdentifier)' == 'osx-arm64'">
+        <SelfContained>true</SelfContained>
+    </PropertyGroup>
+
+    <!-- Windows: embed icon.ico in the executable -->
+    <PropertyGroup
+            Condition="'$(RuntimeIdentifier)' == 'win-x64'
+      Or ('$(RuntimeIdentifier)' == ''
+      And $([MSBuild]::IsOSPlatform('Windows')))">
+
+        <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
+
+    </PropertyGroup>
+
+    <!-- macOS Debug: build directly inside Daycord.app -->
+    <PropertyGroup
+            Condition="'$(Configuration)' == 'Debug'
+      And $([MSBuild]::IsOSPlatform('OSX'))
+      And ('$(RuntimeIdentifier)' == ''
+        Or '$(RuntimeIdentifier)' == 'osx-arm64'
+        Or '$(RuntimeIdentifier)' == 'osx-x64')">
+
+        <IsDaycordMacDebugBundle>true</IsDaycordMacDebugBundle>
+
+        <OutputPath>bin/Debug/net10.0/Daycord.app/Contents/MacOS/</OutputPath>
+
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    </PropertyGroup>
+
+    <!-- Avalonia resources -->
+    <ItemGroup>
+        <AvaloniaResource Include="Assets/**"
+                          Exclude="Assets/*.icns" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" />
+        <PackageReference Include="Avalonia.Desktop" />
+        <PackageReference Include="Avalonia.Themes.Fluent" />
+        <PackageReference Include="Avalonia.Fonts.Inter" />
+
+        <PackageReference Include="AvaloniaUI.DiagnosticsSupport">
+            <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+            <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+        </PackageReference>
+
+        <PackageReference Include="CommunityToolkit.Mvvm" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Daycord.Core/Daycord.Core.csproj" />
+        <ProjectReference Include="../Daycord.Infrastructure/Daycord.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <!-- macOS Debug: install versioned Info.plist and icon.icns automatically -->
+    <Target Name="PrepareDaycordDebugMacBundle"
+            AfterTargets="Build"
+            Condition="'$(IsDaycordMacDebugBundle)' == 'true'">
+
+        <PropertyGroup>
+            <_DaycordDebugContents>$(MSBuildProjectDirectory)/bin/Debug/net10.0/Daycord.app/Contents</_DaycordDebugContents>
+        </PropertyGroup>
+
+        <Error
+                Condition="!Exists('$(MSBuildProjectDirectory)/Assets/icon.icns')"
+                Text="Missing Assets/icon.icns for macOS Debug." />
+
+        <Error
+                Condition="!Exists('$(MSBuildProjectDirectory)/Packaging/macOS/Info.plist')"
+                Text="Missing Packaging/macOS/Info.plist." />
+
+        <MakeDir Directories="$(_DaycordDebugContents)/Resources" />
+
+        <Copy
+                SourceFiles="$(MSBuildProjectDirectory)/Assets/icon.icns"
+                DestinationFiles="$(_DaycordDebugContents)/Resources/icon.icns" />
+
+        <Copy
+                SourceFiles="$(MSBuildProjectDirectory)/Packaging/macOS/Info.plist"
+                DestinationFiles="$(_DaycordDebugContents)/Info.plist" />
+
+        <XmlPoke
+                XmlInputPath="$(_DaycordDebugContents)/Info.plist"
+                Query="/plist/dict/key[.='CFBundleShortVersionString']/following-sibling::string[1]"
+                Value="$(DaycordVersion)" />
+
+        <XmlPoke
+                XmlInputPath="$(_DaycordDebugContents)/Info.plist"
+                Query="/plist/dict/key[.='CFBundleVersion']/following-sibling::string[1]"
+                Value="$(DaycordVersion)" />
+
+    </Target>
+
+    <!-- macOS Release: automatically package the published app -->
+    <Target Name="BundleDaycordMacApp"
+            AfterTargets="Publish"
+            Condition="'$(Configuration)' == 'Release'
+                  And ('$(RuntimeIdentifier)' == 'osx-arm64'
+                    Or '$(RuntimeIdentifier)' == 'osx-x64')">
+
+        <PropertyGroup>
+            <_DaycordPublishRoot>$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))</_DaycordPublishRoot>
+            <_DaycordBundle>$(_DaycordPublishRoot)Daycord.app</_DaycordBundle>
+            <_DaycordContents>$(_DaycordBundle)/Contents</_DaycordContents>
+        </PropertyGroup>
+
+        <Error
+                Condition="'$(SelfContained)' != 'true'"
+                Text="macOS Release publishing must be self-contained." />
+
+        <Error
+                Condition="'$(PublishTrimmed)' == 'true' Or '$(PublishAot)' == 'true' Or '$(PublishSingleFile)' == 'true'"
+                Text="macOS Release does not support trimming, Native AOT, or single-file publish." />
+
+        <Error
+                Condition="!Exists('$(MSBuildProjectDirectory)/Assets/icon.icns')"
+                Text="Missing Assets/icon.icns for macOS packaging." />
+
+        <Error
+                Condition="!Exists('$(MSBuildProjectDirectory)/Packaging/macOS/Info.plist')"
+                Text="Missing Packaging/macOS/Info.plist." />
+
+        <Error
+                Condition="!Exists('$(_DaycordPublishRoot)Daycord.Desktop')"
+                Text="Missing macOS executable in publish output: $(_DaycordPublishRoot)Daycord.Desktop" />
+
+        <RemoveDir Directories="$(_DaycordBundle)" />
+
+        <ItemGroup>
+            <_DaycordPublishFile Include="$(_DaycordPublishRoot)**/*"
+                                 Exclude="$(_DaycordPublishRoot)Daycord.app/**/*" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(_DaycordContents)/MacOS;$(_DaycordContents)/Resources" />
+
+        <Copy
+                SourceFiles="@(_DaycordPublishFile)"
+                DestinationFiles="@(_DaycordPublishFile->'$(_DaycordContents)/MacOS/%(RecursiveDir)%(Filename)%(Extension)')" />
+
+        <Copy
+                SourceFiles="$(MSBuildProjectDirectory)/Assets/icon.icns"
+                DestinationFiles="$(_DaycordContents)/Resources/icon.icns" />
+
+        <Copy
+                SourceFiles="$(MSBuildProjectDirectory)/Packaging/macOS/Info.plist"
+                DestinationFiles="$(_DaycordContents)/Info.plist" />
+
+        <XmlPoke
+                XmlInputPath="$(_DaycordContents)/Info.plist"
+                Query="/plist/dict/key[.='CFBundleShortVersionString']/following-sibling::string[1]"
+                Value="$(DaycordVersion)" />
+
+        <XmlPoke
+                XmlInputPath="$(_DaycordContents)/Info.plist"
+                Query="/plist/dict/key[.='CFBundleVersion']/following-sibling::string[1]"
+                Value="$(DaycordVersion)" />
+
+        <Exec
+                Condition="$([MSBuild]::IsOSPlatform('OSX'))"
+                Command="chmod +x &quot;$(_DaycordContents)/MacOS/Daycord.Desktop&quot;" />
+
+        <Exec
+                Condition="$([MSBuild]::IsOSPlatform('OSX'))"
+                Command="/usr/bin/plutil -lint &quot;$(_DaycordContents)/Info.plist&quot;" />
+
+    </Target>
+
 </Project>
