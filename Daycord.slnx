@@ -1,6 +1,10 @@
 <Solution>
-  <Folder Name="/src/" />
-  <Project Path="src/Daycord.Core/Daycord.Core.csproj" />
-  <Project Path="src/Daycord.Desktop/Daycord.Desktop.csproj" />
-  <Project Path="src/Daycord.Infrastructure/Daycord.Infrastructure.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/Daycord.Core/Daycord.Core.csproj" />
+    <Project Path="src/Daycord.Desktop/Daycord.Desktop.csproj" />
+    <Project Path="src/Daycord.Infrastructure/Daycord.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/common/">
+    <File Path="Directory.Packages.props"/>
+  </Folder>
 </Solution>

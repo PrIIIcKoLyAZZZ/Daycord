@@ -1,0 +1,185 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Daycord.Desktop.Views.DaycordCalendarView"
+             Width="0"
+             Height="0"
+             MinWidth="0"
+             MinHeight="0"
+             HorizontalAlignment="Left"
+             VerticalAlignment="Top"
+             Focusable="False">
+
+    <UserControl.Styles>
+
+        <!-- Month navigation -->
+        <Style Selector="Button.dc-month-nav">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.dc-month-nav:pointerover">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}" />
+        </Style>
+
+        <!-- Weekdays -->
+        <Style Selector="TextBlock.dc-weekday">
+            <Setter Property="Foreground"
+                    Value="{DynamicResource SecondaryText}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Calendar day -->
+        <Style Selector="Button.dc-day">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style Selector="Button.dc-day:pointerover">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}" />
+        </Style>
+
+        <Style Selector="Button.dc-day.outside">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+
+        <Style Selector="Button.dc-day.today">
+            <Setter Property="BorderBrush"
+                    Value="{DynamicResource Accent}" />
+        </Style>
+
+        <!-- Selected date -->
+        <Style Selector="Button.dc-day.selected">
+            <Setter Property="Background"
+                    Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Background}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <Style Selector="Button.dc-day.selected:pointerover">
+            <Setter Property="Background"
+                    Value="{DynamicResource Accent}" />
+        </Style>
+
+        <!-- Today -->
+        <Style Selector="Button.dc-today">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource Accent}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        </Style>
+
+        <Style Selector="Button.dc-today:pointerover">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}" />
+        </Style>
+
+    </UserControl.Styles>
+
+    <!--
+        Shared popup:
+        - positioned relative to an external PlacementTarget
+        - independent of the host UserControl's layout size
+        - used by Quick Task and Task Details
+    -->
+    <Popup x:Name="CalendarPopup"
+           IsLightDismissEnabled="True">
+
+        <Border Width="280"
+                Padding="14"
+                CornerRadius="9"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource Accent}"
+                Background="{DynamicResource Surface}">
+
+            <StackPanel Spacing="12">
+
+                <!-- Month navigation -->
+                <Grid ColumnDefinitions="34,*,34">
+
+                    <Button Grid.Column="0"
+                            Classes="dc-month-nav"
+                            Click="OnPreviousMonthClick">
+
+                        <Path Width="16"
+                              Height="16"
+                              Stretch="Uniform"
+                              Stroke="{DynamicResource PrimaryText}"
+                              StrokeThickness="1.8"
+                              StrokeLineCap="Round"
+                              Data="M11,3 L5,8 L11,13" />
+                    </Button>
+
+                    <TextBlock x:Name="MonthTitle"
+                               Grid.Column="1"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               FontSize="13"
+                               Foreground="{DynamicResource PrimaryText}" />
+
+                    <Button Grid.Column="2"
+                            Classes="dc-month-nav"
+                            Click="OnNextMonthClick">
+
+                        <Path Width="16"
+                              Height="16"
+                              Stretch="Uniform"
+                              Stroke="{DynamicResource PrimaryText}"
+                              StrokeThickness="1.8"
+                              StrokeLineCap="Round"
+                              Data="M5,3 L11,8 L5,13" />
+                    </Button>
+
+                </Grid>
+
+                <!-- Weekday labels -->
+                <UniformGrid x:Name="WeekdayHeader"
+                             Columns="7" />
+
+                <!-- Day buttons -->
+                <UniformGrid x:Name="CalendarDaysGrid"
+                             Columns="7"
+                             Rows="6" />
+
+                <Border Height="1"
+                        Background="{DynamicResource SecondaryText}"
+                        Opacity="0.25" />
+
+                <!-- Today action -->
+                <Button x:Name="TodayButton"
+                        Classes="dc-today"
+                        Click="OnTodayClick" />
+
+            </StackPanel>
+        </Border>
+    </Popup>
+</UserControl>

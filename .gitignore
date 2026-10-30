@@ -1,0 +1,53 @@
+# .NET build outputs
+**/bin/
+**/obj/
+artifacts/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+
+# Backups
+*.bak
+*.backup
+*.daycordbak
+
+# Local secrets
+.env
+.env.*
+secrets.json
+*.pfx
+*.p12
+*.key
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Generated Excel reports
+*.xlsx

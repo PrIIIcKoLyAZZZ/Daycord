@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>2.0</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+
+    <!-- Application -->
+    <data name="AppName"><value>Daycord</value></data>
+    <data name="AppWordmark"><value>DAYCORD</value></data>
+    <data name="WelcomeMessage"><value>Welcome to Daycord</value></data>
+
+    <!-- Navigation -->
+    <data name="NavigationHeading"><value>Navigation</value></data>
+    <data name="NavHome"><value>Home</value></data>
+    <data name="NavCalendar"><value>Calendar</value></data>
+    <data name="NavTasks"><value>Tasks</value></data>
+    <data name="NavNewTask"><value>Quick Task</value></data>
+    <data name="NavReports"><value>Reports</value></data>
+    <data name="NavSettings"><value>Settings</value></data>
+
+    <!-- Placeholder pages -->
+    <data name="PlaceholderHeading"><value>Coming soon</value></data>
+    <data name="PlaceholderDescription"><value>This section will be available in a future update.</value></data>
+
+    <!-- Database initialization -->
+    <data name="DatabaseInitializing"><value>Initializing local database...</value></data>
+    <data name="DatabaseReady"><value>Local database ready.</value></data>
+    <data name="DatabaseInitializationFailed"><value>Database initialization failed: {0}</value></data>
+    <data name="DatabaseUnavailable"><value>Task data is unavailable. Close Daycord and check the database or its backups.</value></data>
+
+    <!-- Retained legacy DC-006 strings -->
+    <data name="TerminalRecentlyCreated"><value>RECENTLY CREATED</value></data>
+    <data name="TerminalEmptySession"><value>No tasks created in this session.</value></data>
+    <data name="TerminalCreateHeading"><value>CREATE TASK</value></data>
+    <data name="TerminalDateLabel"><value>Date</value></data>
+    <data name="TerminalTitleLabel"><value>Title</value></data>
+    <data name="TerminalTitlePlaceholder"><value>Enter task title...</value></data>
+    <data name="TerminalShortDescriptionLabel"><value>Description</value></data>
+    <data name="TerminalShortDescriptionPlaceholder"><value>Optional short description</value></data>
+    <data name="TerminalStatusLabel"><value>Status</value></data>
+    <data name="TerminalEnterHint"><value>Press Enter in Title to create a task</value></data>
+    <data name="TerminalRetryStatuses"><value>Retry loading statuses</value></data>
+    <data name="TerminalCreating"><value>Creating...</value></data>
+    <data name="TerminalCreateTask"><value>Create Task</value></data>
+    <data name="TerminalTaskCreated"><value>Task created successfully.</value></data>
+    <data name="TerminalDateRequired"><value>Select a task date.</value></data>
+    <data name="TerminalTitleRequired"><value>Enter a task title.</value></data>
+    <data name="TerminalStatusRequired"><value>Select a task status.</value></data>
+    <data name="TerminalCreateError"><value>Could not create task: {0}</value></data>
+    <data name="TerminalStatusLoadError"><value>Could not load task statuses: {0}</value></data>
+    <data name="TerminalStatusOpen"><value>Open</value></data>
+    <data name="TerminalStatusCompleted"><value>Completed</value></data>
+    <data name="TerminalExpandTask"><value>Expand task details</value></data>
+    <data name="TerminalCollapseTask"><value>Collapse task details</value></data>
+    <data name="TerminalMarkdownLabel"><value>MARKDOWN DESCRIPTION</value></data>
+    <data name="TerminalMarkdownPlaceholder"><value>Add detailed Markdown description...</value></data>
+    <data name="TerminalSaving"><value>Saving...</value></data>
+    <data name="TerminalSavingMarkdown"><value>Saving...</value></data>
+    <data name="TerminalSaveMarkdown"><value>Save Description</value></data>
+    <data name="TerminalMarkdownSaveError"><value>Could not save description: {0}</value></data>
+    <data name="TerminalMarkdownSaved"><value>Description saved.</value></data>
+
+    <!-- Quick Task -->
+    <data name="QuickTaskRecentHeading"><value>RECENTLY CREATED</value></data>
+    <data name="QuickTaskEmptySession"><value>No tasks created in this session.</value></data>
+    <data name="QuickTaskDateLabel"><value>Date</value></data>
+    <data name="QuickTaskNumberLabel"><value>Issue number (optional)</value></data>
+    <data name="QuickTaskTitleLabel"><value>Title</value></data>
+    <data name="QuickTaskTimeLabel"><value>Planned time (optional)</value></data>
+    <data name="QuickTaskNumberPlaceholder"><value>ISSUE-123</value></data>
+    <data name="QuickTaskTitlePlaceholder"><value>Task title...</value></data>
+    <data name="QuickTaskTimePlaceholder"><value>1h</value></data>
+    <data name="QuickTaskEnterHint"><value>Press Enter to create a task</value></data>
+    <data name="QuickTaskToday"><value>today</value></data>
+    <data name="QuickTaskTomorrow"><value>tomorrow</value></data>
+    <data name="QuickTaskCreating"><value>Creating...</value></data>
+    <data name="QuickTaskCreateAction"><value>Create task</value></data>
+    <data name="QuickTaskCreated"><value>Task created.</value></data>
+    <data name="QuickTaskDateRequired"><value>Select a date.</value></data>
+    <data name="QuickTaskTitleRequired"><value>Enter a task title.</value></data>
+    <data name="QuickTaskInvalidTime"><value>Enter a duration such as 30m or 1h 30m.</value></data>
+    <data name="QuickTaskCreateError"><value>Could not create task: {0}</value></data>
+
+    <!-- Task List (DC-007) -->
+    <data name="TaskListHeading"><value>Tasks</value></data>
+    <data name="TaskListSearchPlaceholder"><value>Search by title or short description...</value></data>
+    <data name="TaskListStatusFilter"><value>Status</value></data>
+    <data name="TaskListDateFrom"><value>From</value></data>
+    <data name="TaskListDateTo"><value>To</value></data>
+    <data name="TaskListSortLabel"><value>Sort by</value></data>
+    <data name="TaskListDescending"><value>Descending</value></data>
+    <data name="TaskListAscending"><value>Ascending</value></data>
+    <data name="TaskListRefresh"><value>Refresh</value></data>
+    <data name="TaskListResetFilters"><value>Clear filters</value></data>
+    <data name="TaskListLoading"><value>Loading tasks...</value></data>
+    <data name="TaskListEmpty"><value>No tasks yet. Create a task in Quick Task to see it here.</value></data>
+    <data name="TaskListNoResults"><value>No tasks match the current search and filters.</value></data>
+    <data name="TaskListColumnDate"><value>Date</value></data>
+    <data name="TaskListColumnTitle"><value>Title</value></data>
+    <data name="TaskListColumnDescription"><value>Short Description</value></data>
+    <data name="TaskListColumnPlanned"><value>Planned</value></data>
+    <data name="TaskListColumnActual"><value>Actual</value></data>
+    <data name="TaskListColumnStatus"><value>Status</value></data>
+    <data name="TaskListInvalidDateRange"><value>Start date cannot be later than end date.</value></data>
+    <data name="TaskListLoadError"><value>Could not load tasks: {0}</value></data>
+    <data name="TaskListStatusOpen"><value>Open</value></data>
+    <data name="TaskListStatusCompleted"><value>Completed</value></data>
+    <data name="TaskListHoursUnit"><value>h</value></data>
+    <data name="TaskListMinutesUnit"><value>m</value></data>
+    <data name="TaskListAllStatuses"><value>All statuses</value></data>
+    <data name="TaskListSortDate"><value>Date</value></data>
+    <data name="TaskListSortTitle"><value>Title</value></data>
+    <data name="TaskListSortStatus"><value>Status</value></data>
+
+    <!-- Task List actions (DC-007) -->
+    <data name="TaskListShowFilters"><value>Filters</value></data>
+    <data name="TaskListHideFilters"><value>Hide filters</value></data>
+    <data name="TaskListFiltersActive"><value>Filters active</value></data>
+    <data name="TaskListDelete"><value>Delete</value></data>
+    <data name="TaskListDeleteConfirmationTitle"><value>Delete task?</value></data>
+    <data name="TaskListDeleteConfirmationMessage"><value>Permanently delete “{0}” and all its planned and recorded time? This cannot be undone.</value></data>
+    <data name="TaskListConfirmDelete"><value>Delete task</value></data>
+    <data name="TaskListCancelDelete"><value>Cancel</value></data>
+    <data name="TaskListDeleting"><value>Deleting task...</value></data>
+    <data name="TaskListDeleteError"><value>Could not delete task: {0}</value></data>
+
+    <!-- Task Details (DC-008) -->
+    <data name="TaskDetailsHeading"><value>TASK DETAILS</value></data>
+    <data name="TaskDetailsBack"><value>← Back</value></data>
+    <data name="TaskDetailsSave"><value>Save Changes</value></data>
+    <data name="TaskDetailsCancel"><value>Cancel</value></data>
+    <data name="TaskDetailsNumber"><value>Task Number</value></data>
+    <data name="TaskDetailsTitle"><value>Title</value></data>
+    <data name="TaskDetailsDate"><value>Date</value></data>
+    <data name="TaskDetailsStatus"><value>Status</value></data>
+    <data name="TaskDetailsShortDescription"><value>Short Description</value></data>
+    <data name="TaskDetailsMarkdown"><value>MARKDOWN DESCRIPTION</value></data>
+    <data name="TaskDetailsEdit"><value>Edit</value></data>
+    <data name="TaskDetailsPreview"><value>Preview</value></data>
+    <data name="TaskDetailsLoading"><value>Loading task...</value></data>
+    <data name="TaskDetailsSaving"><value>Saving...</value></data>
+    <data name="TaskDetailsSaveSuccessful"><value>Changes saved.</value></data>
+    <data name="TaskDetailsTaskNotFound"><value>This task no longer exists.</value></data>
+    <data name="TaskDetailsDatePlaceholder"><value>dd.mm.yyyy (optional)</value></data>
+    <data name="TaskDetailsDiscardTitle"><value>Discard changes?</value></data>
+    <data name="TaskDetailsDiscardMessage"><value>You have unsaved changes. Leave this task without saving?</value></data>
+    <data name="TaskDetailsDiscard"><value>Discard Changes</value></data>
+    <data name="TaskDetailsKeepEditing"><value>Keep Editing</value></data>
+    <data name="TaskDetailsLoadFailed"><value>Could not load task: {0}</value></data>
+    <data name="TaskDetailsTitleRequired"><value>Enter a task title.</value></data>
+    <data name="TaskDetailsDateInvalid"><value>Enter a valid date or leave it blank.</value></data>
+    <data name="TaskDetailsStatusRequired"><value>Select a task status.</value></data>
+    <data name="TaskDetailsValidationError"><value>Invalid task data: {0}</value></data>
+    <data name="TaskDetailsSaveFailed"><value>Could not save task: {0}</value></data>
+
+    <!-- Quick Task: open existing task -->
+    <data name="QuickTaskOpenDetails"><value>Open task details</value></data>
+
+    <!-- Full task creation -->
+    <data name="TaskDetailsCreateHeading"><value>CREATE TASK</value></data>
+    <data name="TaskDetailsCreateAction"><value>Create Task</value></data>
+    <data name="TaskDetailsCreating"><value>Creating...</value></data>
+    <data name="TaskDetailsCreateSuccessful"><value>Task created.</value></data>
+    <data name="TaskDetailsCreateFailed"><value>Could not create task: {0}</value></data>
+
+    <!-- Planning time management (DC-009) -->
+    <data name="PlanningPeriods"><value>PLANNED PERIODS</value></data>
+    <data name="PlanningNoPeriods"><value>No planned periods.</value></data>
+    <data name="PlanningAddPeriod"><value>＋ Add period</value></data>
+    <data name="PlanningEditPeriod"><value>Edit period</value></data>
+    <data name="PlanningDeletePeriod"><value>Delete period</value></data>
+    <data name="PlanningDate"><value>Date</value></data>
+    <data name="PlanningDuration"><value>Duration</value></data>
+    <data name="PlanningTotal"><value>Total planned</value></data>
+    <data name="PlanningDeleteTitle"><value>Delete planned period?</value></data>
+    <data name="PlanningDeleteMessage"><value>This planned period will be permanently deleted. Other periods and recorded work time will not change.</value></data>
+    <data name="PlanningValidationError"><value>Check the date and duration.</value></data>
+    <data name="PlanningSaveFailed"><value>Could not save planned period: {0}</value></data>
+    <data name="PlanningDeleteFailed"><value>Could not delete planned period: {0}</value></data>
+    <data name="PlanningSave"><value>Save period</value></data>
+    <data name="PlanningCancel"><value>Cancel</value></data>
+
+    <!-- Actual Time / Work Log (DC-010) -->
+    <data name="WorkLogTitle"><value>ACTUAL TIME / WORK LOG</value></data>
+    <data name="WorkEntriesLabel"><value>WORK ENTRIES</value></data>
+    <data name="WorkAddEntry"><value>＋ Add work entry</value></data>
+    <data name="WorkEditEntry"><value>Edit work entry</value></data>
+    <data name="WorkDate"><value>Work date</value></data>
+    <data name="WorkDuration"><value>Duration</value></data>
+    <data name="WorkDescription"><value>What I did</value></data>
+    <data name="WorkNote"><value>Note</value></data>
+    <data name="WorkTotalActual"><value>Total actual</value></data>
+    <data name="WorkNoEntries"><value>No work entries yet.</value></data>
+    <data name="WorkSaveEntry"><value>Save entry</value></data>
+    <data name="WorkSaveIndependentHint"><value>Work entries are saved separately from the main task.</value></data>
+    <data name="WorkDeleteTitle"><value>Delete work entry?</value></data>
+    <data name="WorkDeleteMessage"><value>Permanently delete this work entry? Other work entries and planned periods will not change.</value></data>
+    <data name="WorkDeleteEntry"><value>Delete entry</value></data>
+    <data name="WorkValidationError"><value>Enter a valid work date and a positive duration (e.g. 30m or 1h 30m).</value></data>
+    <data name="WorkEntryNotFound"><value>Work entry was not found: {0}</value></data>
+    <data name="WorkSaveFailed"><value>Could not save work entry: {0}</value></data>
+    <data name="WorkDeleteFailed"><value>Could not delete work entry: {0}</value></data>
+
+    <!-- Calendar (DC-011) -->
+    <data name="CalendarToday"><value>Today</value></data>
+    <data name="CalendarPreviousMonth"><value>Previous month</value></data>
+    <data name="CalendarNextMonth"><value>Next month</value></data>
+    <data name="CalendarSelectedDay"><value>SELECTED DAY</value></data>
+    <data name="CalendarTasks"><value>Tasks</value></data>
+    <data name="CalendarPlannedWork"><value>Planned work</value></data>
+    <data name="CalendarActualWork"><value>Actual work</value></data>
+    <data name="CalendarTotalPlanned"><value>Total planned</value></data>
+    <data name="CalendarTotalActual"><value>Total actual</value></data>
+    <data name="CalendarNoEntries"><value>No tasks or work recorded for this day.</value></data>
+    <data name="CalendarNoMonthData"><value>No tasks or recorded work this month.</value></data>
+    <data name="CalendarNoTasks"><value>No tasks on this date.</value></data>
+    <data name="CalendarNoPlanned"><value>No planned work on this date.</value></data>
+    <data name="CalendarNoActual"><value>No actual work recorded on this date.</value></data>
+    <data name="CalendarLoading"><value>Loading calendar...</value></data>
+    <data name="CalendarLoadFailed"><value>Could not load calendar: {0}</value></data>
+    <data name="CalendarRetry"><value>Retry</value></data>
+    <data name="CalendarOpenTask"><value>Open task</value></data>
+
+    <!-- Home Dashboard (DC-012) -->
+    <data name="HomeDashboardTodayTasks"><value>Today's Tasks</value></data>
+    <data name="HomeDashboardCompleted"><value>Completed</value></data>
+    <data name="HomeDashboardPlannedToday"><value>Planned Today</value></data>
+    <data name="HomeDashboardActualToday"><value>Actual Today</value></data>
+    <data name="HomeDashboardPlannedWork"><value>Planned Work</value></data>
+    <data name="HomeDashboardActualWork"><value>Actual Work</value></data>
+    <data name="HomeDashboardNoTasks"><value>No tasks scheduled for today.</value></data>
+    <data name="HomeDashboardNoPlanned"><value>No planned work today.</value></data>
+    <data name="HomeDashboardNoActual"><value>No work entries for today.</value></data>
+    <data name="HomeDashboardNoEntries"><value>No tasks, planned work or recorded work today.</value></data>
+    <data name="HomeDashboardLoading"><value>Loading dashboard...</value></data>
+    <data name="HomeDashboardLoadFailed"><value>Could not load dashboard: {0}</value></data>
+    <data name="HomeDashboardRetry"><value>Retry</value></data>
+    <data name="HomeDashboardOpenTask"><value>Open task</value></data>
+
+    <!-- Monthly Excel Reports (DC-013) -->
+    <data name="ReportsMonthlyWorkReport"><value>Monthly Work Report</value></data>
+    <data name="ReportsReportingPeriod"><value>Reporting period</value></data>
+    <data name="ReportsPreviousMonth"><value>Previous month</value></data>
+    <data name="ReportsNextMonth"><value>Next month</value></data>
+    <data name="ReportsCurrentMonth"><value>Current month</value></data>
+    <data name="ReportsWorkEntries"><value>Work entries</value></data>
+    <data name="ReportsTotalActualTime"><value>Total actual time</value></data>
+    <data name="ReportsExportToExcel"><value>Export to Excel</value></data>
+    <data name="ReportsExporting"><value>Exporting to Excel...</value></data>
+    <data name="ReportsLoading"><value>Loading report...</value></data>
+    <data name="ReportsNoWorkEntries"><value>No work entries recorded for this month. You can still export an empty report.</value></data>
+    <data name="ReportsRetry"><value>Retry</value></data>
+    <data name="ReportsLoadFailed"><value>Could not load report: {0}</value></data>
+    <data name="ReportsExportFailed"><value>Could not export report: {0}</value></data>
+    <data name="ReportsExportCompleted"><value>Report saved successfully: {0}</value></data>
+    <data name="ReportsInvalidPeriod"><value>The selected reporting period is invalid.</value></data>
+    <data name="ReportsFileSaveFailed"><value>Could not save the Excel file: {0}</value></data>
+
+    <!-- Configurable Reports (DC-013 extension) -->
+    <data name="ReportsDateFrom"><value>From</value></data>
+    <data name="ReportsDateTo"><value>To</value></data>
+    <data name="ReportsReportRows"><value>Report rows</value></data>
+    <data name="ReportsTotalPlannedTime"><value>Total planned time</value></data>
+    <data name="ReportsPreset"><value>Report preset</value></data>
+    <data name="ReportsPresetName"><value>Preset name</value></data>
+    <data name="ReportsNewPresetNamePlaceholder"><value>Name for a new preset</value></data>
+    <data name="ReportsCreatePreset"><value>Create preset</value></data>
+    <data name="ReportsDeletePreset"><value>Delete preset</value></data>
+    <data name="ReportsResetToDefault"><value>Reset to default</value></data>
+    <data name="ReportsColumnsAndOrder"><value>Columns and order</value></data>
+    <data name="ReportsColumnsDescription"><value>Select fields, rename headers and change their order.</value></data>
+    <data name="ReportsMoveUp"><value>Move up</value></data>
+    <data name="ReportsMoveDown"><value>Move down</value></data>
+    <data name="ReportsUnsavedChanges"><value>Unsaved changes</value></data>
+    <data name="ReportsSaveColumnSettings"><value>Save column settings</value></data>
+    <data name="ReportsNoReportRows"><value>No report rows for the selected period.</value></data>
+    <data name="ReportsPresetFailed"><value>Could not save or load report presets: {0}</value></data>
+
+    <!-- Backup & Restore (DC-014) -->
+    <data name="BackupSectionTitle"><value>Backup &amp; Restore</value></data>
+    <data name="BackupSectionDescription"><value>Keep a copy of your Daycord data and restore it when needed.</value></data>
+    <data name="BackupCreateTitle"><value>Create backup</value></data>
+    <data name="BackupCreateDescription"><value>Save a complete copy of tasks, planned and actual work, report presets, and settings.</value></data>
+    <data name="BackupCreateButton"><value>Create backup</value></data>
+    <data name="BackupRestoreTitle"><value>Restore from backup</value></data>
+    <data name="BackupRestoreDescription"><value>Select a Daycord SQLite backup to replace current data after restarting the app.</value></data>
+    <data name="BackupChooseFile"><value>Choose backup file</value></data>
+    <data name="BackupConfirmationTitle"><value>Restore data?</value></data>
+    <data name="BackupConfirmationWarning"><value>Restoring this backup will replace your current tasks, work entries, planning periods, report presets and report settings.</value></data>
+    <data name="BackupSafetyWarning"><value>Daycord will save a safety copy of the current database before applying the restore at the next launch.</value></data>
+    <data name="BackupCancel"><value>Cancel</value></data>
+    <data name="BackupConfirmRestore"><value>Restore</value></data>
+    <data name="BackupLastOperation"><value>LAST OPERATION</value></data>
+    <data name="BackupWorking"><value>Working with the database...</value></data>
+    <data name="BackupRestartRequired"><value>Close Daycord normally, then open it again to apply the prepared restore.</value></data>
+    <data name="BackupSaveDialogTitle"><value>Save Daycord backup</value></data>
+    <data name="BackupOpenDialogTitle"><value>Choose a Daycord backup</value></data>
+    <data name="BackupRestorePrepared"><value>Restore prepared. Restart Daycord to apply it.</value></data>
+    <data name="BackupCreated"><value>Backup created successfully: {0}</value></data>
+    <data name="BackupCorrupted"><value>The selected SQLite backup is corrupted. No data was changed.</value></data>
+    <data name="BackupIncompatible"><value>This backup is incompatible with the current Daycord database schema. No data was changed.</value></data>
+    <data name="BackupInvalid"><value>The selected file is not a valid Daycord backup.</value></data>
+    <data name="BackupReportsBusy"><value>Finish exporting or save report settings before preparing a restore.</value></data>
+    <data name="BackupRestoreFailed"><value>Could not prepare the restore. Current data was not replaced.</value></data>
+    <data name="BackupPermissionDenied"><value>Access denied. Check your permissions for the selected file or folder.</value></data>
+    <data name="BackupFileUnavailable"><value>The selected file or folder is unavailable.</value></data>
+    <data name="BackupStorageError"><value>Could not read or write the backup. Check available space, access rights, and file locks.</value></data>
+    <data name="BackupFailed"><value>Could not create the backup.</value></data>
+    <data name="BackupRestoreCompleted"><value>Restore completed successfully.</value></data>
+    <data name="BackupRestoreSafetyCopy"><value>A safety copy of your previous data has been retained.</value></data>
+    <data name="BackupOperationInProgress"><value>Another backup or restore operation is in progress.</value></data>
+    <data name="BackupRetry"><value>Retry</value></data>
+    <data name="BackupRestoreCancelled"><value>Restore cancelled. Current data was not changed.</value></data>
+
+    <!-- Application Settings (DC-015) -->
+    <data name="SettingsGeneralHeading"><value>Application Settings</value></data>
+    <data name="SettingsLanguageTitle"><value>Language</value></data>
+    <data name="SettingsLanguageDescription"><value>Interface language</value></data>
+    <data name="SettingsAppearanceTitle"><value>Appearance</value></data>
+    <data name="SettingsAppearanceDescription"><value>Application theme</value></data>
+    <data name="SettingsTimeTrackingHeading"><value>TIME TRACKING</value></data>
+    <data name="SettingsDayLengthTitle"><value>Duration of one day</value></data>
+    <data name="SettingsDayLengthDescription"><value>Used to interpret 1d when entering durations. Enter 24h, 8h or 7h 30m.</value></data>
+    <data name="SettingsSaveDuration"><value>Save</value></data>
+    <data name="SettingsDataHeading"><value>DATA</value></data>
+    <data name="SettingsDayEquivalent"><value>1d = {0}</value></data>
+    <data name="SettingsThemeSystem"><value>System</value></data>
+    <data name="SettingsThemeLight"><value>Light</value></data>
+    <data name="SettingsThemeDark"><value>Dark</value></data>
+    <data name="SettingsSaved"><value>Settings saved.</value></data>
+    <data name="SettingsSaveFailed"><value>Could not save settings. Previous values remain active.</value></data>
+    <data name="SettingsInvalidDuration"><value>Enter a duration from 1m to 24h (e.g. 8h or 7h 30m). The d unit is not allowed here.</value></data>
+</root>
