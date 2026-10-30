@@ -24,33 +24,6 @@ public sealed record WorkReportColumn(
     WorkReportField Field,
     string Header);
 
-/// <summary>
-/// The built-in report layout for contract work.
-/// </summary>
-public static class WorkReportDefaults
-{
-    public static IReadOnlyList<WorkReportColumn> Columns { get; } =
-        Array.AsReadOnly(
-            new[]
-            {
-                new WorkReportColumn(
-                    WorkReportField.Date,
-                    "Дата"),
-
-                new WorkReportColumn(
-                    WorkReportField.TaskNumber,
-                    "Задача"),
-
-                new WorkReportColumn(
-                    WorkReportField.TaskTitle,
-                    "Что делал"),
-
-                new WorkReportColumn(
-                    WorkReportField.PlannedTime,
-                    "Время")
-            });
-}
-
 public enum WorkReportRowSource
 {
     PlanningPeriod = 1,

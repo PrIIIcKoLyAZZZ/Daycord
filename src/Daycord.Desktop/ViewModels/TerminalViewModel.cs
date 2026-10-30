@@ -119,8 +119,6 @@ public sealed partial class TerminalViewModel : ObservableObject, IDisposable
         }
     }
 
-    public Task InitializeAsync() => Task.CompletedTask;
-
     public DateTime CalendarAnchorDate =>
         TryResolveDate(out var date)
             ? date
