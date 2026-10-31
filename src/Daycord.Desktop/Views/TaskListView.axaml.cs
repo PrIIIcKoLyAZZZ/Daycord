@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -7,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Daycord.Desktop.ViewModels;
 
@@ -16,6 +18,10 @@ public partial class TaskListView : UserControl
 {
     // Keep a readable minimum; fill the available viewport above it.
     private const double MinimumTableWidth = 760;
+
+    // State survives a recreated View, but not the lifetime of its VM.
+    private static readonly ConditionalWeakTable<
+        TaskListViewModel, ScrollSnapshot> SavedScroll = new();
 
     private static readonly string[] DateFormats =
     [
@@ -29,6 +35,7 @@ public partial class TaskListView : UserControl
     private readonly Grid _fromDateSegment;
     private readonly Grid _toDateSegment;
     private readonly ScrollViewer _tableScroller;
+    private readonly ListBox _taskTable;
     private readonly Grid _tableContent;
     private readonly Popup _datePopup;
     private readonly UniformGrid _weekdayHeader;
@@ -57,6 +64,7 @@ public partial class TaskListView : UserControl
         _fromDateSegment = Required<Grid>("FromDateSegment");
         _toDateSegment = Required<Grid>("ToDateSegment");
         _tableScroller = Required<ScrollViewer>("TableHorizontalScroll");
+        _taskTable = Required<ListBox>("TaskTable");
         _tableContent = Required<Grid>("TableContent");
         _datePopup = Required<Popup>("DatePopup");
         _weekdayHeader = Required<UniformGrid>("WeekdayHeader");
@@ -95,6 +103,7 @@ public partial class TaskListView : UserControl
 
         DetachedFromVisualTree += (_, _) =>
         {
+            SaveScrollState();
             _isAttached = false;
             _datePopup.IsOpen = false;
             DisconnectViewModel();
@@ -129,9 +138,121 @@ public partial class TaskListView : UserControl
         if (_isAttached && !_hasInitializedThisAttachment)
         {
             _hasInitializedThisAttachment = true;
-            _ = viewModel.InitializeAsync();
+            _ = InitializeAndRestoreAsync(viewModel);
         }
     }
+
+    // The View is recreated by the main ContentControl on navigation.
+    // Reload first, then restore only when the row order is still identical.
+    private async Task InitializeAndRestoreAsync(TaskListViewModel viewModel)
+    {
+        await viewModel.InitializeAsync();
+
+        if (!_isAttached ||
+            !ReferenceEquals(_loadedViewModel, viewModel))
+        {
+            return;
+        }
+
+        Dispatcher.UIThread.Post(
+            () => RestoreScrollState(viewModel),
+            DispatcherPriority.Background);
+    }
+
+    private void SaveScrollState()
+    {
+        if (_loadedViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var verticalScroller = FindTableVerticalScroller();
+        if (verticalScroller is null)
+        {
+            return;
+        }
+
+        var snapshot = new ScrollSnapshot(
+            _tableScroller.Offset.X,
+            verticalScroller.Offset.Y,
+            viewModel.Items.Select(row => row.Id).ToArray(),
+            viewModel.SearchText,
+            viewModel.SelectedStatus?.StatusId,
+            viewModel.DateFrom,
+            viewModel.DateTo,
+            viewModel.SelectedSort?.Field.ToString(),
+            viewModel.IsDescending);
+
+        SavedScroll.Remove(viewModel);
+        SavedScroll.Add(viewModel, snapshot);
+    }
+
+    private void RestoreScrollState(TaskListViewModel viewModel)
+    {
+        if (!_isAttached ||
+            !ReferenceEquals(_loadedViewModel, viewModel) ||
+            viewModel.IsLoading ||
+            viewModel.HasLoadError ||
+            !SavedScroll.TryGetValue(viewModel, out var snapshot))
+        {
+            return;
+        }
+
+        // Never apply an old pixel offset to changed search results,
+        // sort order, or row sequence: it might land on another task.
+        if (viewModel.SearchText != snapshot.SearchText ||
+            viewModel.SelectedStatus?.StatusId != snapshot.StatusId ||
+            viewModel.DateFrom != snapshot.DateFrom ||
+            viewModel.DateTo != snapshot.DateTo ||
+            viewModel.SelectedSort?.Field.ToString() != snapshot.SortField ||
+            viewModel.IsDescending != snapshot.Descending ||
+            viewModel.Items.Count != snapshot.ItemIds.Length)
+        {
+            return;
+        }
+
+        for (var index = 0; index < snapshot.ItemIds.Length; index++)
+        {
+            if (viewModel.Items[index].Id != snapshot.ItemIds[index])
+            {
+                return;
+            }
+        }
+
+        var verticalScroller = FindTableVerticalScroller();
+        if (verticalScroller is null)
+        {
+            return;
+        }
+
+        var horizontalMax = Math.Max(
+            0, _tableScroller.Extent.Width - _tableScroller.Viewport.Width);
+        var verticalMax = Math.Max(
+            0, verticalScroller.Extent.Height - verticalScroller.Viewport.Height);
+
+        _tableScroller.Offset = new Vector(
+            Math.Clamp(snapshot.Horizontal, 0, horizontalMax),
+            _tableScroller.Offset.Y);
+        verticalScroller.Offset = new Vector(
+            verticalScroller.Offset.X,
+            Math.Clamp(snapshot.Vertical, 0, verticalMax));
+    }
+
+    private ScrollViewer? FindTableVerticalScroller() =>
+        _taskTable.GetVisualDescendants()
+            .OfType<ScrollViewer>()
+            .FirstOrDefault();
+
+    private sealed record ScrollSnapshot(
+        double Horizontal,
+        double Vertical,
+        Guid[] ItemIds,
+        string SearchText,
+        Guid? StatusId,
+        DateTimeOffset? DateFrom,
+        DateTimeOffset? DateTo,
+        string? SortField,
+        bool Descending);
 
     private bool _hasInitializedThisAttachment;
 

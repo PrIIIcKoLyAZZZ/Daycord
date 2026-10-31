@@ -40,6 +40,12 @@ public sealed partial class ReportsViewModel :
     private Exception? _presetError;
 
     private WorkReport? _report;
+
+    // Keep the displayed summary associated with its original period
+    // until the next successful report is ready.
+    private DateOnly? _reportFrom;
+    private DateOnly? _reportTo;
+
     private bool _exportSucceeded;
     private string _exportedFileName = string.Empty;
 
@@ -142,8 +148,16 @@ public sealed partial class ReportsViewModel :
             if (!IsPeriodValid)
                 return Text("ReportsInvalidPeriod");
 
-            var from = GetDate(StartDate!.Value);
-            var to = GetDate(EndDate!.Value);
+            // Keep the title and summary counters in sync.
+            // Navigation changes the date inputs immediately.
+            // The displayed report changes only after a successful load.
+            var from = _report is not null && _reportFrom.HasValue
+                ? _reportFrom.Value
+                : GetDate(StartDate!.Value);
+
+            var to = _report is not null && _reportTo.HasValue
+                ? _reportTo.Value
+                : GetDate(EndDate!.Value);
 
             if (from.Day == 1 && to == EndOfMonth(from))
                 return from.ToString("MMMM yyyy", Culture);
@@ -194,11 +208,19 @@ public sealed partial class ReportsViewModel :
         ++_loadVersion;
         _loadCancellation?.Cancel();
 
-        _report = null;
+        // Preserve the last committed report while changing periods.
+        // It must not become exportable for the new date range.
         _hasLoaded = false;
         _loadError = null;
 
-        IsLoading = false;
+        if (!IsPeriodValid)
+        {
+            _report = null;
+            _reportFrom = null;
+            _reportTo = null;
+            IsLoading = false;
+            NotifyReportChanged();
+        }
 
         OnPropertyChanged(nameof(IsPeriodValid));
         OnPropertyChanged(nameof(PeriodErrorMessage));
@@ -207,7 +229,6 @@ public sealed partial class ReportsViewModel :
         OnPropertyChanged(nameof(CanGoPrevious));
         OnPropertyChanged(nameof(CanGoNext));
 
-        NotifyReportChanged();
         NotifyLoadState();
 
         ClearExportStatus();
@@ -305,11 +326,23 @@ public sealed partial class ReportsViewModel :
 
     public bool HasLoadError => _loadError is not null;
 
+    // Visibility is independent from a pending refresh.
+    // A successfully loaded report remains visible until replacement.
     public bool IsLoaded =>
-        _hasLoaded &&
+        _report is not null &&
         IsPeriodValid &&
-        !IsLoading &&
         !HasLoadError;
+
+    // Export and other actions require the current selected period,
+    // not merely the last report displayed on screen.
+    private bool HasCurrentReport =>
+        _hasLoaded &&
+        !IsLoading &&
+        !HasLoadError &&
+        IsPeriodValid &&
+        _report is not null &&
+        _reportFrom == GetDate(StartDate!.Value) &&
+        _reportTo == GetDate(EndDate!.Value);
 
     public int PlanningPeriodCount =>
         _report?.PlanningPeriodCount ?? 0;
@@ -347,9 +380,15 @@ public sealed partial class ReportsViewModel :
                 Text("ReportsLoadFailed"),
                 _loadError.Message);
 
-    private void ApplyReport(WorkReport report)
+    private void ApplyReport(
+        WorkReport report,
+        DateOnly from,
+        DateOnly to)
     {
+        // Commit all report data and the corresponding period together.
         _report = report;
+        _reportFrom = from;
+        _reportTo = to;
         _loadError = null;
         _hasLoaded = true;
 
@@ -359,6 +398,7 @@ public sealed partial class ReportsViewModel :
 
     private void NotifyReportChanged()
     {
+        OnPropertyChanged(nameof(MonthTitle));
         OnPropertyChanged(nameof(PlanningPeriodCount));
         OnPropertyChanged(nameof(WorkEntryCount));
         OnPropertyChanged(nameof(ReportRowCount));
@@ -479,7 +519,10 @@ public sealed partial class ReportsViewModel :
 
         if (!preserveLoadedReport)
         {
+            // Preset changes may affect report row composition.
             _report = null;
+            _reportFrom = null;
+            _reportTo = null;
             _hasLoaded = false;
         }
 
@@ -873,9 +916,8 @@ public sealed partial class ReportsViewModel :
 
         _loadError = null;
         _hasLoaded = false;
-        _report = null;
 
-        NotifyReportChanged();
+        // Keep the existing summary until the new result is available.
         IsLoading = true;
         NotifyLoadState();
 
@@ -890,7 +932,7 @@ public sealed partial class ReportsViewModel :
                 source.Token);
 
             if (IsCurrentLoad(source, version))
-                ApplyReport(report);
+                ApplyReport(report, from, to);
         }
         catch (OperationCanceledException)
             when (source.IsCancellationRequested)
@@ -900,7 +942,14 @@ public sealed partial class ReportsViewModel :
         {
             if (IsCurrentLoad(source, version))
             {
+                // Never present stale data following a failed refresh.
+                _report = null;
+                _reportFrom = null;
+                _reportTo = null;
+                _hasLoaded = false;
                 _loadError = error;
+
+                NotifyReportChanged();
                 NotifyLoadState();
             }
         }
@@ -983,7 +1032,7 @@ public sealed partial class ReportsViewModel :
         !_disposed &&
         _isActive &&
         IsPeriodValid &&
-        IsLoaded &&
+        HasCurrentReport &&
         !IsExporting &&
         !IsPresetBusy &&
         _selectedPreset is not null &&
@@ -1054,7 +1103,7 @@ public sealed partial class ReportsViewModel :
             if (!IsCurrentExport(source, from, to))
                 return;
 
-            ApplyReport(freshReport);
+            ApplyReport(freshReport, from, to);
 
             // The exporter captures the language once and uses
             // that snapshot for both the automatic headers and
