@@ -31,9 +31,8 @@ public sealed partial class TaskListViewModel :
     private Guid? _pendingDeleteId;
     private string _pendingDeleteTitle = string.Empty;
 
-    [ObservableProperty]
-    private IReadOnlyList<TaskListRowViewModel> _items =
-        Array.Empty<TaskListRowViewModel>();
+    // Never replace the collection bound to the ListBox.
+    private readonly ObservableCollection<TaskListRowViewModel> _rows = new();
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -78,6 +77,8 @@ public sealed partial class TaskListViewModel :
         _localization = localization
             ?? throw new ArgumentNullException(nameof(localization));
 
+        Items = new ReadOnlyObservableCollection<TaskListRowViewModel>(_rows);
+
         _suppressReload = true;
 
         StatusOptions.Add(
@@ -116,6 +117,8 @@ public sealed partial class TaskListViewModel :
     }
 
     // Collections
+
+    public ReadOnlyObservableCollection<TaskListRowViewModel> Items { get; }
 
     public ObservableCollection<TaskListStatusOption>
         StatusOptions { get; } = new();
@@ -156,6 +159,9 @@ public sealed partial class TaskListViewModel :
 
     public string ResetFiltersLabel =>
         Text("TaskListResetFilters");
+
+    public string RetryLabel =>
+        Text("TaskListRefresh");
 
     public string LoadingMessage =>
         Text("TaskListLoading");
@@ -274,6 +280,16 @@ public sealed partial class TaskListViewModel :
     public Task InitializeAsync()
     {
         return LoadAsync(refreshStatuses: true);
+    }
+
+    // Reload after a failed database query. The view displays this
+    // command next to the load error in the following UI package.
+    [RelayCommand]
+    private Task RetryAsync()
+    {
+        return _disposed || IsDeleting
+            ? Task.CompletedTask
+            : LoadAsync(refreshStatuses: !_statusesLoaded);
     }
 
     // Filter commands
@@ -542,12 +558,6 @@ public sealed partial class TaskListViewModel :
         NotifyEmptyState();
     }
 
-    partial void OnItemsChanged(
-        IReadOnlyList<TaskListRowViewModel> value)
-    {
-        NotifyEmptyState();
-    }
-
     // List loading
 
     private void QueueLoad(bool debounce = false)
@@ -598,7 +608,11 @@ public sealed partial class TaskListViewModel :
 
             if (HasDateRangeError)
             {
-                Items = Array.Empty<TaskListRowViewModel>();
+                if (_rows.Count > 0)
+                {
+                    _rows.Clear();
+                }
+
                 SelectedTask = null;
                 _hasLoaded = true;
                 return;
@@ -630,20 +644,7 @@ public sealed partial class TaskListViewModel :
                 return;
             }
 
-            var selectedId = SelectedTask?.Id;
-
-            var rows = tasks
-                .Select(task =>
-                    new TaskListRowViewModel(
-                        task,
-                        _localization))
-                .ToArray();
-
-            Items = rows;
-
-            SelectedTask = rows.FirstOrDefault(
-                row => row.Id == selectedId);
-
+            ApplyTasks(tasks);
             _hasLoaded = true;
         }
         catch (OperationCanceledException)
@@ -670,6 +671,81 @@ public sealed partial class TaskListViewModel :
 
             cancellation.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Apply a successful database result on the UI thread in one
+    /// synchronous pass. Existing rows and the Items collection survive
+    /// refreshes, so unchanged ListBox containers can remain in place.
+    /// </summary>
+    /// <param name="tasks"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    private void ApplyTasks(IReadOnlyList<TaskListItem> tasks)
+    {
+        var selectedId = SelectedTask?.Id;
+        var existing = _rows.ToDictionary(row => row.Id);
+        var ids = new HashSet<Guid>();
+        var nextRows = new List<TaskListRowViewModel>(tasks.Count);
+
+        foreach (var task in tasks)
+        {
+            if (!ids.Add(task.Id))
+            {
+                throw new InvalidOperationException(
+                    $"Task query returned duplicate ID '{task.Id}'.");
+            }
+
+            if (existing.TryGetValue(task.Id, out var row))
+            {
+                row.Update(task);
+            }
+            else
+            {
+                row = new TaskListRowViewModel(task, _localization);
+            }
+
+            nextRows.Add(row);
+        }
+
+        // First remove rows no longer matching the query.
+        for (var index = _rows.Count - 1; index >= 0; index--)
+        {
+            if (!ids.Contains(_rows[index].Id))
+            {
+                _rows.RemoveAt(index);
+            }
+        }
+
+        // Reorder retained row objects, inserting only genuinely new rows.
+        for (var index = 0; index < nextRows.Count; index++)
+        {
+            var desired = nextRows[index];
+
+            if (index < _rows.Count &&
+                ReferenceEquals(_rows[index], desired))
+            {
+                continue;
+            }
+
+            var previousIndex = _rows.IndexOf(desired);
+
+            if (previousIndex >= 0)
+            {
+                _rows.Move(previousIndex, index);
+            }
+            else
+            {
+                _rows.Insert(index, desired);
+            }
+        }
+
+        // Selection is identified by Guid, never by a former row index.
+        // Repair any intermediate selection changes from collection moves.
+        SelectedTask = selectedId is Guid id
+            ? nextRows.FirstOrDefault(row => row.Id == id)
+            : null;
+
+        NotifyEmptyState();
     }
 
     private TaskQuery BuildQuery()
@@ -832,6 +908,7 @@ public sealed partial class TaskListViewModel :
         OnPropertyChanged(nameof(DirectionLabel));
         OnPropertyChanged(nameof(FiltersButtonLabel));
         OnPropertyChanged(nameof(ResetFiltersLabel));
+        OnPropertyChanged(nameof(RetryLabel));
         OnPropertyChanged(nameof(LoadingMessage));
         OnPropertyChanged(nameof(EmptyMessage));
         OnPropertyChanged(nameof(NoResultsMessage));

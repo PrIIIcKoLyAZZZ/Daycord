@@ -326,10 +326,21 @@
                            Foreground="{DynamicResource Accent}"
                            TextWrapping="Wrap" />
 
-                <TextBlock Text="{Binding LoadErrorMessage}"
-                           IsVisible="{Binding HasLoadError}"
-                           Foreground="{DynamicResource Accent}"
-                           TextWrapping="Wrap" />
+                <Grid IsVisible="{Binding HasLoadError}"
+                      ColumnDefinitions="*,Auto"
+                      ColumnSpacing="10">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding LoadErrorMessage}"
+                               Foreground="{DynamicResource Accent}"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center" />
+
+                    <Button Grid.Column="1"
+                            Classes="task-action"
+                            Content="{Binding RetryLabel}"
+                            Command="{Binding RetryCommand}"
+                            VerticalAlignment="Center" />
+                </Grid>
             </StackPanel>
 
             <!-- Adaptive task table -->
@@ -409,7 +420,8 @@
                             </Border>
 
                             <!-- Rows -->
-                            <ListBox Grid.Row="1"
+                            <ListBox x:Name="TaskTable"
+                                     Grid.Row="1"
                                      Classes="task-table"
                                      ItemsSource="{Binding Items}"
                                      SelectedItem="{Binding SelectedTask, Mode=TwoWay}"

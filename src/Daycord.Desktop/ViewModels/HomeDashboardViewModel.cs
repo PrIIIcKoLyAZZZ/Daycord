@@ -31,6 +31,12 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
     private IReadOnlyList<CalendarEntryViewModel> _todayTasks = [];
     private IReadOnlyList<CalendarEntryViewModel> _plannedWork = [];
     private IReadOnlyList<CalendarEntryViewModel> _actualWork = [];
+
+    // Snapshots let an unchanged refresh retain its existing visual items.
+    private IReadOnlyList<CalendarTaskItem> _displayedTasks = [];
+    private IReadOnlyList<CalendarPlanningItem> _displayedPlanned = [];
+    private IReadOnlyList<CalendarWorkItem> _displayedActual = [];
+
     private int _completedCount;
     private long _plannedMinutes;
     private long _actualMinutes;
@@ -87,7 +93,8 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
         }
     }
 
-    public bool IsLoaded => _hasLoaded && !IsLoading && !HasLoadError;
+    // A refresh of the same day must not hide an already loaded dashboard.
+    public bool IsLoaded => _hasLoaded && !HasLoadError;
     public bool HasLoadError => _loadError is not null;
     public bool HasTodayTasks => TodayTasks.Count > 0;
     public bool HasPlannedWork => PlannedWork.Count > 0;
@@ -130,7 +137,7 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
         ? string.Empty
         : string.Format(Culture, Text("HomeDashboardLoadFailed"),
             _loadError.Message);
-    
+
     public Task ActivateAsync()
     {
         if (_disposed) return Task.CompletedTask;
@@ -142,7 +149,11 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
     {
         _isActive = false;
         ++_loadVersion;
-        _loadCancellation?.Cancel();
+
+        var pending = _loadCancellation;
+        _loadCancellation = null;
+        pending?.Cancel();
+
         IsLoading = false;
     }
 
@@ -153,17 +164,24 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
     {
         if (_disposed || !_isActive) return;
 
-        _loadCancellation?.Cancel();
+        var previous = _loadCancellation;
         var source = new CancellationTokenSource();
         _loadCancellation = source;
         var requestVersion = ++_loadVersion;
+        previous?.Cancel();
 
-        Today = DateOnly.FromDateTime(DateTime.Now);
-        var date = Today;
+        var date = DateOnly.FromDateTime(DateTime.Now);
 
+        if (Today != date)
+        {
+            // Old-day values must never appear beneath the new date label.
+            Today = date;
+            _hasLoaded = false;
+            ClearData();
+        }
+
+        // For the same day, keep the last successful data and its visual tree.
         _loadError = null;
-        _hasLoaded = false;
-        ClearData();
         IsLoading = true;
         NotifyLoadState();
 
@@ -183,9 +201,10 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
         {
             if (IsCurrentLoad(source, requestVersion))
             {
+                // Do not present a failed refresh as successfully updated.
+                _hasLoaded = false;
                 ClearData();
                 _loadError = ex;
-                _hasLoaded = false;
             }
         }
         finally
@@ -204,7 +223,7 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
     private void ApplyData(CalendarData data, DateOnly date)
     {
         var comparer = StringComparer.Create(Culture, ignoreCase: true);
-        
+
         var tasks = data.Tasks
             .Where(item => item.TaskDate == date)
             .OrderBy(item => item.IsCompleted)
@@ -224,12 +243,26 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
             .ThenBy(item => item.Id)
             .ToArray();
 
-        TodayTasks = tasks.Select(item => CalendarEntryViewModel.FromTask(
-            item, _localization, OpenTask)).ToArray();
-        PlannedWork = planned.Select(item => CalendarEntryViewModel.FromPlanning(
-            item, _localization, OpenTask)).ToArray();
-        ActualWork = actual.Select(item => CalendarEntryViewModel.FromWork(
-            item, _localization, OpenTask)).ToArray();
+        if (!SameTasks(_displayedTasks, tasks))
+        {
+            TodayTasks = tasks.Select(item => CalendarEntryViewModel.FromTask(
+                item, _localization, OpenTask)).ToArray();
+            _displayedTasks = tasks;
+        }
+
+        if (!SamePlanned(_displayedPlanned, planned))
+        {
+            PlannedWork = planned.Select(item => CalendarEntryViewModel.FromPlanning(
+                item, _localization, OpenTask)).ToArray();
+            _displayedPlanned = planned;
+        }
+
+        if (!SameActual(_displayedActual, actual))
+        {
+            ActualWork = actual.Select(item => CalendarEntryViewModel.FromWork(
+                item, _localization, OpenTask)).ToArray();
+            _displayedActual = actual;
+        }
 
         _completedCount = tasks.Count(item => item.IsCompleted);
         _plannedMinutes = planned.Sum(item => (long)item.PlannedMinutes);
@@ -237,11 +270,56 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
         NotifyDataChanged();
     }
 
+    // Equality includes everything displayed by CalendarEntryViewModel.
+    // Compare the sorted source records, not object references returned by SQLite.
+    private static bool SameTasks(
+        IReadOnlyList<CalendarTaskItem> left,
+        IReadOnlyList<CalendarTaskItem> right) =>
+        left.Select(item => (
+            item.TaskId, item.TaskDate, item.TaskNumber, item.TaskTitle,
+            item.StatusId, item.StatusName, item.StatusSystemKey,
+            item.IsCompleted))
+        .SequenceEqual(right.Select(item => (
+            item.TaskId, item.TaskDate, item.TaskNumber, item.TaskTitle,
+            item.StatusId, item.StatusName, item.StatusSystemKey,
+            item.IsCompleted)));
+
+    private static bool SamePlanned(
+        IReadOnlyList<CalendarPlanningItem> left,
+        IReadOnlyList<CalendarPlanningItem> right) =>
+        left.Select(item => (
+            item.Id, item.TaskId, item.PlannedDate, item.PlannedMinutes,
+            item.TaskNumber, item.TaskTitle, item.StatusId,
+            item.StatusName, item.StatusSystemKey, item.IsCompleted))
+        .SequenceEqual(right.Select(item => (
+            item.Id, item.TaskId, item.PlannedDate, item.PlannedMinutes,
+            item.TaskNumber, item.TaskTitle, item.StatusId,
+            item.StatusName, item.StatusSystemKey, item.IsCompleted)));
+
+    private static bool SameActual(
+        IReadOnlyList<CalendarWorkItem> left,
+        IReadOnlyList<CalendarWorkItem> right) =>
+        left.Select(item => (
+            item.Id, item.TaskId, item.WorkDate, item.ActualMinutes,
+            item.WorkDescription, item.Note, item.TaskNumber, item.TaskTitle,
+            item.StatusId, item.StatusName, item.StatusSystemKey,
+            item.IsCompleted))
+        .SequenceEqual(right.Select(item => (
+            item.Id, item.TaskId, item.WorkDate, item.ActualMinutes,
+            item.WorkDescription, item.Note, item.TaskNumber, item.TaskTitle,
+            item.StatusId, item.StatusName, item.StatusSystemKey,
+            item.IsCompleted)));
+
     private void ClearData()
     {
+        _displayedTasks = [];
+        _displayedPlanned = [];
+        _displayedActual = [];
+
         TodayTasks = [];
         PlannedWork = [];
         ActualWork = [];
+
         _completedCount = 0;
         _plannedMinutes = 0;
         _actualMinutes = 0;

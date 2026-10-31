@@ -7,16 +7,11 @@
              x:DataType="vm:ReportsViewModel"
              Background="{DynamicResource Background}">
 
-    <!-- Custom theme for the four preset action buttons. -->
     <UserControl.Resources>
-        <ControlTheme x:Key="ReportsPresetIconTheme"
-                      TargetType="Button">
-
+        <ControlTheme x:Key="ReportsPresetIconTheme" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SidebarSelectedBackground}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="7"/>
             <Setter Property="Width" Value="38"/>
@@ -25,7 +20,6 @@
             <Setter Property="Padding" Value="7"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-
             <Setter Property="Template">
                 <ControlTemplate>
                     <ContentPresenter Name="PART_ContentPresenter"
@@ -40,114 +34,129 @@
                                       VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
                 </ControlTemplate>
             </Setter>
-
-            <!-- Only highlight on hover. -->
             <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-                <Setter Property="Background"
-                        Value="{DynamicResource SidebarSelectedBackground}"/>
+                <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
             </Style>
-
-            <!-- Disabled buttons stay transparent, never gray-filled. -->
             <Style Selector="^:disabled">
                 <Setter Property="Opacity" Value="0.48"/>
             </Style>
-
             <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
                 <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderBrush"
-                        Value="{DynamicResource SidebarSelectedBackground}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource SidebarSelectedBackground}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </Style>
-
-            <!-- Visible focus for keyboard navigation. -->
             <Style Selector="^:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
-                <Setter Property="BorderBrush"
-                        Value="{DynamicResource Accent}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
                 <Setter Property="BorderThickness" Value="2"/>
             </Style>
         </ControlTheme>
     </UserControl.Resources>
 
     <UserControl.Styles>
-
         <Style Selector="Button.reports-action">
-            <Setter Property="Background"
-                    Value="{DynamicResource Surface}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SidebarSelectedBackground}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="7"/>
             <Setter Property="Padding" Value="13,9"/>
             <Setter Property="MinHeight" Value="37"/>
         </Style>
-
         <Style Selector="Button.reports-action:pointerover">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
         </Style>
-
         <Style Selector="Button.reports-primary">
-            <Setter Property="Background"
-                    Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Background}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource Accent}"/>
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Background}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="7"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="MinHeight" Value="40"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
+        <Style Selector="Button.reports-export:disabled">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Background}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+        <Style Selector="Button.reports-export:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Background}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+        
+        <!-- Normal state: sharp statistics -->
+        <Style Selector="StackPanel.reports-stat-content">
+            <Setter Property="Effect" Value="blur(0)"/>
+        </Style>
+
+        <!-- Empty state: gradual blur appearance -->
+        <Style Selector="StackPanel.reports-stat-content.empty">
+            <Setter Property="Effect" Value="blur(9)"/>
+
+            <Style.Animations>
+                <Animation Duration="0:0:0.26"
+                           Easing="CubicEaseInOut"
+                           FillMode="None">
+
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Effect" Value="blur(0)"/>
+                    </KeyFrame>
+
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Effect" Value="blur(9)"/>
+                    </KeyFrame>
+
+                </Animation>
+            </Style.Animations>
+        </Style>
+        
+        <!-- Animate only on empty/non-empty transitions. -->
+        <Style Selector="Grid.reports-empty-overlay">
+            <Setter Property="Opacity" Value="0"/>
+        </Style>
+        <Style Selector="Grid.reports-empty-overlay.empty">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
 
         <Style Selector="Button.reports-nav">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Width" Value="35"/>
             <Setter Property="Height" Value="35"/>
             <Setter Property="Padding" Value="0"/>
         </Style>
-
         <Style Selector="Button.reports-nav:pointerover">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
         </Style>
-
         <Style Selector="TextBox.reports-input">
-            <Setter Property="Background"
-                    Value="{DynamicResource Background}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource Background}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SidebarSelectedBackground}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="7"/>
             <Setter Property="Padding" Value="11,8"/>
             <Setter Property="MinHeight" Value="37"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
-
         <Style Selector="TextBox.reports-date">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="MinHeight" Value="38"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
-
         <Style Selector="Button.reports-calendar">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="6"/>
@@ -155,28 +164,20 @@
             <Setter Property="Height" Value="36"/>
             <Setter Property="Padding" Value="7"/>
         </Style>
-
         <Style Selector="Button.reports-calendar:pointerover">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
         </Style>
-
         <Style Selector="ComboBox.reports-combo">
-            <Setter Property="Background"
-                    Value="{DynamicResource Background}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource Background}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SidebarSelectedBackground}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="7"/>
             <Setter Property="MinHeight" Value="39"/>
         </Style>
-
         <Style Selector="Button.reports-move">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="5"/>
@@ -184,10 +185,8 @@
             <Setter Property="Height" Value="29"/>
             <Setter Property="Padding" Value="0"/>
         </Style>
-
         <Style Selector="Button.reports-move:pointerover">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}"/>
         </Style>
     </UserControl.Styles>
 
@@ -195,23 +194,16 @@
         <ScrollViewer x:Name="ReportsScroll"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-
             <StackPanel Margin="22,20,22,28">
-
-                <!-- MAIN REPORT PAGE -->
-
                 <StackPanel x:Name="MainReportPage"
                             MaxWidth="900"
                             Spacing="17">
 
                     <!-- Reporting period -->
-
                     <Border Background="{DynamicResource Surface}"
                             CornerRadius="10"
                             Padding="16">
-
                         <StackPanel Spacing="14">
-
                             <TextBlock Text="{Binding ReportingPeriodLabel}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
@@ -220,37 +212,27 @@
                             <Grid ColumnDefinitions="*,*"
                                   ColumnSpacing="12"
                                   IsEnabled="{Binding !IsExporting}">
-
-                                <!-- From date -->
-
                                 <StackPanel Grid.Column="0" Spacing="6">
-
                                     <TextBlock Text="{Binding UiLabels.DateFrom}"
                                                Foreground="{DynamicResource SecondaryText}"
                                                FontSize="11"/>
-
                                     <Border Background="{DynamicResource Background}"
                                             BorderBrush="{DynamicResource SidebarSelectedBackground}"
                                             BorderThickness="1"
                                             CornerRadius="7">
-
                                         <Grid x:Name="ReportFromSegment"
                                               ColumnDefinitions="*,Auto">
-
                                             <TextBox x:Name="ReportFromInput"
                                                      Grid.Column="0"
                                                      Classes="reports-date"
                                                      PlaceholderText="dd.MM.yyyy"
                                                      LostFocus="OnDateInputLostFocus"
                                                      KeyDown="OnDateInputKeyDown"/>
-
                                             <Button Grid.Column="1"
                                                     Classes="reports-calendar"
                                                     ToolTip.Tip="{Binding UiLabels.DateFrom}"
                                                     Click="OnFromCalendarClick">
-
-                                                <Path Width="18"
-                                                      Height="18"
+                                                <Path Width="18" Height="18"
                                                       Stretch="Uniform"
                                                       Stroke="{DynamicResource Accent}"
                                                       StrokeThickness="1.6"
@@ -261,36 +243,27 @@
                                     </Border>
                                 </StackPanel>
 
-                                <!-- To date -->
-
                                 <StackPanel Grid.Column="1" Spacing="6">
-
                                     <TextBlock Text="{Binding UiLabels.DateTo}"
                                                Foreground="{DynamicResource SecondaryText}"
                                                FontSize="11"/>
-
                                     <Border Background="{DynamicResource Background}"
                                             BorderBrush="{DynamicResource SidebarSelectedBackground}"
                                             BorderThickness="1"
                                             CornerRadius="7">
-
                                         <Grid x:Name="ReportToSegment"
                                               ColumnDefinitions="*,Auto">
-
                                             <TextBox x:Name="ReportToInput"
                                                      Grid.Column="0"
                                                      Classes="reports-date"
                                                      PlaceholderText="dd.MM.yyyy"
                                                      LostFocus="OnDateInputLostFocus"
                                                      KeyDown="OnDateInputKeyDown"/>
-
                                             <Button Grid.Column="1"
                                                     Classes="reports-calendar"
                                                     ToolTip.Tip="{Binding UiLabels.DateTo}"
                                                     Click="OnToCalendarClick">
-
-                                                <Path Width="18"
-                                                      Height="18"
+                                                <Path Width="18" Height="18"
                                                       Stretch="Uniform"
                                                       Stroke="{DynamicResource Accent}"
                                                       StrokeThickness="1.6"
@@ -302,43 +275,37 @@
                                 </StackPanel>
                             </Grid>
 
-                            <views:DaycordCalendarView
-                                x:Name="ReportCalendar"/>
-
-                            <!-- Month navigation -->
+                            <views:DaycordCalendarView x:Name="ReportCalendar"/>
 
                             <Grid ColumnDefinitions="Auto,*,Auto"
                                   ColumnSpacing="8">
-
                                 <Button Grid.Column="0"
                                         Classes="reports-nav"
                                         Command="{Binding PreviousMonthCommand}"
                                         ToolTip.Tip="{Binding PreviousMonthLabel}">
-
-                                    <Path Width="15"
-                                          Height="15"
+                                    <Path Width="15" Height="15"
                                           Stretch="Uniform"
                                           Stroke="{DynamicResource PrimaryText}"
                                           StrokeThickness="1.7"
                                           StrokeLineCap="Round"
                                           Data="M11,2 L5,8 L11,14"/>
                                 </Button>
-
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding MonthTitle}"
-                                           Foreground="{DynamicResource PrimaryText}"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           TextAlignment="Center"
-                                           VerticalAlignment="Center"/>
-
+                                <Grid Grid.Column="1"
+                                      ColumnDefinitions="*,Auto,*"
+                                      VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding MonthTitle}"
+                                               Foreground="{DynamicResource PrimaryText}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               TextAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
                                 <Button Grid.Column="2"
                                         Classes="reports-nav"
                                         Command="{Binding NextMonthCommand}"
                                         ToolTip.Tip="{Binding NextMonthLabel}">
-
-                                    <Path Width="15"
-                                          Height="15"
+                                    <Path Width="15" Height="15"
                                           Stretch="Uniform"
                                           Stroke="{DynamicResource PrimaryText}"
                                           StrokeThickness="1.7"
@@ -352,34 +319,20 @@
                                        Foreground="{DynamicResource Accent}"
                                        FontSize="12"
                                        TextWrapping="Wrap"/>
-
-                            <ProgressBar IsVisible="{Binding IsLoading}"
-                                         IsIndeterminate="True"
-                                         Height="3"
-                                         Foreground="{DynamicResource Accent}"/>
-
-                            <TextBlock IsVisible="{Binding IsLoading}"
-                                       Text="{Binding LoadingLabel}"
-                                       Foreground="{DynamicResource SecondaryText}"
-                                       FontSize="12"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Loading error -->
-
                     <Border IsVisible="{Binding HasLoadError}"
                             Background="{DynamicResource Surface}"
                             BorderBrush="{DynamicResource Accent}"
                             BorderThickness="1"
                             CornerRadius="9"
                             Padding="14">
-
                         <StackPanel Spacing="9">
-
                             <TextBlock Text="{Binding LoadErrorMessage}"
                                        Foreground="{DynamicResource PrimaryText}"
                                        TextWrapping="Wrap"/>
-
                             <Button Classes="reports-action"
                                     HorizontalAlignment="Left"
                                     Content="{Binding RetryLabel}"
@@ -387,92 +340,171 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Report metrics -->
+                    <!-- Statistics and empty-state overlay -->
+                    <Grid ClipToBounds="True">
+                        
+                        <!-- Report statistics: crossfade between sharp and blurred content -->
+                        <Grid x:Name="ReportMetricsCards"
+                              ColumnDefinitions="*,*,*"
+                              ColumnSpacing="10">
 
-                    <Grid ColumnDefinitions="*,*,*"
-                          ColumnSpacing="10"
-                          IsVisible="{Binding IsLoaded}">
+                            <!-- Report rows -->
+                            <Border Grid.Column="0"
+                                    Background="{DynamicResource Surface}"
+                                    CornerRadius="9"
+                                    Padding="14">
 
-                        <Border Grid.Column="0"
-                                Background="{DynamicResource Surface}"
-                                CornerRadius="9"
-                                Padding="14">
+                                <Grid>
+                                    <!-- Original sharp content -->
+                                    <StackPanel Classes="reports-stat-content"
+                                                Classes.empty="{Binding IsMonthEmpty}"
+                                                Spacing="7">
 
-                            <StackPanel Spacing="7">
+                                        <TextBlock Text="{Binding UiLabels.ReportRows}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource SecondaryText}"/>
 
-                                <TextBlock Text="{Binding UiLabels.ReportRows}"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource SecondaryText}"/>
+                                        <Grid MinHeight="32">
+                                            <TextBlock Text="{Binding ReportRowCount}"
+                                                       IsVisible="{Binding IsLoaded}"
+                                                       FontSize="24"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryText}"/>
 
-                                <TextBlock Text="{Binding ReportRowCount}"
-                                           FontSize="24"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource PrimaryText}"/>
-                            </StackPanel>
-                        </Border>
+                                            <TextBlock Text="—"
+                                                       IsVisible="{Binding !IsLoaded}"
+                                                       FontSize="24"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource SecondaryText}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
-                        <Border Grid.Column="1"
-                                Background="{DynamicResource Surface}"
-                                CornerRadius="9"
-                                Padding="14">
+                            <!-- Total planned time -->
+                            <Border Grid.Column="1"
+                                    Background="{DynamicResource Surface}"
+                                    CornerRadius="9"
+                                    Padding="14">
 
-                            <StackPanel Spacing="7">
+                                <Grid>
+                                    <!-- Original sharp content -->
+                                    <StackPanel Classes="reports-stat-content"
+                                                Classes.empty="{Binding IsMonthEmpty}"
+                                                Spacing="7">
 
-                                <TextBlock Text="{Binding TotalPlannedTimeLabel}"
-                                           FontSize="11"
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource SecondaryText}"/>
+                                        <TextBlock Text="{Binding TotalPlannedTimeLabel}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SecondaryText}"/>
 
-                                <TextBlock Text="{Binding TotalPlannedTimeText}"
-                                           FontSize="23"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource Accent}"/>
-                            </StackPanel>
-                        </Border>
+                                        <Grid MinHeight="32">
+                                            <TextBlock Text="{Binding TotalPlannedTimeText}"
+                                                       IsVisible="{Binding IsLoaded}"
+                                                       FontSize="23"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Accent}"/>
 
-                        <Border Grid.Column="2"
-                                Background="{DynamicResource Surface}"
-                                CornerRadius="9"
-                                Padding="14">
+                                            <TextBlock Text="—"
+                                                       IsVisible="{Binding !IsLoaded}"
+                                                       FontSize="23"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource SecondaryText}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
-                            <StackPanel Spacing="7">
+                            <!-- Total actual time -->
+                            <Border Grid.Column="2"
+                                    Background="{DynamicResource Surface}"
+                                    CornerRadius="9"
+                                    Padding="14">
 
-                                <TextBlock Text="{Binding TotalActualTimeLabel}"
-                                           FontSize="11"
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource SecondaryText}"/>
+                                <Grid>
+                                    <!-- Original sharp content -->
+                                    <StackPanel Classes="reports-stat-content"
+                                                Classes.empty="{Binding IsMonthEmpty}"
+                                                Spacing="7">
 
-                                <TextBlock Text="{Binding TotalActualTimeText}"
-                                           FontSize="23"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource PrimaryText}"/>
-                            </StackPanel>
-                        </Border>
+                                        <TextBlock Text="{Binding TotalActualTimeLabel}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SecondaryText}"/>
+
+                                        <Grid MinHeight="32">
+                                            <TextBlock Text="{Binding TotalActualTimeText}"
+                                                       IsVisible="{Binding IsLoaded}"
+                                                       FontSize="23"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryText}"/>
+
+                                            <TextBlock Text="—"
+                                                       IsVisible="{Binding !IsLoaded}"
+                                                       FontSize="23"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource SecondaryText}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                        
+                        <!-- Persistent empty-state overlay -->
+                        <Grid Classes="reports-empty-overlay"
+                              Classes.empty="{Binding IsMonthEmpty}"
+                              IsHitTestVisible="False"
+                              ClipToBounds="True">
+
+                            <!-- Fast and smooth appearance/disappearance -->
+                            <Grid.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity"
+                                                      Duration="0:0:0.26"
+                                                      Easing="CubicEaseInOut"/>
+                                </Transitions>
+                            </Grid.Transitions>
+
+                            <!-- Theme-aware frosted surface -->
+                            <Border Background="{DynamicResource Surface}">
+                                <Border.OpacityMask>
+                                    <RadialGradientBrush Center="50%,50%"
+                                                         RadiusX="57%"
+                                                         RadiusY="100%">
+
+                                        <GradientStop Color="#E5FFFFFF" Offset="0"/>
+                                        <GradientStop Color="#C8FFFFFF" Offset="0.26"/>
+                                        <GradientStop Color="#98FFFFFF" Offset="0.52"/>
+                                        <GradientStop Color="#6EFFFFFF" Offset="0.80"/>
+                                        <GradientStop Color="#40FFFFFF" Offset="1"/>
+
+                                    </RadialGradientBrush>
+                                </Border.OpacityMask>
+                            </Border>
+
+                            <!-- Sharp text, animated together with the overlay -->
+                            <TextBlock Text="{Binding UiLabels.NoReportRows}"
+                                       Foreground="{DynamicResource PrimaryText}"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       MaxWidth="560"
+                                       Margin="22,12"/>
+
+                        </Grid>
                     </Grid>
 
-                    <Border IsVisible="{Binding IsMonthEmpty}"
-                            Background="{DynamicResource Surface}"
-                            CornerRadius="9"
-                            Padding="14">
-
-                        <TextBlock Text="{Binding UiLabels.NoReportRows}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SecondaryText}"/>
-                    </Border>
-
                     <!-- Export actions -->
-
                     <Grid ColumnDefinitions="Auto,*,Auto"
                           ColumnSpacing="12">
-
                         <Button Grid.Column="0"
-                                Classes="reports-primary"
+                                Classes="reports-primary reports-export"
                                 Command="{Binding ExportCommand}">
-
                             <StackPanel Orientation="Horizontal" Spacing="8">
-
-                                <Path Width="16"
-                                      Height="16"
+                                <Path Width="16" Height="16"
                                       VerticalAlignment="Center"
                                       Stretch="Uniform"
                                       Stroke="{DynamicResource Background}"
@@ -480,11 +512,9 @@
                                       StrokeLineCap="Round"
                                       StrokeJoin="Round"
                                       Data="M12,2 L12,15 M7,10 L12,15 L17,10 M4,17 L4,21 L20,21 L20,17"/>
-
                                 <TextBlock Text="{Binding ExportToExcelLabel}"
                                            IsVisible="{Binding !IsExporting}"
                                            VerticalAlignment="Center"/>
-
                                 <TextBlock Text="{Binding ExportingLabel}"
                                            IsVisible="{Binding IsExporting}"
                                            VerticalAlignment="Center"/>
@@ -495,18 +525,14 @@
                                 Classes="reports-action"
                                 IsEnabled="{Binding !IsExporting}"
                                 Click="OnOpenSettingsClick">
-
                             <StackPanel Orientation="Horizontal" Spacing="8">
-
-                                <Path Width="16"
-                                      Height="16"
+                                <Path Width="16" Height="16"
                                       VerticalAlignment="Center"
                                       Stretch="Uniform"
                                       Stroke="{DynamicResource PrimaryText}"
                                       StrokeThickness="1.6"
                                       StrokeLineCap="Round"
                                       Data="M3,5 L19,5 M3,11 L19,11 M3,17 L19,17 M8,2 L8,8 M15,8 L15,14 M10,14 L10,20"/>
-
                                 <TextBlock Text="{Binding UiLabels.ExportSettings}"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
@@ -522,7 +548,6 @@
                             Background="{DynamicResource Surface}"
                             CornerRadius="9"
                             Padding="13">
-
                         <TextBlock Text="{Binding ExportMessage}"
                                    FontSize="12"
                                    Foreground="{DynamicResource PrimaryText}"
@@ -535,7 +560,6 @@
                             BorderThickness="1"
                             CornerRadius="9"
                             Padding="13">
-
                         <TextBlock Text="{Binding ExportMessage}"
                                    FontSize="12"
                                    Foreground="{DynamicResource PrimaryText}"
@@ -543,21 +567,17 @@
                     </Border>
                 </StackPanel>
 
-                <!-- EXPORT SETTINGS PAGE -->
-
+                <!-- Export settings -->
                 <StackPanel x:Name="ExportSettingsPage"
                             MaxWidth="900"
                             IsVisible="False"
                             Spacing="17">
-
                     <Grid ColumnDefinitions="Auto,*"
                           ColumnSpacing="14">
-
                         <Button Grid.Column="0"
                                 Classes="reports-action"
                                 Content="{Binding UiLabels.BackToReport}"
                                 Click="OnBackToReportClick"/>
-
                         <TextBlock Grid.Column="1"
                                    Text="{Binding UiLabels.ExportSettings}"
                                    FontSize="18"
@@ -566,14 +586,10 @@
                                    VerticalAlignment="Center"/>
                     </Grid>
 
-                    <!-- Preset selection and icon actions -->
-
                     <Border Background="{DynamicResource Surface}"
                             CornerRadius="10"
                             Padding="16">
-
                         <StackPanel Spacing="12">
-
                             <TextBlock Text="{Binding UiLabels.Preset}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
@@ -581,20 +597,17 @@
 
                             <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto"
                                   ColumnSpacing="6">
-
                                 <ComboBox Grid.Column="0"
                                           Classes="reports-combo"
                                           HorizontalAlignment="Stretch"
                                           VerticalAlignment="Center"
                                           ItemsSource="{Binding AvailablePresets}"
                                           SelectedItem="{Binding SelectedPreset, Mode=TwoWay}">
-
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate x:DataType="models:WorkReportPreset">
                                             <Grid>
                                                 <TextBlock Text="{ReflectionBinding $parent[UserControl].DataContext.UiLabels.DefaultPreset}"
                                                            IsVisible="{Binding IsBuiltIn}"/>
-
                                                 <TextBlock Text="{Binding Name}"
                                                            IsVisible="{Binding !IsBuiltIn}"
                                                            TextTrimming="CharacterEllipsis"/>
@@ -603,16 +616,12 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
 
-                                <!-- Create -->
-
                                 <Button Grid.Column="1"
                                         Theme="{StaticResource ReportsPresetIconTheme}"
                                         IsEnabled="{Binding !IsPresetBusy}"
                                         ToolTip.Tip="{Binding UiLabels.CreateNewPreset}"
                                         Click="OnShowCreatePresetClick">
-
-                                    <Path Width="19"
-                                          Height="19"
+                                    <Path Width="19" Height="19"
                                           Stretch="Uniform"
                                           Stroke="{DynamicResource PrimaryText}"
                                           StrokeThickness="1.8"
@@ -620,16 +629,12 @@
                                           Data="M12,3 L12,21 M3,12 L21,12"/>
                                 </Button>
 
-                                <!-- Rename -->
-
                                 <Button Grid.Column="2"
                                         Theme="{StaticResource ReportsPresetIconTheme}"
                                         IsEnabled="{Binding CanDeleteSelectedPreset}"
                                         ToolTip.Tip="{Binding UiLabels.RenamePreset}"
                                         Click="OnShowRenamePresetClick">
-
-                                    <Path Width="19"
-                                          Height="19"
+                                    <Path Width="19" Height="19"
                                           Stretch="Uniform"
                                           Stroke="{DynamicResource PrimaryText}"
                                           StrokeThickness="1.7"
@@ -638,16 +643,12 @@
                                           Data="M4,20 L9,19 L20,8 L16,4 L5,15 Z M14,6 L18,10"/>
                                 </Button>
 
-                                <!-- Reset -->
-
                                 <Button Grid.Column="3"
                                         Theme="{StaticResource ReportsPresetIconTheme}"
                                         IsEnabled="{Binding !IsPresetBusy}"
                                         ToolTip.Tip="{Binding UiLabels.ResetToDefault}"
                                         Command="{Binding ResetToDefaultCommand}">
-
-                                    <Path Width="19"
-                                          Height="19"
+                                    <Path Width="19" Height="19"
                                           Stretch="Uniform"
                                           Stroke="{DynamicResource PrimaryText}"
                                           StrokeThickness="1.7"
@@ -656,16 +657,12 @@
                                           Data="M3,3 L3,10 L10,10 M4,10 C5,6 8,4 12,4 C17,4 21,8 21,13 C21,18 17,21 12,21 C8,21 5,19 4,16"/>
                                 </Button>
 
-                                <!-- Delete -->
-
                                 <Button Grid.Column="4"
                                         Theme="{StaticResource ReportsPresetIconTheme}"
                                         IsEnabled="{Binding CanDeleteSelectedPreset}"
                                         ToolTip.Tip="{Binding UiLabels.DeletePreset}"
                                         Click="OnDeletePresetClick">
-
-                                    <Path Width="19"
-                                          Height="19"
+                                    <Path Width="19" Height="19"
                                           Stretch="Uniform"
                                           Stroke="#D64C4C"
                                           StrokeThickness="1.7"
@@ -675,49 +672,34 @@
                                 </Button>
                             </Grid>
 
-                            <!-- Create preset editor -->
-
                             <StackPanel x:Name="CreatePresetEditor"
                                         IsVisible="False"
                                         Spacing="9">
-
                                 <TextBox Classes="reports-input"
                                          Text="{Binding NewPresetName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          PlaceholderText="{Binding UiLabels.NewPresetNamePlaceholder}"/>
-
-                                <StackPanel Orientation="Horizontal"
-                                            Spacing="8">
-
+                                <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Button Classes="reports-primary"
                                             Content="{Binding UiLabels.CreatePreset}"
                                             Command="{Binding CreatePresetCommand}"/>
-
                                     <Button Classes="reports-action"
                                             Content="{Binding UiLabels.Cancel}"
                                             Click="OnCancelPresetEditClick"/>
                                 </StackPanel>
                             </StackPanel>
 
-                            <!-- Rename preset editor -->
-
                             <StackPanel x:Name="RenamePresetEditor"
                                         IsVisible="False"
                                         Spacing="9">
-
                                 <TextBlock Text="{Binding UiLabels.PresetName}"
                                            FontSize="11"
                                            Foreground="{DynamicResource SecondaryText}"/>
-
                                 <TextBox Classes="reports-input"
                                          Text="{Binding PresetNameDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-
-                                <StackPanel Orientation="Horizontal"
-                                            Spacing="8">
-
+                                <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Button Classes="reports-primary"
                                             Content="{Binding UiLabels.SavePresetName}"
                                             Command="{Binding SaveColumnsCommand}"/>
-
                                     <Button Classes="reports-action"
                                             Content="{Binding UiLabels.Cancel}"
                                             Click="OnCancelPresetEditClick"/>
@@ -732,53 +714,39 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Column editor -->
-
                     <Border Background="{DynamicResource Surface}"
                             CornerRadius="10"
                             Padding="16">
-
                         <StackPanel Spacing="12">
-
                             <TextBlock Text="{Binding UiLabels.ColumnsAndOrder}"
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource PrimaryText}"/>
-
                             <TextBlock Text="{Binding UiLabels.ColumnsDescription}"
                                        FontSize="12"
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource SecondaryText}"/>
 
                             <ItemsControl ItemsSource="{Binding ColumnEditors}">
-
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:ReportColumnEditorItem">
-
                                         <Border Background="{DynamicResource Background}"
                                                 CornerRadius="7"
                                                 Padding="9"
                                                 Margin="0,0,0,7">
-
                                             <Grid ColumnDefinitions="Auto,*,Auto,Auto"
                                                   ColumnSpacing="8">
-
                                                 <CheckBox Grid.Column="0"
                                                           VerticalAlignment="Center"
                                                           IsChecked="{Binding IsIncluded, Mode=TwoWay}"/>
-
-                                                <StackPanel Grid.Column="1"
-                                                            Spacing="4">
-
+                                                <StackPanel Grid.Column="1" Spacing="4">
                                                     <TextBlock Text="{Binding DefaultHeader}"
                                                                FontSize="11"
                                                                Foreground="{DynamicResource SecondaryText}"/>
-
                                                     <TextBox Classes="reports-input"
                                                              MinWidth="100"
                                                              Text="{Binding Header, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                                 </StackPanel>
-
                                                 <Button Grid.Column="2"
                                                         Classes="reports-move"
                                                         Content="↑"
@@ -786,7 +754,6 @@
                                                         ToolTip.Tip="{ReflectionBinding $parent[UserControl].DataContext.UiLabels.MoveUp}"
                                                         Command="{ReflectionBinding $parent[UserControl].DataContext.MoveColumnUpCommand}"
                                                         CommandParameter="{Binding}"/>
-
                                                 <Button Grid.Column="3"
                                                         Classes="reports-move"
                                                         Content="↓"
@@ -804,7 +771,6 @@
                                        Text="{Binding UiLabels.UnsavedChanges}"
                                        FontSize="12"
                                        Foreground="{DynamicResource Accent}"/>
-
                             <Button Classes="reports-primary"
                                     HorizontalAlignment="Left"
                                     Content="{Binding UiLabels.SaveColumnSettings}"
@@ -816,15 +782,12 @@
         </ScrollViewer>
 
         <!-- Delete preset confirmation -->
-
         <Grid x:Name="DeletePresetConfirmation"
               IsVisible="False"
               Focusable="True"
               KeyDown="OnDeleteConfirmationKeyDown"
               ZIndex="100">
-
             <Border Background="#AA000000"/>
-
             <Border Width="440"
                     MaxWidth="440"
                     Margin="18"
@@ -835,39 +798,31 @@
                     BorderBrush="{DynamicResource SidebarSelectedBackground}"
                     BorderThickness="1"
                     CornerRadius="10">
-
                 <StackPanel Spacing="16">
-
                     <TextBlock Text="{Binding UiLabels.DeletePreset}"
                                FontSize="18"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource PrimaryText}"/>
-
                     <TextBlock x:Name="DeletePresetMessage"
                                FontSize="13"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource SecondaryText}"/>
-
                     <ProgressBar IsIndeterminate="True"
                                  Height="2"
                                  IsVisible="{Binding IsPresetBusy}"
                                  Foreground="{DynamicResource Accent}"/>
-
                     <TextBlock Text="{Binding PresetErrorMessage}"
                                IsVisible="{Binding HasPresetError}"
                                FontSize="12"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource Accent}"/>
-
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 Spacing="8">
-
                         <Button x:Name="CancelPresetDeletionButton"
                                 Classes="reports-action"
                                 Content="{Binding UiLabels.Cancel}"
                                 Click="OnCancelDeletePresetClick"/>
-
                         <Button x:Name="ConfirmPresetDeletionButton"
                                 Classes="reports-primary"
                                 Content="{Binding UiLabels.DeletePreset}"
