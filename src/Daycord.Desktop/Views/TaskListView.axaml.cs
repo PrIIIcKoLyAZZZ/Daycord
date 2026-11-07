@@ -23,6 +23,11 @@ public partial class TaskListView : UserControl
     private static readonly ConditionalWeakTable<
         TaskListViewModel, ScrollSnapshot> SavedScroll = new();
 
+    // A navigation-triggered focus request is kept separately from scroll:
+    // scroll restoration must also work when no keyboard focus was requested.
+    private static readonly ConditionalWeakTable<
+        TaskListViewModel, ReturnFocusRequest> SavedReturnFocus = new();
+
     private static readonly string[] DateFormats =
     [
         "dd.MM.yyyy", "d.M.yyyy", "yyyy-MM-dd", "yyyy/MM/dd",
@@ -36,6 +41,7 @@ public partial class TaskListView : UserControl
     private readonly Grid _toDateSegment;
     private readonly ScrollViewer _tableScroller;
     private readonly ListBox _taskTable;
+    private readonly Button _cancelDeleteButton;
     private readonly Grid _tableContent;
     private readonly Popup _datePopup;
     private readonly UniformGrid _weekdayHeader;
@@ -50,6 +56,7 @@ public partial class TaskListView : UserControl
         1);
 
     private TaskListViewModel? _loadedViewModel;
+    private Control? _focusBeforeDeleteConfirmation;
     private bool _isAttached;
     private bool _suppressTextChanges;
     private bool _changingFromInput;
@@ -65,6 +72,7 @@ public partial class TaskListView : UserControl
         _toDateSegment = Required<Grid>("ToDateSegment");
         _tableScroller = Required<ScrollViewer>("TableHorizontalScroll");
         _taskTable = Required<ListBox>("TaskTable");
+        _cancelDeleteButton = Required<Button>("CancelDeleteButton");
         _tableContent = Required<Grid>("TableContent");
         _datePopup = Required<Popup>("DatePopup");
         _weekdayHeader = Required<UniformGrid>("WeekdayHeader");
@@ -77,6 +85,11 @@ public partial class TaskListView : UserControl
         AddHandler(
             InputElement.PointerPressedEvent,
             OnTaskRowPointerPressed,
+            RoutingStrategies.Tunnel);
+
+        AddHandler(
+            InputElement.KeyDownEvent,
+            OnTaskSafetyKeyDown,
             RoutingStrategies.Tunnel);
 
         AddHandler(
@@ -106,6 +119,7 @@ public partial class TaskListView : UserControl
             SaveScrollState();
             _isAttached = false;
             _datePopup.IsOpen = false;
+            _focusBeforeDeleteConfirmation = null;
             DisconnectViewModel();
         };
     }
@@ -154,9 +168,11 @@ public partial class TaskListView : UserControl
             return;
         }
 
-        Dispatcher.UIThread.Post(
-            () => RestoreScrollState(viewModel),
-            DispatcherPriority.Background);
+        Dispatcher.UIThread.Post(() =>
+        {
+            RestoreScrollState(viewModel);
+            RestoreNavigationFocus(viewModel);
+        }, DispatcherPriority.Background);
     }
 
     private void SaveScrollState()
@@ -254,6 +270,91 @@ public partial class TaskListView : UserControl
         string? SortField,
         bool Descending);
 
+    private sealed record ReturnFocusRequest(Guid TaskId, bool OnOpenButton);
+
+    private void RestoreNavigationFocus(TaskListViewModel viewModel)
+    {
+        if (!_isAttached ||
+            !ReferenceEquals(_loadedViewModel, viewModel) ||
+            !SavedReturnFocus.TryGetValue(viewModel, out var request))
+        {
+            return;
+        }
+
+        // Consume exactly once. If the task disappeared or another control
+        // received focus, never steal focus or select a different task.
+        SavedReturnFocus.Remove(viewModel);
+
+        var row = viewModel.SelectedTask;
+        if (row?.Id != request.TaskId ||
+            !viewModel.CanOpenTaskFromList(row))
+        {
+            return;
+        }
+
+        var focused = TopLevel.GetTopLevel(this)?
+            .FocusManager?.GetFocusedElement() as Visual;
+
+        if (focused is not null &&
+            (ReferenceEquals(focused, this) ||
+             focused.GetVisualAncestors().Contains(this)) &&
+            !IsFromTaskTable(focused))
+        {
+            return;
+        }
+
+        _taskTable.ScrollIntoView(row);
+        Dispatcher.UIThread.Post(
+            () => FocusReturnedTask(viewModel, request, 2),
+            DispatcherPriority.Background);
+    }
+
+    private void FocusReturnedTask(
+        TaskListViewModel viewModel,
+        ReturnFocusRequest request,
+        int remainingAttempts)
+    {
+        if (!_isAttached ||
+            !ReferenceEquals(_loadedViewModel, viewModel) ||
+            viewModel.SelectedTask is not { } selected ||
+            selected.Id != request.TaskId ||
+            !viewModel.CanOpenTaskFromList(selected))
+        {
+            return;
+        }
+
+        var container = _taskTable.ContainerFromItem(selected) as ListBoxItem;
+        if (container is null && remainingAttempts > 0)
+        {
+            _taskTable.ScrollIntoView(selected);
+            Dispatcher.UIThread.Post(
+                () => FocusReturnedTask(
+                    viewModel, request, remainingAttempts - 1),
+                DispatcherPriority.Background);
+            return;
+        }
+
+        if (container is null)
+        {
+            _taskTable.Focus(NavigationMethod.Tab);
+            return;
+        }
+
+        if (request.OnOpenButton)
+        {
+            var button = container.GetVisualDescendants()
+                .OfType<Button>()
+                .FirstOrDefault(x => x.Classes.Contains("task-open"));
+
+            if (button?.Focus(NavigationMethod.Tab) == true)
+            {
+                return;
+            }
+        }
+
+        container.Focus(NavigationMethod.Tab);
+    }
+
     private bool _hasInitializedThisAttachment;
 
     private void DisconnectViewModel()
@@ -295,13 +396,113 @@ public partial class TaskListView : UserControl
         {
             _datePopup.IsOpen = false;
         }
-        else if (
-            e.PropertyName ==
-                nameof(TaskListViewModel.IsDeleteConfirmationOpen) &&
-            viewModel.IsDeleteConfirmationOpen)
+        else if (e.PropertyName ==
+                 nameof(TaskListViewModel.IsDeleteConfirmationOpen))
+        {
+            UpdateDeleteConfirmationFocus(viewModel);
+        }
+    }
+
+    // While deletion is pending, move focus into the confirmation.
+    private void UpdateDeleteConfirmationFocus(TaskListViewModel viewModel)
+    {
+        if (viewModel.IsDeleteConfirmationOpen)
         {
             _datePopup.IsOpen = false;
+            _focusBeforeDeleteConfirmation =
+                TopLevel.GetTopLevel(this)?.FocusManager?
+                    .GetFocusedElement() as Control;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_isAttached &&
+                    ReferenceEquals(_loadedViewModel, viewModel) &&
+                    viewModel.IsDeleteConfirmationOpen)
+                {
+                    _cancelDeleteButton.Focus();
+                }
+            }, DispatcherPriority.Background);
+
+            return;
         }
+
+        var previousFocus = _focusBeforeDeleteConfirmation;
+        _focusBeforeDeleteConfirmation = null;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!_isAttached ||
+                !ReferenceEquals(_loadedViewModel, viewModel) ||
+                viewModel.IsDeleteConfirmationOpen)
+            {
+                return;
+            }
+
+            if (previousFocus is { IsVisible: true, IsEnabled: true } &&
+                previousFocus.Focus())
+            {
+                return;
+            }
+
+            _taskTable.Focus();
+        }, DispatcherPriority.Background);
+    }
+
+    // Escape is scoped to Tasks and never performs a destructive action.
+    private void OnTaskSafetyKeyDown(
+        object? sender,
+        KeyEventArgs e)
+    {
+        if (e.Handled ||
+            e.Key != Key.Escape ||
+            _loadedViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        if (viewModel.IsDeleteConfirmationOpen)
+        {
+            e.Handled = true;
+
+            if (viewModel.CancelDeleteCommand.CanExecute(null))
+            {
+                viewModel.CancelDeleteCommand.Execute(null);
+            }
+
+            return;
+        }
+
+        if (_datePopup.IsOpen)
+        {
+            _datePopup.IsOpen = false;
+            e.Handled = true;
+            return;
+        }
+
+        if (IsFromTaskTable(e.Source))
+        {
+            viewModel.SelectedTask = null;
+            e.Handled = true;
+        }
+    }
+
+    private bool IsFromTaskTable(object? source) =>
+        source is Visual visual &&
+        (ReferenceEquals(visual, _taskTable) ||
+         visual.GetVisualAncestors().Contains(_taskTable));
+
+    private void OnCalendarPopupKeyDown(
+        object? sender,
+        KeyEventArgs e)
+    {
+        if (e.Handled || e.Key != Key.Escape)
+        {
+            return;
+        }
+
+        _datePopup.IsOpen = false;
+        e.Handled = true;
+        _activeDateInput?.Focus();
     }
 
     // Opening a task from the table
@@ -312,6 +513,7 @@ public partial class TaskListView : UserControl
     {
         if (e.Handled ||
             e.ClickCount != 2 ||
+            IsOpenButtonEvent(e.Source) ||
             !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             return;
@@ -330,7 +532,9 @@ public partial class TaskListView : UserControl
         object? sender,
         KeyEventArgs e)
     {
-        if (e.Handled || e.Key != Key.Enter)
+        if (e.Handled ||
+            e.Key != Key.Enter ||
+            IsOpenButtonEvent(e.Source))
         {
             return;
         }
@@ -344,24 +548,41 @@ public partial class TaskListView : UserControl
         OpenTaskRow(row, e);
     }
 
-    private void OpenTaskRow(
-        TaskListRowViewModel? row,
+    private void OnOpenTaskClick(
+        object? sender,
         RoutedEventArgs e)
     {
-        if (row is null ||
-            _loadedViewModel is not { } viewModel)
+        if (sender is Button { DataContext: TaskListRowViewModel row })
         {
-            return;
+            OpenTaskRow(row, e, preferButtonFocus: true);
         }
+    }
 
-        if (viewModel.IsDeleting ||
-            viewModel.IsDeleteConfirmationOpen)
+    private static bool IsOpenButtonEvent(object? source) =>
+        source is Visual visual &&
+        visual.GetVisualAncestors()
+            .Prepend(visual)
+            .OfType<Button>()
+            .Any(button => button.Classes.Contains("task-open"));
+
+    private void OpenTaskRow(
+        TaskListRowViewModel? row,
+        RoutedEventArgs e,
+        bool preferButtonFocus = false)
+    {
+        if (_loadedViewModel is not { } viewModel ||
+            !viewModel.CanOpenTaskFromList(row) ||
+            row is null)
         {
             return;
         }
 
         e.Handled = true;
         _datePopup.IsOpen = false;
+
+        SavedReturnFocus.Remove(viewModel);
+        SavedReturnFocus.Add(
+            viewModel, new ReturnFocusRequest(row.Id, preferButtonFocus));
 
         viewModel.OpenTaskFromList(row);
     }

@@ -11,18 +11,31 @@ public sealed partial class TaskListViewModel
     public string CreateFullTaskLabel =>
         _localization.GetString("QuickTaskCreateAction");
 
+    // Do not open old rows while a debounced filter or reload is pending.
+    // Row identity is preserved by DC-034, so reference membership is safe.
+    public bool CanOpenTaskFromList(TaskListRowViewModel? task)
+    {
+        return !_disposed &&
+               !IsDeleting &&
+               !IsDeleteConfirmationOpen &&
+               !IsLoading &&
+               _loadCancellation is null &&
+               !HasDateRangeError &&
+               !HasLoadError &&
+               task is not null &&
+               _rows.Contains(task);
+    }
+
     public void OpenTaskFromList(TaskListRowViewModel? task)
     {
-        if (_disposed ||
-            IsDeleting ||
-            IsDeleteConfirmationOpen ||
-            task is null)
+        if (!CanOpenTaskFromList(task))
         {
             return;
         }
 
+        // The guard above confirms task is non-null and still displayed.
         SelectedTask = task;
-        TaskOpenRequested?.Invoke(task.Id);
+        TaskOpenRequested?.Invoke(task!.Id);
     }
 
     [RelayCommand]
