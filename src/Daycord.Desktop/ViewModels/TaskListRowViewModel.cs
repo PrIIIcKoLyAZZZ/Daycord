@@ -64,6 +64,10 @@ public sealed class TaskListRowViewModel : ObservableObject
 
     public bool IsCompleted => _task.IsCompleted;
 
+    // Reuse the already localized "Open task" resource from Calendar.
+    public string OpenTaskLabel =>
+        _localization.GetString("CalendarOpenTask");
+
     /// <summary>
     /// Update an existing visual row without changing its identity.
     /// // Each property notifies the UI only when its source value changed.
@@ -135,6 +139,7 @@ public sealed class TaskListRowViewModel : ObservableObject
         OnPropertyChanged(nameof(PlannedText));
         OnPropertyChanged(nameof(ActualText));
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(OpenTaskLabel));
     }
 
     private string FormatDuration(long? totalMinutes)

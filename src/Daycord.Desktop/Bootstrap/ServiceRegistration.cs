@@ -20,7 +20,26 @@ public static class ServiceRegistration
 
         // Database
 
+#if DEBUG
+        // Debug uses an isolated test database.
+        services.AddSingleton<AppDataPaths>(_ =>
+        {
+            var localApplicationData = Environment.GetFolderPath(
+                Environment.SpecialFolder.LocalApplicationData);
+
+            if (string.IsNullOrWhiteSpace(localApplicationData))
+            {
+                throw new IOException(
+                    "The local application data folder is unavailable.");
+            }
+
+            return new AppDataPaths(
+                Path.Combine(localApplicationData, "Daycord-test"));
+        });
+#else
+        // Release uses the existing production database.
         services.AddSingleton<AppDataPaths>();
+#endif
 
         services.AddSingleton<SqliteConnectionFactory>();
 

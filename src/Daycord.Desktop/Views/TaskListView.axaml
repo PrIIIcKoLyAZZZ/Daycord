@@ -115,7 +115,9 @@
         </Style>
         <Style Selector="ListBox.task-table ListBoxItem">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
             <Setter Property="CornerRadius" Value="0" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
@@ -131,6 +133,54 @@
         <Style Selector="ListBox.task-table ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBackground}" />
         </Style>
+
+        <!-- Keep selected and hovered states separate from keyboard focus. -->
+        <Style Selector="ListBox.task-table ListBoxItem:focus-visible">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="Button.task-action:focus-visible">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="Button.task-confirm:focus-visible">
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <!-- The open action only appears for a hovered or keyboard-focused row. -->
+        <Style Selector="Button.task-open">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="ListBox.task-table ListBoxItem:pointerover Button.task-open,
+                         ListBox.task-table ListBoxItem:focus-within Button.task-open,
+                         Button.task-open:focus-visible">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Button.task-open:pointerover, Button.task-open:focus-visible">
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="Button.task-open:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.task-open:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
+        </Style>
+        <Style Selector="Button.task-open:pointerover Path,
+                         Button.task-open:focus-visible Path">
+            <Setter Property="Stroke" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="Button.task-open:disabled">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+
         <Style Selector="Border.task-status TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
         </Style>
@@ -366,7 +416,7 @@
                                     BorderBrush="{DynamicResource Background}"
                                     BorderThickness="0,0,0,1">
                                 <Grid Height="38"
-                                      ColumnDefinitions="104,2.4*,1.7*,84,78,112">
+                                      ColumnDefinitions="104,2.4*,1.7*,84,78,112,40">
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding DateColumn}"
                                                Margin="12,0,4,0"
@@ -434,7 +484,7 @@
                                                 Background="Transparent"
                                                 BorderBrush="{DynamicResource Background}"
                                                 BorderThickness="0,0,0,1">
-                                            <Grid ColumnDefinitions="104,2.4*,1.7*,84,78,112">
+                                            <Grid ColumnDefinitions="104,2.4*,1.7*,84,78,112,40">
                                                 <TextBlock Grid.Column="0"
                                                            Text="{Binding DateText}"
                                                            Margin="12,0,4,0"
@@ -511,6 +561,24 @@
                                                                TextTrimming="CharacterEllipsis"
                                                                MaxWidth="94" />
                                                 </Border>
+
+                                                <!-- No layout shift: the action column is always reserved. -->
+                                                <Button Grid.Column="6"
+                                                        Classes="task-open"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        ToolTip.Tip="{Binding OpenTaskLabel}"
+                                                        AutomationProperties.Name="{Binding OpenTaskLabel}"
+                                                        Click="OnOpenTaskClick">
+                                                    <Path Width="15"
+                                                          Height="15"
+                                                          Stretch="Uniform"
+                                                          Stroke="{DynamicResource SecondaryText}"
+                                                          StrokeThickness="1.7"
+                                                          StrokeLineCap="Round"
+                                                          StrokeJoin="Round"
+                                                          Data="M5,15 L15,5 M8,5 L15,5 L15,12" />
+                                                </Button>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -552,7 +620,8 @@
                     BorderThickness="1"
                     CornerRadius="9"
                     Padding="14"
-                    Width="280">
+                    Width="280"
+                    KeyDown="OnCalendarPopupKeyDown">
                 <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <Button Grid.Column="0"
@@ -639,7 +708,8 @@
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 Spacing="8">
-                        <Button Classes="task-action"
+                        <Button x:Name="CancelDeleteButton"
+                                Classes="task-action"
                                 Content="{Binding CancelDeleteLabel}"
                                 Command="{Binding CancelDeleteCommand}" />
 
