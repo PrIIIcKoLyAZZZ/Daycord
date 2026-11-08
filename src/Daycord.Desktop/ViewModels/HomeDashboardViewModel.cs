@@ -158,6 +158,18 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
     }
 
     [RelayCommand]
+    private void ViewTodayTasks()
+    {
+        if (_disposed || !_isActive)
+            return;
+
+        // Determine the user's current calendar day on click rather
+        // than relying on the date captured by the last dashboard load.
+        var date = DateOnly.FromDateTime(DateTime.Now);
+        _navigation.NavigateToTasksForDate(date);
+    }
+
+    [RelayCommand]
     private void Retry() => _ = ReloadAsync();
 
     private async Task ReloadAsync()
@@ -294,7 +306,8 @@ public sealed partial class HomeDashboardViewModel : ObservableObject, IDisposab
         .SequenceEqual(right.Select(item => (
             item.Id, item.TaskId, item.PlannedDate, item.PlannedMinutes,
             item.TaskNumber, item.TaskTitle, item.StatusId,
-            item.StatusName, item.StatusSystemKey, item.IsCompleted)));
+            item.StatusName, item.StatusSystemKey,
+            item.IsCompleted)));
 
     private static bool SameActual(
         IReadOnlyList<CalendarWorkItem> left,

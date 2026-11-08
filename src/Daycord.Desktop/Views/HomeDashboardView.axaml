@@ -87,6 +87,43 @@
         <Style Selector="Button.home-entry:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
         </Style>
+
+        <!-- Summary card and section heading are separate real buttons,
+             so nested task-entry buttons keep independent click handling. -->
+        <Style Selector="Button.home-today-card">
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Padding" Value="14"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.home-today-card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+        <Style Selector="Button.home-today-card:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+
+        <Style Selector="Button.home-today-heading">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="6,5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.home-today-heading:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background"
+                    Value="{DynamicResource SidebarSelectedBackground}"/>
+        </Style>
+        <Style Selector="Button.home-today-heading:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        </Style>
+
         <Style Selector="Button.home-retry">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
             <Setter Property="Foreground" Value="{DynamicResource Background}"/>
@@ -152,18 +189,34 @@
                       RowDefinitions="Auto,Auto"
                       ColumnSpacing="10"
                       RowSpacing="10">
-                    <Border Grid.Row="0" Grid.Column="0"
-                            Background="{DynamicResource Surface}"
-                            CornerRadius="9" Padding="15">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="{Binding TodayTasksLabel}"
-                                       Foreground="{DynamicResource SecondaryText}"
-                                       FontSize="11"/>
-                            <TextBlock Text="{Binding TodayTaskCount}"
-                                       Foreground="{DynamicResource PrimaryText}"
-                                       FontSize="23" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </Border>
+
+                    <Button Grid.Row="0" Grid.Column="0"
+                            Classes="home-today-card"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding ViewTodayTasksCommand}"
+                            ToolTip.Tip="{Binding TodayTasksLabel}"
+                            AutomationProperties.Name="{Binding TodayTasksLabel}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <StackPanel Grid.Column="0" Spacing="8">
+                                <TextBlock Text="{Binding TodayTasksLabel}"
+                                           Foreground="{DynamicResource SecondaryText}"
+                                           FontSize="11"/>
+                                <TextBlock Text="{Binding TodayTaskCount}"
+                                           Foreground="{DynamicResource PrimaryText}"
+                                           FontSize="23" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <Path Grid.Column="1"
+                                  Width="10" Height="10"
+                                  VerticalAlignment="Top"
+                                  IsHitTestVisible="False"
+                                  Stretch="Uniform"
+                                  Stroke="{DynamicResource SecondaryText}"
+                                  StrokeThickness="1.5"
+                                  StrokeLineCap="Round"
+                                  Data="M2,8 L8,2 M3,2 H8 V7"/>
+                        </Grid>
+                    </Button>
+
                     <Border Grid.Row="0" Grid.Column="1"
                             Background="{DynamicResource Surface}"
                             CornerRadius="9" Padding="15">
@@ -176,6 +229,7 @@
                                        FontSize="23" FontWeight="SemiBold"/>
                         </StackPanel>
                     </Border>
+
                     <Border Grid.Row="1" Grid.Column="0"
                             Background="{DynamicResource Surface}"
                             CornerRadius="9" Padding="15">
@@ -188,6 +242,7 @@
                                        FontSize="23" FontWeight="SemiBold"/>
                         </StackPanel>
                     </Border>
+
                     <Border Grid.Row="1" Grid.Column="1"
                             Background="{DynamicResource Surface}"
                             CornerRadius="9" Padding="15">
@@ -212,9 +267,27 @@
                 <Border Background="{DynamicResource Surface}"
                         CornerRadius="9" Padding="14">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="{Binding TodayTasksLabel}"
-                                   FontWeight="SemiBold" FontSize="13"
-                                   Foreground="{DynamicResource PrimaryText}"/>
+                        <Button Classes="home-today-heading"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding ViewTodayTasksCommand}"
+                                ToolTip.Tip="{Binding TodayTasksLabel}"
+                                AutomationProperties.Name="{Binding TodayTasksLabel}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding TodayTasksLabel}"
+                                           FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource PrimaryText}"/>
+                                <Path Grid.Column="1"
+                                      Width="9" Height="9"
+                                      VerticalAlignment="Center"
+                                      IsHitTestVisible="False"
+                                      Stretch="Uniform"
+                                      Stroke="{DynamicResource SecondaryText}"
+                                      StrokeThickness="1.5"
+                                      StrokeLineCap="Round"
+                                      Data="M2,1 L7,4.5 L2,8"/>
+                            </Grid>
+                        </Button>
                         <TextBlock Text="{Binding NoTasksLabel}"
                                    IsVisible="{Binding !HasTodayTasks}"
                                    FontSize="12"
