@@ -136,6 +136,9 @@ public sealed partial class TaskListViewModel :
     public string StatusFilterLabel =>
         Text("TaskListStatusFilter");
 
+    public CultureInfo CalendarCulture =>
+        CultureInfo.GetCultureInfo(_localization.CurrentLanguage);
+
     public string DateFromLabel =>
         Text("TaskListDateFrom");
 
@@ -902,6 +905,7 @@ public sealed partial class TaskListViewModel :
         OnPropertyChanged(nameof(Heading));
         OnPropertyChanged(nameof(SearchPlaceholder));
         OnPropertyChanged(nameof(StatusFilterLabel));
+        OnPropertyChanged(nameof(CalendarCulture));
         OnPropertyChanged(nameof(DateFromLabel));
         OnPropertyChanged(nameof(DateToLabel));
         OnPropertyChanged(nameof(SortLabel));

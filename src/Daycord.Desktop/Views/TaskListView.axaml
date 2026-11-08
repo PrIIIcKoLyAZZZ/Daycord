@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Daycord.Desktop.ViewModels"
+             xmlns:views="using:Daycord.Desktop.Views"
              x:Class="Daycord.Desktop.Views.TaskListView"
              x:DataType="vm:TaskListViewModel"
              Background="{DynamicResource Background}">
@@ -61,7 +62,7 @@
             <Setter Property="MinHeight" Value="34" />
             <Setter Property="FontSize" Value="12" />
         </Style>
-        <Style Selector="Button.calendar-trigger, Button.calendar-nav">
+        <Style Selector="Button.calendar-trigger">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource Accent}" />
             <Setter Property="BorderBrush" Value="Transparent" />
@@ -69,44 +70,6 @@
             <Setter Property="CornerRadius" Value="5" />
             <Setter Property="Padding" Value="5" />
             <Setter Property="MinHeight" Value="30" />
-        </Style>
-        <Style Selector="Button.calendar-nav">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="Padding" Value="0" />
-        </Style>
-        <Style Selector="TextBlock.calendar-weekday">
-            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
-            <Setter Property="FontFamily" Value="Menlo, Consolas, Courier New" />
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-        </Style>
-        <Style Selector="Button.calendar-day">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="5" />
-            <Setter Property="MinHeight" Value="32" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="FontSize" Value="12" />
-        </Style>
-        <Style Selector="Button.calendar-day.outside">
-            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
-            <Setter Property="Opacity" Value="0.5" />
-        </Style>
-        <Style Selector="Button.calendar-day.today">
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
-        </Style>
-        <Style Selector="Button.calendar-day.selected">
-            <Setter Property="Background" Value="{DynamicResource Accent}" />
-            <Setter Property="Foreground" Value="{DynamicResource Background}" />
-        </Style>
-        <Style Selector="Button.calendar-day.selected /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource Accent}" />
-            <Setter Property="Foreground" Value="{DynamicResource Background}" />
         </Style>
         <Style Selector="ListBox.task-table">
             <Setter Property="Background" Value="{DynamicResource Surface}" />
@@ -611,59 +574,8 @@
             </Border>
         </Grid>
 
-        <!-- Custom date picker -->
-        <Popup x:Name="DatePopup"
-               Placement="BottomEdgeAlignedLeft"
-               IsLightDismissEnabled="True">
-            <Border Background="{DynamicResource Surface}"
-                    BorderBrush="{DynamicResource Accent}"
-                    BorderThickness="1"
-                    CornerRadius="9"
-                    Padding="14"
-                    Width="280"
-                    KeyDown="OnCalendarPopupKeyDown">
-                <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                        <Button Grid.Column="0"
-                                Classes="calendar-nav"
-                                Content="‹"
-                                Click="OnPreviousMonthClick" />
-
-                        <TextBlock x:Name="CalendarMonthTitle"
-                                   Grid.Column="1"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource PrimaryText}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold" />
-
-                        <Button Grid.Column="2"
-                                Classes="calendar-nav"
-                                Content="›"
-                                Click="OnNextMonthClick" />
-                    </Grid>
-
-                    <UniformGrid x:Name="WeekdayHeader" Columns="7" />
-
-                    <UniformGrid x:Name="CalendarDaysGrid"
-                                 Columns="7"
-                                 Rows="6" />
-
-                    <Border Height="1"
-                            Background="{DynamicResource SecondaryText}"
-                            Opacity="0.25" />
-
-                    <Button x:Name="CalendarTodayButton"
-                            Classes="calendar-nav"
-                            HorizontalAlignment="Left"
-                            Width="110"
-                            Padding="10,0"
-                            FontSize="12"
-                            Foreground="{DynamicResource Accent}"
-                            Click="OnTodayClick" />
-                </StackPanel>
-            </Border>
-        </Popup>
+        <!-- Shared Graphite & Amber calendar, also used by Quick Task and Reports. -->
+        <views:DaycordCalendarView x:Name="TaskFilterCalendar" />
 
         <!-- Delete confirmation -->
         <Grid IsVisible="{Binding IsDeleteConfirmationOpen}"
