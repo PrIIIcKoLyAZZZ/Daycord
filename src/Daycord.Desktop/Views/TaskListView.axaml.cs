@@ -6,7 +6,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -43,17 +42,9 @@ public partial class TaskListView : UserControl
     private readonly ListBox _taskTable;
     private readonly Button _cancelDeleteButton;
     private readonly Grid _tableContent;
-    private readonly Popup _datePopup;
-    private readonly UniformGrid _weekdayHeader;
-    private readonly UniformGrid _calendarDaysGrid;
-    private readonly TextBlock _calendarMonthTitle;
-    private readonly Button _calendarTodayButton;
+    private readonly DaycordCalendarView _calendar;
 
     private TextBox? _activeDateInput;
-    private DateTime _visibleMonth = new(
-        DateTime.Today.Year,
-        DateTime.Today.Month,
-        1);
 
     private TaskListViewModel? _loadedViewModel;
     private Control? _focusBeforeDeleteConfirmation;
@@ -74,11 +65,8 @@ public partial class TaskListView : UserControl
         _taskTable = Required<ListBox>("TaskTable");
         _cancelDeleteButton = Required<Button>("CancelDeleteButton");
         _tableContent = Required<Grid>("TableContent");
-        _datePopup = Required<Popup>("DatePopup");
-        _weekdayHeader = Required<UniformGrid>("WeekdayHeader");
-        _calendarDaysGrid = Required<UniformGrid>("CalendarDaysGrid");
-        _calendarMonthTitle = Required<TextBlock>("CalendarMonthTitle");
-        _calendarTodayButton = Required<Button>("CalendarTodayButton");
+        _calendar = Required<DaycordCalendarView>("TaskFilterCalendar");
+        _calendar.DateSelected += OnCalendarDateSelected;
 
         // Tunnel events let the table retain its native ListBox selection.
         // Only a deliberate double-click or Enter opens task details.
@@ -97,7 +85,6 @@ public partial class TaskListView : UserControl
             OnTaskRowKeyDown,
             RoutingStrategies.Tunnel);
 
-        _datePopup.PlacementTarget = _fromDateSegment;
         ResizeTable(_tableScroller.Bounds.Width);
 
         AttachedToVisualTree += (_, _) =>
@@ -118,7 +105,8 @@ public partial class TaskListView : UserControl
         {
             SaveScrollState();
             _isAttached = false;
-            _datePopup.IsOpen = false;
+            _calendar.Close();
+            _activeDateInput = null;
             _focusBeforeDeleteConfirmation = null;
             DisconnectViewModel();
         };
@@ -394,12 +382,26 @@ public partial class TaskListView : UserControl
                 nameof(TaskListViewModel.AreFiltersExpanded) &&
             !viewModel.AreFiltersExpanded)
         {
-            _datePopup.IsOpen = false;
+            _calendar.Close();
         }
         else if (e.PropertyName ==
                  nameof(TaskListViewModel.IsDeleteConfirmationOpen))
         {
             UpdateDeleteConfirmationFocus(viewModel);
+        }
+
+        if (_calendar.IsOpen &&
+            (e.PropertyName == nameof(TaskListViewModel.CalendarCulture) ||
+             (e.PropertyName == nameof(TaskListViewModel.DateFrom) &&
+              ReferenceEquals(_activeDateInput, _fromInput)) ||
+             (e.PropertyName == nameof(TaskListViewModel.DateTo) &&
+              ReferenceEquals(_activeDateInput, _toInput))))
+        {
+            DateTime? selected = ReferenceEquals(_activeDateInput, _fromInput)
+                ? viewModel.DateFrom?.Date
+                : viewModel.DateTo?.Date;
+
+            _calendar.Refresh(selected, viewModel.CalendarCulture);
         }
     }
 
@@ -408,7 +410,7 @@ public partial class TaskListView : UserControl
     {
         if (viewModel.IsDeleteConfirmationOpen)
         {
-            _datePopup.IsOpen = false;
+            _calendar.Close();
             _focusBeforeDeleteConfirmation =
                 TopLevel.GetTopLevel(this)?.FocusManager?
                     .GetFocusedElement() as Control;
@@ -472,9 +474,9 @@ public partial class TaskListView : UserControl
             return;
         }
 
-        if (_datePopup.IsOpen)
+        if (_calendar.IsOpen)
         {
-            _datePopup.IsOpen = false;
+            _calendar.Close();
             e.Handled = true;
             return;
         }
@@ -490,20 +492,6 @@ public partial class TaskListView : UserControl
         source is Visual visual &&
         (ReferenceEquals(visual, _taskTable) ||
          visual.GetVisualAncestors().Contains(_taskTable));
-
-    private void OnCalendarPopupKeyDown(
-        object? sender,
-        KeyEventArgs e)
-    {
-        if (e.Handled || e.Key != Key.Escape)
-        {
-            return;
-        }
-
-        _datePopup.IsOpen = false;
-        e.Handled = true;
-        _activeDateInput?.Focus();
-    }
 
     // Opening a task from the table
 
@@ -578,7 +566,7 @@ public partial class TaskListView : UserControl
         }
 
         e.Handled = true;
-        _datePopup.IsOpen = false;
+        _calendar.Close();
 
         SavedReturnFocus.Remove(viewModel);
         SavedReturnFocus.Add(
@@ -795,10 +783,11 @@ public partial class TaskListView : UserControl
         SyncDateInput(_fromInput, null);
         SyncDateInput(_toInput, null);
 
-        _datePopup.IsOpen = false;
+        _calendar.Close();
     }
 
-    // Custom Graphite & Amber calendar
+    // Tasks reuses the same calendar Popup as Quick Task and Task Details.
+    // Only the filter ViewModel decides what the selected date means.
 
     private void OnFromCalendarClick(
         object? sender,
@@ -814,202 +803,64 @@ public partial class TaskListView : UserControl
         TextBox input,
         Grid target)
     {
-        if (_datePopup.IsOpen &&
+        if (_loadedViewModel is not { } viewModel ||
+            viewModel.IsDeleteConfirmationOpen)
+        {
+            return;
+        }
+
+        if (_calendar.IsOpen &&
             ReferenceEquals(_activeDateInput, input))
         {
-            _datePopup.IsOpen = false;
+            _calendar.Close();
             return;
         }
 
-        _datePopup.IsOpen = false;
+        _calendar.Close();
         _activeDateInput = input;
-        _datePopup.PlacementTarget = target;
 
-        var selected = ReferenceEquals(input, _fromInput)
-            ? _loadedViewModel?.DateFrom?.Date
-            : _loadedViewModel?.DateTo?.Date;
+        // An invalid unfinished text entry remains untouched. Valid text
+        // was already applied by OnDateTextChanged, without changing the
+        // date when the popup is merely opened.
+        DateTime? selected = ReferenceEquals(input, _fromInput)
+            ? viewModel.DateFrom?.Date
+            : viewModel.DateTo?.Date;
 
-        var anchor = selected ?? DateTime.Today;
-
-        _visibleMonth = new DateTime(
-            anchor.Year,
-            anchor.Month,
-            1);
-
-        _calendarTodayButton.Content =
-            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru"
-                ? "Сегодня"
-                : "Today";
-
-        RenderCalendar();
-
-        _datePopup.IsOpen = true;
+        _calendar.Open(
+            placementTarget: target,
+            anchorDate: selected ?? DateTime.Today,
+            selectedDate: selected,
+            culture: viewModel.CalendarCulture,
+            placement: PlacementMode.BottomEdgeAlignedLeft);
     }
 
-    private void OnPreviousMonthClick(
+    private void OnCalendarDateSelected(
         object? sender,
-        RoutedEventArgs e) =>
-        ChangeMonth(-1);
-
-    private void OnNextMonthClick(
-        object? sender,
-        RoutedEventArgs e) =>
-        ChangeMonth(1);
-
-    private void ChangeMonth(int step)
+        CalendarDateSelectedEventArgs e)
     {
-        try
-        {
-            _visibleMonth = _visibleMonth.AddMonths(step);
-            RenderCalendar();
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            // Reached DateTime range boundary.
-        }
-    }
-
-    private void RenderCalendar()
-    {
-        var culture = CultureInfo.CurrentCulture;
-
-        _calendarMonthTitle.Text =
-            _visibleMonth.ToString("MMMM yyyy", culture);
-
-        _weekdayHeader.Children.Clear();
-
-        for (int i = 0; i < 7; i++)
-        {
-            var weekday = (DayOfWeek)((i + 1) % 7);
-
-            var label = new TextBlock
-            {
-                Text = culture.DateTimeFormat
-                    .GetShortestDayName(weekday),
-
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-
-            label.Classes.Add("calendar-weekday");
-            _weekdayHeader.Children.Add(label);
-        }
-
-        var offset =
-            ((int)_visibleMonth.DayOfWeek + 6) % 7;
-
-        DateTime first;
-
-        try
-        {
-            first = _visibleMonth.AddDays(-offset);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            first = _visibleMonth;
-        }
-
-        var selected = ReferenceEquals(
-            _activeDateInput,
-            _fromInput)
-                ? _loadedViewModel?.DateFrom?.Date
-                : _loadedViewModel?.DateTo?.Date;
-
-        _calendarDaysGrid.Children.Clear();
-
-        for (int i = 0; i < 42; i++)
-        {
-            DateTime day;
-
-            try
-            {
-                day = first.AddDays(i);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                break;
-            }
-
-            var button = new Button
-            {
-                Content = day.Day.ToString(
-                    CultureInfo.InvariantCulture),
-
-                Tag = day,
-
-                HorizontalAlignment =
-                    HorizontalAlignment.Stretch,
-
-                HorizontalContentAlignment =
-                    HorizontalAlignment.Center
-            };
-
-            button.Classes.Add("calendar-day");
-
-            if (day.Month != _visibleMonth.Month ||
-                day.Year != _visibleMonth.Year)
-            {
-                button.Classes.Add("outside");
-            }
-
-            if (day.Date == DateTime.Today)
-            {
-                button.Classes.Add("today");
-            }
-
-            if (selected.HasValue &&
-                day.Date == selected.Value)
-            {
-                button.Classes.Add("selected");
-            }
-
-            button.Click += OnCalendarDayClick;
-
-            _calendarDaysGrid.Children.Add(button);
-        }
-    }
-
-    private void OnCalendarDayClick(
-        object? sender,
-        RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: DateTime day })
-        {
-            SetCalendarDate(day);
-        }
-    }
-
-    private void OnTodayClick(
-        object? sender,
-        RoutedEventArgs e) =>
-        SetCalendarDate(DateTime.Today);
-
-    private void SetCalendarDate(DateTime day)
-    {
-        if (_activeDateInput is null ||
-            _loadedViewModel is not { } vm)
+        if (_activeDateInput is not { } input ||
+            _loadedViewModel is not { } viewModel)
         {
             return;
         }
 
+        // Keep the existing Tasks date-filter representation. Date is
+        // calendar-local and must not be converted through UTC.
+        var day = e.Date;
         var value = new DateTimeOffset(
-            day.Year,
-            day.Month,
-            day.Day,
-            0, 0, 0,
-            TimeSpan.Zero);
+            day.Year, day.Month, day.Day,
+            0, 0, 0, TimeSpan.Zero);
 
-        if (ReferenceEquals(_activeDateInput, _fromInput))
+        if (ReferenceEquals(input, _fromInput))
         {
-            vm.DateFrom = value;
+            viewModel.DateFrom = value;
             SyncDateInput(_fromInput, value);
         }
-        else
+        else if (ReferenceEquals(input, _toInput))
         {
-            vm.DateTo = value;
+            viewModel.DateTo = value;
             SyncDateInput(_toInput, value);
         }
-
-        _datePopup.IsOpen = false;
     }
 
     // Responsive table
