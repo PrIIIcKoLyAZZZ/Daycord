@@ -23,6 +23,10 @@ public sealed class TaskListRowViewModel : ObservableObject
 
     public Guid Id => _task.Id;
 
+    // Used to retain only date-matching rows during Home -> Tasks.
+    // Planned and actual work dates must not affect this filter.
+    internal DateOnly? TaskDate => _task.TaskDate;
+
     public string Title => _task.Title;
 
     public string TaskNumberText =>

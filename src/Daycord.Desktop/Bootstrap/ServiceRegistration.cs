@@ -57,9 +57,9 @@ public static class ServiceRegistration
             IUserBackupService,
             UserBackupService>();
 
-        services.AddSingleton<PendingRestoreCoordinator>();
-
         // Application Settings — DC-015
+
+        services.AddSingleton<PendingRestoreCoordinator>();
 
         services.AddSingleton<
             IAppSettingsRepository,
@@ -95,8 +95,6 @@ public static class ServiceRegistration
 
         services.AddSingleton<WorkReportPresetService>();
 
-        services.AddSingleton<WorkReportService>();
-
         services.AddSingleton<IWorkReportExporter>(provider =>
         {
             var localization = provider
@@ -105,6 +103,8 @@ public static class ServiceRegistration
             return new ClosedXmlWorkReportExporter(
                 () => localization.CurrentLanguage);
         });
+
+        services.AddSingleton<WorkReportService>();
 
         services.AddSingleton<ReportsViewModel>();
 
@@ -147,6 +147,10 @@ public static class ServiceRegistration
 
             taskList.TaskOpenRequested += navigation.OpenTask;
             taskList.TaskCreationRequested += navigation.OpenNewTask;
+
+            // Must subscribe before MainWindowViewModel: navigation
+            // applies the Today filter before the Tasks view activates.
+            taskList.AttachNavigation(navigation);
 
             return taskList;
         });
