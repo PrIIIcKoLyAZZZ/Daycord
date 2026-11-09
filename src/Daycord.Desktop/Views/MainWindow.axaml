@@ -65,11 +65,14 @@
 
     <Window.Styles>
         <StyleInclude Source="avares://Daycord.Desktop/Styles/Sidebar.axaml"/>
+        <!-- DC-041: modal visuals only; does not change navigation styles. -->
+        <StyleInclude Source="avares://Daycord.Desktop/Styles/OverlayEffects.axaml"/>
     </Window.Styles>
 
     <!-- Root layout -->
 
-    <Grid Background="{DynamicResource Background}">
+    <Grid x:Name="ApplicationRoot"
+          Background="{DynamicResource Background}">
 
         <!-- Database initialization -->
 
@@ -149,7 +152,8 @@
 
         <!-- Main application shell -->
 
-        <Grid IsVisible="{Binding IsDatabaseReady}"
+        <Grid x:Name="ApplicationShell"
+              IsVisible="{Binding IsDatabaseReady}"
               ColumnDefinitions="200,*">
 
             <!-- Sidebar -->

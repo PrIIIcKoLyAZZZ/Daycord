@@ -2,10 +2,11 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -41,6 +42,12 @@ public partial class TaskListView : UserControl
     private readonly ScrollViewer _tableScroller;
     private readonly ListBox _taskTable;
     private readonly Button _cancelDeleteButton;
+    private readonly Button _confirmDeleteButton;
+    private readonly Grid _tasksBlurContent;
+    private readonly Grid _deleteConfirmationOverlay;
+    private readonly Border _deleteConfirmationPanel;
+    private readonly BlurEffect _deleteBlurEffect;
+    private readonly double _targetDeleteBlur;
     private readonly Grid _tableContent;
     private readonly DaycordCalendarView _calendar;
 
@@ -52,6 +59,13 @@ public partial class TaskListView : UserControl
     private bool _suppressTextChanges;
     private bool _changingFromInput;
     private bool _changingToInput;
+    private long _deleteTransitionGeneration;
+
+    // DC-041: The confirmation is temporarily hosted by MainWindow so the
+    // matte and blur cover the sidebar and page header, not only Tasks.
+    private Grid? _applicationRoot;
+    private Grid? _applicationShell;
+    private Panel? _originalOverlayParent;
 
     public TaskListView()
     {
@@ -64,6 +78,18 @@ public partial class TaskListView : UserControl
         _tableScroller = Required<ScrollViewer>("TableHorizontalScroll");
         _taskTable = Required<ListBox>("TaskTable");
         _cancelDeleteButton = Required<Button>("CancelDeleteButton");
+        _confirmDeleteButton = Required<Button>("ConfirmDeleteButton");
+        _tasksBlurContent = Required<Grid>("TasksBlurContent");
+        _deleteConfirmationOverlay = Required<Grid>("DeleteConfirmationOverlay");
+        _deleteConfirmationPanel = Required<Border>("DeleteConfirmationPanel");
+        _deleteBlurEffect = _tasksBlurContent.Effect as BlurEffect
+            ?? throw new InvalidOperationException("Tasks blur effect was not found.");
+        _targetDeleteBlur = _deleteBlurEffect.Radius;
+
+        // No render effect or animated radius while the confirmation is hidden.
+        _tasksBlurContent.Effect = null;
+        SetDeleteBlurImmediately(0);
+
         _tableContent = Required<Grid>("TableContent");
         _calendar = Required<DaycordCalendarView>("TaskFilterCalendar");
         _calendar.DateSelected += OnCalendarDateSelected;
@@ -76,6 +102,13 @@ public partial class TaskListView : UserControl
             RoutingStrategies.Tunnel);
 
         AddHandler(
+            InputElement.KeyDownEvent,
+            OnTaskSafetyKeyDown,
+            RoutingStrategies.Tunnel);
+
+        // Once hosted in MainWindow, the overlay is no longer a descendant
+        // of this view. Keep keyboard modal handling on the overlay itself.
+        _deleteConfirmationOverlay.AddHandler(
             InputElement.KeyDownEvent,
             OnTaskSafetyKeyDown,
             RoutingStrategies.Tunnel);
@@ -108,6 +141,7 @@ public partial class TaskListView : UserControl
             _calendar.Close();
             _activeDateInput = null;
             _focusBeforeDeleteConfirmation = null;
+            ResetDeleteOverlay();
             DisconnectViewModel();
         };
     }
@@ -121,12 +155,16 @@ public partial class TaskListView : UserControl
     {
         if (DataContext is not TaskListViewModel viewModel)
         {
+            ResetDeleteOverlay();
+            _focusBeforeDeleteConfirmation = null;
             DisconnectViewModel();
             return;
         }
 
         if (!ReferenceEquals(_loadedViewModel, viewModel))
         {
+            ResetDeleteOverlay();
+            _focusBeforeDeleteConfirmation = null;
             DisconnectViewModel();
 
             _loadedViewModel = viewModel;
@@ -134,6 +172,10 @@ public partial class TaskListView : UserControl
 
             SyncDateInput(_fromInput, viewModel.DateFrom);
             SyncDateInput(_toInput, viewModel.DateTo);
+            if (viewModel.IsDeleteConfirmationOpen)
+            {
+                UpdateDeleteConfirmation(viewModel);
+            }
         }
 
         // Returning to Tasks reloads actual SQLite data.
@@ -387,7 +429,7 @@ public partial class TaskListView : UserControl
         else if (e.PropertyName ==
                  nameof(TaskListViewModel.IsDeleteConfirmationOpen))
         {
-            UpdateDeleteConfirmationFocus(viewModel);
+            UpdateDeleteConfirmation(viewModel);
         }
 
         if (_calendar.IsOpen &&
@@ -405,72 +447,274 @@ public partial class TaskListView : UserControl
         }
     }
 
-    // While deletion is pending, move focus into the confirmation.
-    private void UpdateDeleteConfirmationFocus(TaskListViewModel viewModel)
+    // The VM owns deletion; this View owns only the visual transition.
+    // Keep the overlay hit-testable until both exit transitions have finished.
+    private void UpdateDeleteConfirmation(TaskListViewModel viewModel)
     {
+        var generation = ++_deleteTransitionGeneration;
+
         if (viewModel.IsDeleteConfirmationOpen)
         {
             _calendar.Close();
-            _focusBeforeDeleteConfirmation =
-                TopLevel.GetTopLevel(this)?.FocusManager?
-                    .GetFocusedElement() as Control;
+            if (!_deleteConfirmationOverlay.IsVisible)
+            {
+                _focusBeforeDeleteConfirmation =
+                    TopLevel.GetTopLevel(this)?.FocusManager?
+                        .GetFocusedElement() as Control;
 
+                _deleteConfirmationOverlay.Classes.Remove("open");
+                SetDeleteBlurImmediately(0);
+
+                // In the actual application, reparent the existing dialog
+                // into the full-window root (no second dialog or task list).
+                // Standalone previews can still use the Tasks-local fallback.
+                AttachDeleteOverlayToWindow(viewModel);
+                if (_applicationShell is { } shell)
+                {
+                    shell.Effect = _deleteBlurEffect;
+                }
+                else
+                {
+                    _tasksBlurContent.Effect = _deleteBlurEffect;
+                }
+
+                _deleteConfirmationOverlay.IsVisible = true;
+            }
+
+            if (_applicationShell is { } fullShell)
+            {
+                fullShell.IsHitTestVisible = false;
+            }
+            else
+            {
+                _tasksBlurContent.IsHitTestVisible = false;
+            }
+
+            // Do not switch the opening style in the same layout update as
+            // IsVisible: opacity and radius must both start at zero.
             Dispatcher.UIThread.Post(() =>
             {
-                if (_isAttached &&
-                    ReferenceEquals(_loadedViewModel, viewModel) &&
-                    viewModel.IsDeleteConfirmationOpen)
+                if (!IsCurrentDeleteTransition(viewModel, generation) ||
+                    !viewModel.IsDeleteConfirmationOpen)
                 {
-                    _cancelDeleteButton.Focus();
+                    return;
                 }
+
+                _deleteConfirmationOverlay.Classes.Add("open");
+                _deleteBlurEffect.Radius = _targetDeleteBlur;
+
+                // Programmatic focus must not imitate a Tab press.
+                _cancelDeleteButton.Focus(NavigationMethod.Unspecified);
             }, DispatcherPriority.Background);
 
             return;
         }
 
-        var previousFocus = _focusBeforeDeleteConfirmation;
-        _focusBeforeDeleteConfirmation = null;
-
-        Dispatcher.UIThread.Post(() =>
+        if (!_deleteConfirmationOverlay.IsVisible)
         {
-            if (!_isAttached ||
-                !ReferenceEquals(_loadedViewModel, viewModel) ||
+            return;
+        }
+
+        _deleteConfirmationOverlay.Classes.Remove("open");
+        _deleteBlurEffect.Radius = 0;
+        _ = FinishDeleteOverlayCloseAsync(viewModel, generation);
+    }
+
+    private async Task FinishDeleteOverlayCloseAsync(
+        TaskListViewModel viewModel,
+        long generation)
+    {
+        // Durations come from the AXAML transitions, not a duplicated C# timer.
+        var blurDuration = _deleteBlurEffect.Transitions?
+            .OfType<DoubleTransition>()
+            .Where(t => t.Property == BlurEffect.RadiusProperty)
+            .Select(t => t.Duration)
+            .DefaultIfEmpty(TimeSpan.Zero)
+            .Max() ?? TimeSpan.Zero;
+
+        var matteDuration = _deleteConfirmationOverlay.Transitions?
+            .OfType<DoubleTransition>()
+            .Where(t => t.Property == Visual.OpacityProperty)
+            .Select(t => t.Duration)
+            .DefaultIfEmpty(TimeSpan.Zero)
+            .Max() ?? TimeSpan.Zero;
+
+        var duration = blurDuration > matteDuration
+            ? blurDuration : matteDuration;
+
+        if (duration > TimeSpan.Zero)
+        {
+            await Task.Delay(duration);
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (!IsCurrentDeleteTransition(viewModel, generation) ||
                 viewModel.IsDeleteConfirmationOpen)
             {
                 return;
             }
 
-            if (previousFocus is { IsVisible: true, IsEnabled: true } &&
-                previousFocus.Focus())
-            {
-                return;
-            }
+            // Commit the terminal state only after the reverse transition.
+            _deleteConfirmationOverlay.IsVisible = false;
+            ReleaseDeleteVisuals();
 
-            _taskTable.Focus();
-        }, DispatcherPriority.Background);
+            var previousFocus = _focusBeforeDeleteConfirmation;
+            _focusBeforeDeleteConfirmation = null;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!IsCurrentDeleteTransition(viewModel, generation) ||
+                    viewModel.IsDeleteConfirmationOpen)
+                {
+                    return;
+                }
+
+                if (previousFocus is { IsVisible: true, IsEnabled: true } &&
+                    previousFocus.Focus())
+                {
+                    return;
+                }
+
+                _taskTable.Focus();
+            }, DispatcherPriority.Background);
+        });
     }
 
-    // Escape is scoped to Tasks and never performs a destructive action.
-    private void OnTaskSafetyKeyDown(
-        object? sender,
-        KeyEventArgs e)
+    private bool IsCurrentDeleteTransition(
+        TaskListViewModel viewModel,
+        long generation) =>
+        _isAttached &&
+        ReferenceEquals(_loadedViewModel, viewModel) &&
+        generation == _deleteTransitionGeneration;
+
+    private void ResetDeleteOverlay()
     {
-        if (e.Handled ||
-            e.Key != Key.Escape ||
-            _loadedViewModel is not { } viewModel)
+        ++_deleteTransitionGeneration; // Invalidates pending UI callbacks.
+        _deleteConfirmationOverlay.Classes.Remove("open");
+        _deleteConfirmationOverlay.IsVisible = false;
+        ReleaseDeleteVisuals();
+        SetDeleteBlurImmediately(0);
+    }
+
+    private void AttachDeleteOverlayToWindow(TaskListViewModel viewModel)
+    {
+        if (_applicationRoot is not null)
         {
             return;
         }
 
-        if (viewModel.IsDeleteConfirmationOpen)
+        if (TopLevel.GetTopLevel(this) is not MainWindow window ||
+            window.FindControl<Grid>("ApplicationRoot") is not { } root ||
+            window.FindControl<Grid>("ApplicationShell") is not { } shell ||
+            _deleteConfirmationOverlay.Parent is not Panel originalParent)
         {
-            e.Handled = true;
+            return;
+        }
 
-            if (viewModel.CancelDeleteCommand.CanExecute(null))
+        originalParent.Children.Remove(_deleteConfirmationOverlay);
+
+        // Once reparented outside TaskListView, the dialog must keep its
+        // TaskListViewModel binding context explicitly.
+        _deleteConfirmationOverlay.DataContext = viewModel;
+        root.Children.Add(_deleteConfirmationOverlay);
+
+        _originalOverlayParent = originalParent;
+        _applicationRoot = root;
+        _applicationShell = shell;
+    }
+
+    private void ReleaseDeleteVisuals()
+    {
+        if (_applicationShell is { } shell)
+        {
+            shell.Effect = null;
+            shell.IsHitTestVisible = true;
+        }
+
+        _tasksBlurContent.Effect = null;
+        _tasksBlurContent.IsHitTestVisible = true;
+
+        if (_applicationRoot is { } root)
+        {
+            root.Children.Remove(_deleteConfirmationOverlay);
+
+            // Restore inherited DataContext for the next opening.
+            _deleteConfirmationOverlay.ClearValue(
+                StyledElement.DataContextProperty);
+
+            _originalOverlayParent?.Children.Add(_deleteConfirmationOverlay);
+        }
+
+        _applicationRoot = null;
+        _applicationShell = null;
+        _originalOverlayParent = null;
+    }
+
+    private void SetDeleteBlurImmediately(double radius)
+    {
+        // Removing this local effect must not create an offscreen transition
+        // that leaks into the next opening of the confirmation.
+        var transitions = _deleteBlurEffect.Transitions;
+        _deleteBlurEffect.Transitions = null;
+        _deleteBlurEffect.Radius = radius;
+        _deleteBlurEffect.Transitions = transitions;
+    }
+
+    // Modal keyboard handling is scoped to Tasks, including the exit fade.
+    private void OnTaskSafetyKeyDown(
+        object? sender,
+        KeyEventArgs e)
+    {
+        if (e.Handled || _loadedViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        if (_deleteConfirmationOverlay.IsVisible)
+        {
+            if (e.Key == Key.Escape)
             {
-                viewModel.CancelDeleteCommand.Execute(null);
+                e.Handled = true;
+                if (viewModel.IsDeleteConfirmationOpen &&
+                    viewModel.CancelDeleteCommand.CanExecute(null))
+                {
+                    viewModel.CancelDeleteCommand.Execute(null);
+                }
+
+                return;
             }
 
+            if (e.Key == Key.Tab)
+            {
+                e.Handled = true;
+                var focused = TopLevel.GetTopLevel(this)?
+                    .FocusManager?.GetFocusedElement();
+
+                bool backwards = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+
+                // Both buttons are the only tab stops in this dialog.
+                var target = ReferenceEquals(focused, _cancelDeleteButton)
+                    ? _confirmDeleteButton
+                    : ReferenceEquals(focused, _confirmDeleteButton)
+                        ? _cancelDeleteButton
+                        : backwards ? _confirmDeleteButton : _cancelDeleteButton;
+
+                target.Focus(NavigationMethod.Tab);
+                return;
+            }
+
+            // A parent list must not react to Enter while the modal exits.
+            if (e.Key == Key.Enter && !IsFromDeleteDialog(e.Source))
+            {
+                e.Handled = true;
+            }
+
+            return;
+        }
+
+        if (e.Key != Key.Escape)
+        {
             return;
         }
 
@@ -488,6 +732,11 @@ public partial class TaskListView : UserControl
         }
     }
 
+    private bool IsFromDeleteDialog(object? source) =>
+        source is Visual visual &&
+        (ReferenceEquals(visual, _deleteConfirmationPanel) ||
+         visual.GetVisualAncestors().Contains(_deleteConfirmationPanel));
+
     private bool IsFromTaskTable(object? source) =>
         source is Visual visual &&
         (ReferenceEquals(visual, _taskTable) ||
@@ -500,6 +749,7 @@ public partial class TaskListView : UserControl
         PointerPressedEventArgs e)
     {
         if (e.Handled ||
+            _deleteConfirmationOverlay.IsVisible ||
             e.ClickCount != 2 ||
             IsOpenButtonEvent(e.Source) ||
             !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
@@ -521,6 +771,7 @@ public partial class TaskListView : UserControl
         KeyEventArgs e)
     {
         if (e.Handled ||
+            _deleteConfirmationOverlay.IsVisible ||
             e.Key != Key.Enter ||
             IsOpenButtonEvent(e.Source))
         {
@@ -558,7 +809,8 @@ public partial class TaskListView : UserControl
         RoutedEventArgs e,
         bool preferButtonFocus = false)
     {
-        if (_loadedViewModel is not { } viewModel ||
+        if (_deleteConfirmationOverlay.IsVisible ||
+            _loadedViewModel is not { } viewModel ||
             !viewModel.CanOpenTaskFromList(row) ||
             row is null)
         {
@@ -803,7 +1055,8 @@ public partial class TaskListView : UserControl
         TextBox input,
         Grid target)
     {
-        if (_loadedViewModel is not { } viewModel ||
+        if (_deleteConfirmationOverlay.IsVisible ||
+            _loadedViewModel is not { } viewModel ||
             viewModel.IsDeleteConfirmationOpen)
         {
             return;

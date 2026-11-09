@@ -1,0 +1,75 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:media="using:Avalonia.Media">
+
+    <!-- DC-041: resources exclusively for the Tasks delete confirmation. -->
+
+    <Styles.Resources>
+        <ResourceDictionary>
+            <Transitions x:Key="DeleteConfirmationBlurTransitions">
+                <DoubleTransition
+                    Property="{x:Static media:BlurEffect.RadiusProperty}"
+                    Duration="0:0:0.24"
+                    Easing="CubicEaseInOut" />
+            </Transitions>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+    <Style Selector="Grid.task-delete-overlay">
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity"
+                                  Duration="0:0:0.24"
+                                  Easing="CubicEaseInOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <Style Selector="Grid.task-delete-overlay.open">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="Border.task-delete-matte">
+        <Setter Property="Background"
+                Value="{DynamicResource DeleteConfirmationMatte}" />
+    </Style>
+
+    <!-- The dialog retains its appearance when hosted by MainWindow. -->
+
+    <Style Selector="Grid.task-delete-overlay Button.task-action">
+        <Setter Property="Background" Value="{DynamicResource Surface}" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Background}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+
+    <Style Selector="Grid.task-delete-overlay Button.task-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background"
+                Value="{DynamicResource SidebarSelectedBackground}" />
+    </Style>
+
+    <Style Selector="Grid.task-delete-overlay Button.task-action:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    </Style>
+
+    <Style Selector="Grid.task-delete-overlay Button.task-confirm">
+        <Setter Property="Background" Value="{DynamicResource Accent}" />
+        <Setter Property="Foreground" Value="{DynamicResource Background}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="18,9" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+
+    <Style Selector="Grid.task-delete-overlay Button.task-confirm:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryText}" />
+    </Style>
+</Styles>
