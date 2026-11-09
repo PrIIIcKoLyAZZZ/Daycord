@@ -350,8 +350,9 @@ public sealed partial class ReportsViewModel :
     public int WorkEntryCount =>
         _report?.WorkEntryCount ?? 0;
 
+    // Statistics include every report row, independently of Excel columns.
     public int ReportRowCount =>
-        _report?.GetRowsForColumns(GetEditedColumns()).Count ?? 0;
+        _report?.Rows.Count ?? 0;
 
     public long TotalPlannedMinutes =>
         _report?.TotalPlannedMinutes ?? 0;
@@ -623,9 +624,7 @@ public sealed partial class ReportsViewModel :
             OnPropertyChanged(nameof(HasUnsavedChanges));
         }
 
-        OnPropertyChanged(nameof(ReportRowCount));
-        OnPropertyChanged(nameof(IsMonthEmpty));
-
+        // Editing Excel columns must not invalidate report statistics.
         RefreshCommands();
     }
 
@@ -718,7 +717,8 @@ public sealed partial class ReportsViewModel :
                 return;
             }
 
-            ApplyPresetState(state);
+            // Keep the period summary visible while Excel preset changes.
+            ApplyPresetState(state, preserveLoadedReport: true);
             await ReloadAsync();
         }
         catch (OperationCanceledException)
