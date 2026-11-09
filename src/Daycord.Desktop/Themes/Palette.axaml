@@ -38,6 +38,12 @@
                 x:Key="SidebarSelectedHoverBackground"
                 Color="#F0DAB8" />
 
+            <!-- Tasks delete confirmation (DC-041) -->
+
+            <SolidColorBrush
+                x:Key="DeleteConfirmationMatte"
+                Color="#58000000" />
+
         </ResourceDictionary>
 
         <!-- DARK THEME -->
@@ -73,6 +79,12 @@
             <SolidColorBrush
                 x:Key="SidebarSelectedHoverBackground"
                 Color="#493924" />
+
+            <!-- Tasks delete confirmation (DC-041) -->
+
+            <SolidColorBrush
+                x:Key="DeleteConfirmationMatte"
+                Color="#46000000" />
 
         </ResourceDictionary>
 
