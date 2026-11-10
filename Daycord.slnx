@@ -5,6 +5,11 @@
     <Project Path="src/Daycord.Infrastructure/Daycord.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/common/">
-    <File Path="Directory.Packages.props"/>
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Daycord.EmergencyRetryChecks/Daycord.EmergencyRetryChecks.csproj" />
+    <Project Path="tests/Daycord.RecoveryChecks/Daycord.RecoveryChecks.csproj" />
+    <Project Path="tests/Daycord.AutomaticBackupChecks/Daycord.AutomaticBackupChecks.csproj" />
   </Folder>
 </Solution>

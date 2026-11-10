@@ -14,84 +14,77 @@ namespace Daycord.Desktop.Bootstrap;
 
 public static class ServiceRegistration
 {
+    public static AppDataPaths ResolveDataPaths()
+    {
+#if DEBUG
+        var localApplicationData = Environment.GetFolderPath(
+            Environment.SpecialFolder.LocalApplicationData);
+
+        if (string.IsNullOrWhiteSpace(localApplicationData))
+        {
+            throw new IOException(
+                "The local application data folder is unavailable.");
+        }
+
+        return new AppDataPaths(
+            Path.Combine(localApplicationData, "Daycord-test"));
+#else
+        return new AppDataPaths();
+#endif
+    }
+
     public static ServiceProvider CreateServiceProvider()
     {
         var services = new ServiceCollection();
 
-        // Database
+        // Established Debug / Release profile isolation.
+        services.AddSingleton<AppDataPaths>(_ => ResolveDataPaths());
 
-#if DEBUG
-        // Debug uses an isolated test database.
-        services.AddSingleton<AppDataPaths>(_ =>
-        {
-            var localApplicationData = Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData);
+        // Shared database change tracking and automatic backup service.
+        services.AddSingleton<DatabaseChangeTracker>();
+        services.AddSingleton<AutomaticBackupService>();
 
-            if (string.IsNullOrWhiteSpace(localApplicationData))
-            {
-                throw new IOException(
-                    "The local application data folder is unavailable.");
-            }
-
-            return new AppDataPaths(
-                Path.Combine(localApplicationData, "Daycord-test"));
-        });
-#else
-        // Release uses the existing production database.
-        services.AddSingleton<AppDataPaths>();
-#endif
-
+        // SQLite infrastructure.
         services.AddSingleton<SqliteConnectionFactory>();
-
         services.AddSingleton<DatabaseBackupService>();
-
         services.AddSingleton<MigrationRunner>();
+        services.AddSingleton<DatabaseRecoveryDiagnostics>();
 
-        services.AddSingleton<
-            IDatabaseInitializer,
-            DatabaseInitializer>();
-
-        // Backup & Restore — DC-014
-
-        services.AddSingleton<
-            IUserBackupService,
-            UserBackupService>();
-
-        // Application Settings — DC-015
-
+        services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
+        services.AddSingleton<IUserBackupService, UserBackupService>();
         services.AddSingleton<PendingRestoreCoordinator>();
 
-        services.AddSingleton<
-            IAppSettingsRepository,
-            SqliteAppSettingsRepository>();
+        // Application settings.
+        services.AddSingleton<SqliteAppSettingsRepository>();
 
-        services.AddSingleton<
-            IAppSettingsService,
-            AppSettingsService>();
+        services.AddSingleton<IAppSettingsRepository>(provider =>
+            new TrackedAppSettingsRepository(
+                provider.GetRequiredService<SqliteAppSettingsRepository>(),
+                provider.GetRequiredService<DatabaseChangeTracker>()));
 
-        // Task data
+        services.AddSingleton<IAppSettingsService, AppSettingsService>();
 
-        services.AddTransient<
-            ITaskRepository,
-            SqliteTaskRepository>();
+        // Tasks, planning periods and actual time.
+        services.AddTransient<SqliteTaskRepository>();
+
+        services.AddTransient<ITaskRepository>(provider =>
+            new TrackedTaskRepository(
+                provider.GetRequiredService<SqliteTaskRepository>(),
+                provider.GetRequiredService<DatabaseChangeTracker>()));
 
         services.AddTransient<TaskService>();
 
-        // Desktop services
+        // Desktop services.
+        services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<ILocalizationService, LocalizationService>();
 
-        services.AddSingleton<
-            INavigationService,
-            NavigationService>();
+        // Report presets.
+        services.AddTransient<SqliteWorkReportPresetRepository>();
 
-        services.AddSingleton<
-            ILocalizationService,
-            LocalizationService>();
-
-        // Reports
-
-        services.AddTransient<
-            IWorkReportPresetRepository,
-            SqliteWorkReportPresetRepository>();
+        services.AddTransient<IWorkReportPresetRepository>(provider =>
+            new TrackedWorkReportPresetRepository(
+                provider.GetRequiredService<SqliteWorkReportPresetRepository>(),
+                provider.GetRequiredService<DatabaseChangeTracker>()));
 
         services.AddSingleton<WorkReportPresetService>();
 
@@ -105,36 +98,22 @@ public static class ServiceRegistration
         });
 
         services.AddSingleton<WorkReportService>();
-
         services.AddSingleton<ReportsViewModel>();
 
-        // Backup & Restore.
-        // Keep lazy initialization after PendingRestore.
-
+        // Lazy settings ViewModels.
         services.AddSingleton<BackupSettingsViewModel>();
 
-        services.AddSingleton<Func<BackupSettingsViewModel>>(
-            provider =>
-                () => provider.GetRequiredService<
-                    BackupSettingsViewModel>());
-
-        // Settings.
-        // The SettingsViewModel requires loaded AppSettings,
-        // so it must not be constructed during initial DI setup.
+        services.AddSingleton<Func<BackupSettingsViewModel>>(provider =>
+            () => provider.GetRequiredService<BackupSettingsViewModel>());
 
         services.AddSingleton<SettingsViewModel>();
 
-        services.AddSingleton<Func<SettingsViewModel>>(
-            provider =>
-                () => provider.GetRequiredService<
-                    SettingsViewModel>());
+        services.AddSingleton<Func<SettingsViewModel>>(provider =>
+            () => provider.GetRequiredService<SettingsViewModel>());
 
-        // Existing views and ViewModels
-
+        // Existing application views and ViewModels.
         services.AddSingleton<PlaceholderPageViewModel>();
-
         services.AddSingleton<CalendarPageViewModel>();
-
         services.AddSingleton<HomeDashboardViewModel>();
 
         services.AddSingleton<TaskListViewModel>(provider =>
@@ -147,9 +126,6 @@ public static class ServiceRegistration
 
             taskList.TaskOpenRequested += navigation.OpenTask;
             taskList.TaskCreationRequested += navigation.OpenNewTask;
-
-            // Must subscribe before MainWindowViewModel: navigation
-            // applies the Today filter before the Tasks view activates.
             taskList.AttachNavigation(navigation);
 
             return taskList;
@@ -164,7 +140,6 @@ public static class ServiceRegistration
                 .CreateInstance<TaskDetailsViewModel>(provider));
 
         services.AddSingleton<MainWindowViewModel>();
-
         services.AddTransient<MainWindow>();
 
         return services.BuildServiceProvider();
