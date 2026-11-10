@@ -15,6 +15,9 @@ public sealed class PendingRestoreCoordinator : IDisposable
     private FileStream? _instanceLock;
     private bool _disposed;
 
+    /// <summary>True only when this launch installed a verified emergency backup.</summary>
+    public bool IsEmergencyRestoreInstalled { get; private set; }
+
     public PendingRestoreCoordinator(AppDataPaths paths) => _paths = paths;
 
     public void AcquireApplicationLock()
@@ -51,6 +54,34 @@ public sealed class PendingRestoreCoordinator : IDisposable
         }
     }
 
+    /// <summary>
+    /// Prepares a verified backup for emergency restoration.
+    /// Requires the application instance lock. Preparation does not change
+    /// the live database; installation is performed separately through
+    /// ApplyPendingRestoreAsync.
+    /// </summary>
+    public async Task PrepareEmergencyRestoreAsync(
+        string selectedBackupPath,
+        CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            RequireApplicationLock();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            await Task.Run(
+                () => new EmergencyRestorePreparation(_paths)
+                    .Prepare(selectedBackupPath, cancellationToken),
+                cancellationToken);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     public async Task CompleteAfterInitializationAsync()
     {
         await _gate.WaitAsync();
@@ -69,11 +100,19 @@ public sealed class PendingRestoreCoordinator : IDisposable
 
                 var state = PendingRestoreStateStore.Read(manifest);
 
+                if (state.Mode == PendingRestoreMode.Emergency)
+                {
+                    new EmergencyRestoreInstaller(_paths)
+                        .CompleteAfterInitialization();
+                    return;
+                }
+
                 if (state.Phase != PendingRestorePhase.Installed)
                     throw new InvalidOperationException(
                         "The restore was not installed.");
 
                 ValidateSafety(state);
+                ValidateRawArchiveIfPresent(state);
                 RequireValidLiveDatabaseSnapshot();
 
                 // Only a successfully initialized database can be committed.
@@ -105,6 +144,15 @@ public sealed class PendingRestoreCoordinator : IDisposable
 
                 var state = PendingRestoreStateStore.Read(manifest);
 
+                if (state.Mode == PendingRestoreMode.Emergency)
+                {
+                    // An emergency restore may have no valid safety snapshot.
+                    // Never roll back to an unreadable original database.
+                    new EmergencyRestoreInstaller(_paths)
+                        .MarkInitializationFailed();
+                    return;
+                }
+
                 if (state.Phase is PendingRestorePhase.Installing or
                     PendingRestorePhase.Installed or
                     PendingRestorePhase.RollingBack)
@@ -121,12 +169,23 @@ public sealed class PendingRestoreCoordinator : IDisposable
 
     private bool ApplyPendingRestore(CancellationToken cancellationToken)
     {
+        IsEmergencyRestoreInstalled = false;
         var manifest = _paths.PendingRestoreManifestPath;
 
         if (!File.Exists(manifest))
             return false;
 
         var state = PendingRestoreStateStore.Read(manifest);
+
+        if (state.Mode == PendingRestoreMode.Emergency)
+        {
+            // This branch is intentionally before the normal restore phase
+            // handling: a damaged original must not enter normal rollback.
+            var installed = new EmergencyRestoreInstaller(_paths)
+                .Apply(state, cancellationToken);
+            IsEmergencyRestoreInstalled = installed;
+            return installed;
+        }
 
         // A crash during replacement leaves the final state ambiguous.
         // Never infer successful installation from daycord.db bytes alone.
@@ -144,6 +203,7 @@ public sealed class PendingRestoreCoordinator : IDisposable
             if (state.Phase == PendingRestorePhase.Installed)
             {
                 ValidateSafety(state);
+                ValidateRawArchiveIfPresent(state);
                 ValidateStaged(state);
                 RequireValidLiveDatabaseSnapshot();
 
@@ -152,6 +212,7 @@ public sealed class PendingRestoreCoordinator : IDisposable
 
             if (state.Phase is not (
                 PendingRestorePhase.Prepared or
+                PendingRestorePhase.RawCaptured or
                 PendingRestorePhase.SafetyCreated))
             {
                 throw new InvalidDataException(
@@ -161,23 +222,54 @@ public sealed class PendingRestoreCoordinator : IDisposable
             ValidateStaged(state);
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Take a fresh safety backup even if an earlier process
-            // already reached SafetyCreated.
-            var safetyName = CreateSafetyBackup(cancellationToken);
+            var rawArchive = new RawDatabaseRecoveryArchive(_paths);
 
-            var safetyPath = Path.Combine(
-                _paths.BeforeRestoreBackupDirectory,
-                safetyName);
-
-            state = state with
+            if (state.Phase == PendingRestorePhase.Prepared)
             {
-                Phase = PendingRestorePhase.SafetyCreated,
-                SafetyBackupFileName = safetyName,
-                SafetyBackupSha256 =
-                    PendingRestoreStateStore.GetSha256(safetyPath)
-            };
+                // A published archive may exist if the process terminated
+                // immediately before updating the journal. Find and verify
+                // that exact operation's archive rather than duplicating it.
+                // No active database modification has happened yet.
+                var reference = rawArchive.EnsureCaptured(
+                    state.OperationId, cancellationToken);
 
-            PendingRestoreStateStore.Update(manifest, state);
+                state = state with
+                {
+                    Phase = PendingRestorePhase.RawCaptured,
+                    RawArchiveDirectoryName = reference.DirectoryName,
+                    RawArchiveManifestSha256 = reference.ManifestSha256
+                };
+
+                PendingRestoreStateStore.Update(manifest, state);
+            }
+
+            if (state.Phase == PendingRestorePhase.RawCaptured)
+            {
+                // Never continue after a crash without proving that every
+                // original file is still preserved under its recorded hash.
+                ValidateRawArchiveIfPresent(state);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Normal Restore requires a valid safety snapshot.
+                var safetyName = CreateSafetyBackup(cancellationToken);
+                var safetyPath = Path.Combine(
+                    _paths.BeforeRestoreBackupDirectory, safetyName);
+
+                state = state with
+                {
+                    Phase = PendingRestorePhase.SafetyCreated,
+                    SafetyBackupFileName = safetyName,
+                    SafetyBackupSha256 =
+                        PendingRestoreStateStore.GetSha256(safetyPath)
+                };
+
+                PendingRestoreStateStore.Update(manifest, state);
+            }
+
+            // A restarted SafetyCreated operation must reuse the recorded
+            // safety snapshot and raw archive, not create replacements.
+            ValidateSafety(state);
+            ValidateRawArchiveIfPresent(state);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -208,6 +300,7 @@ public sealed class PendingRestoreCoordinator : IDisposable
     {
         ValidateStaged(state);
         ValidateSafety(state);
+        ValidateRawArchiveIfPresent(state);
 
         var installTemp = NewInstallTempPath();
 
@@ -259,71 +352,91 @@ public sealed class PendingRestoreCoordinator : IDisposable
 
     private void Rollback(PendingRestoreState state)
     {
+        // These references must still describe the exact immutable safety
+        // artifacts recorded before the original installation began.
         ValidateSafety(state);
+        ValidateRawArchiveIfPresent(state);
 
-        // Save rollback intent before modifying any files.
-        // Repeating rollback after a crash is safe.
+        var manifest = _paths.PendingRestoreManifestPath;
+
+        // Persist intent before touching the active file set. This transition
+        // is idempotent and recognized by the next launch after a crash.
         PendingRestoreStateStore.Update(
-            _paths.PendingRestoreManifestPath,
-            state with
-            {
-                Phase = PendingRestorePhase.RollingBack
-            });
+            manifest,
+            state with { Phase = PendingRestorePhase.RollingBack });
+
+        // If the last attempt installed and verified the safety copy, but
+        // crashed before deleting the journal, simply finish that attempt.
+        // In particular, never quarantine an already-restored database.
+        if (IsSafetyAlreadyInstalled(state))
+        {
+            File.Delete(manifest);
+            return;
+        }
 
         var temporary = NewInstallTempPath();
-
         try
         {
-            SqliteSnapshotIO.CopyDurably(
-                SafetyPath(state),
-                temporary);
-
+            // Prepare and verify the replacement *before* moving any of the
+            // active files. The original safety backup is never consumed.
+            SqliteSnapshotIO.CopyDurably(SafetyPath(state), temporary);
             RequireValidSnapshot(temporary);
             SqliteSnapshotIO.RequireNoSidecars(temporary);
 
-            if (!HashMatches(
-                    temporary,
-                    state.SafetyBackupSha256!))
-            {
+            if (!HashMatches(temporary, state.SafetyBackupSha256!))
                 throw new InvalidDataException(
-                    "The rollback copy did not match the safety backup.");
-            }
+                    "The prepared rollback copy differs from its safety snapshot.");
 
-            if (File.Exists(_paths.DatabasePath))
-            {
-                PrepareDatabaseForReplacement();
-            }
-            else
-            {
-                SqliteSnapshotIO.RequireNoSidecars(
-                    _paths.DatabasePath);
-            }
+            // Do not open the possibly corrupt active database through SQLite.
+            // Quarantine the installed .db and any remaining WAL/SHM/journal.
+            // A deterministic directory permits retry after a crash between
+            // individual file moves. Existing quarantined files are retained.
+            new RollbackFileQuarantine(_paths)
+                .MoveActiveFilesAside(state.OperationId);
 
-            File.Move(
-                temporary,
-                _paths.DatabasePath,
-                overwrite: true);
+            // The source path must now be absent. Refuse overwrite if an
+            // external process has recreated it in the meantime.
+            File.Move(temporary, _paths.DatabasePath);
 
-            if (!HashMatches(
-                    _paths.DatabasePath,
-                    state.SafetyBackupSha256!))
-            {
-                throw new IOException(
-                    "The restored safety backup has a different checksum.");
-            }
+            RequireInstalledSafety(state);
 
-            RequireValidSnapshot(_paths.DatabasePath);
-            SqliteSnapshotIO.RequireNoSidecars(
-                _paths.DatabasePath);
-
-            // Keep the safety backup and staged file.
-            // The original database is usable again.
-            File.Delete(_paths.PendingRestoreManifestPath);
+            // Only a verified rollback clears the journal. Safety, staging
+            // and quarantine artifacts are preserved for investigation.
+            File.Delete(manifest);
         }
         finally
         {
             TryDeleteFile(temporary);
         }
+    }
+
+    private bool IsSafetyAlreadyInstalled(PendingRestoreState state)
+    {
+        if (!File.Exists(_paths.DatabasePath) ||
+            File.Exists(_paths.DatabasePath + "-wal") ||
+            File.Exists(_paths.DatabasePath + "-shm") ||
+            File.Exists(_paths.DatabasePath + "-journal"))
+        {
+            return false;
+        }
+
+        if (!HashMatches(_paths.DatabasePath, state.SafetyBackupSha256!))
+            return false;
+
+        // A matching hash is not enough: the file must be a valid Daycord
+        // snapshot before the rollback journal can be cleared.
+        RequireInstalledSafety(state);
+        return true;
+    }
+
+    private void RequireInstalledSafety(PendingRestoreState state)
+    {
+        if (!HashMatches(_paths.DatabasePath, state.SafetyBackupSha256!))
+            throw new IOException(
+                "The installed rollback database does not match the safety snapshot.");
+
+        RequireValidSnapshot(_paths.DatabasePath);
+        SqliteSnapshotIO.RequireNoSidecars(_paths.DatabasePath);
     }
 
     private string CreateSafetyBackup(
@@ -395,6 +508,21 @@ public sealed class PendingRestoreCoordinator : IDisposable
 
         RequireValidSnapshot(path);
         SqliteSnapshotIO.RequireNoSidecars(path);
+    }
+
+    private void ValidateRawArchiveIfPresent(PendingRestoreState state)
+    {
+        // Older journals do not have a raw-archive reference and remain
+        // compatible. Newly created operations always record both fields.
+        if (state.RawArchiveDirectoryName is null)
+            return;
+
+        new RawDatabaseRecoveryArchive(_paths).ValidateReference(
+            state.OperationId,
+            state.RawArchiveDirectoryName,
+            state.RawArchiveManifestSha256
+                ?? throw new InvalidDataException(
+                    "The raw recovery archive checksum is missing."));
     }
 
     private void RequireValidLiveDatabaseSnapshot()

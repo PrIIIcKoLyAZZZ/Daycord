@@ -11,10 +11,12 @@ public sealed class AppDataPaths
 
             if (string.IsNullOrWhiteSpace(localApplicationData))
             {
-                throw new IOException("The local application data folder is unavailable.");
+                throw new IOException(
+                    "The local application data folder is unavailable.");
             }
 
-            appDataDirectory = Path.Combine(localApplicationData, "Daycord");
+            appDataDirectory = Path.Combine(
+                localApplicationData, "Daycord");
         }
 
         DataDirectory = Path.GetFullPath(appDataDirectory);
@@ -22,7 +24,8 @@ public sealed class AppDataPaths
 
     public string DataDirectory { get; }
 
-    public string DatabasePath => Path.Combine(DataDirectory, "daycord.db");
+    public string DatabasePath =>
+        Path.Combine(DataDirectory, "daycord.db");
 
     public string SchemaBackupDirectory =>
         Path.Combine(DataDirectory, "Backups", "SchemaUpgrades");
@@ -30,19 +33,26 @@ public sealed class AppDataPaths
     public string BeforeRestoreBackupDirectory =>
         Path.Combine(DataDirectory, "Backups", "BeforeRestore");
 
+    public string RawRecoveryBackupDirectory =>
+        Path.Combine(DataDirectory, "Backups", "Recovery");
+
     public string RestoreStagingDirectory =>
         Path.Combine(DataDirectory, "RestoreStaging");
 
     public string PendingRestoreManifestPath =>
         Path.Combine(RestoreStagingDirectory, "pending-restore.json");
 
-    public void EnsureDataDirectory() => Directory.CreateDirectory(DataDirectory);
+    public void EnsureDataDirectory() =>
+        Directory.CreateDirectory(DataDirectory);
 
     public void EnsureSchemaBackupDirectory() =>
         Directory.CreateDirectory(SchemaBackupDirectory);
 
     public void EnsureBeforeRestoreBackupDirectory() =>
         Directory.CreateDirectory(BeforeRestoreBackupDirectory);
+
+    public void EnsureRawRecoveryBackupDirectory() =>
+        Directory.CreateDirectory(RawRecoveryBackupDirectory);
 
     public void EnsureRestoreStagingDirectory() =>
         Directory.CreateDirectory(RestoreStagingDirectory);
