@@ -7,11 +7,11 @@ using Microsoft.Data.Sqlite;
 namespace Daycord.RecoveryChecks;
 
 /// <summary>
-/// DC-046 integration checks. ALL mutable data lives under a fresh random
+/// DC-046/DC-047 integration checks. ALL mutable data lives under a fresh random
 /// directory in Path.GetTempPath(); no default AppDataPaths is ever created.
 /// Run: dotnet run --project tests/Daycord.RecoveryChecks --configuration Debug
 /// </summary>
-internal static class Program
+internal static partial class Program
 {
     private static async Task<int> Main()
     {
@@ -20,6 +20,8 @@ internal static class Program
             ("First launch does not create pre-upgrade backup", FirstLaunch),
             ("Online backup includes committed WAL data", WalBackup),
             ("Normal restore retains pre-restore data", NormalRestore),
+            ("Backup and restore preserve all user records", CompleteUserDataRestore),
+            ("User restore rejects changed migration checksum", IncompatibleUserRestore),
             ("Invalid backup cannot schedule emergency restore", InvalidBackup),
             ("Incompatible migration history is rejected", FutureHistory),
             ("Emergency preparation requires instance lock", RequiresInstanceLock),
@@ -52,7 +54,7 @@ internal static class Program
             }
         }
 
-        Console.WriteLine($"DC-046: {checks.Length - failed}/{checks.Length} checks passed.");
+        Console.WriteLine($"Recovery: {checks.Length - failed}/{checks.Length} checks passed (DC-046 + DC-047).");
         return failed == 0 ? 0 : 1;
     }
 
