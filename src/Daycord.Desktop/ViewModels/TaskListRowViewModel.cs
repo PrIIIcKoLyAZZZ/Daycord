@@ -7,7 +7,7 @@ namespace Daycord.Desktop.ViewModels;
 
 public sealed class TaskListRowViewModel : ObservableObject
 {
-    private readonly TaskListItem _task;
+    private TaskListItem _task;
     private readonly ILocalizationService _localization;
 
     public TaskListRowViewModel(
@@ -22,6 +22,10 @@ public sealed class TaskListRowViewModel : ObservableObject
     }
 
     public Guid Id => _task.Id;
+
+    // Used to retain only date-matching rows during Home -> Tasks.
+    // Planned and actual work dates must not affect this filter.
+    internal DateOnly? TaskDate => _task.TaskDate;
 
     public string Title => _task.Title;
 
@@ -64,12 +68,82 @@ public sealed class TaskListRowViewModel : ObservableObject
 
     public bool IsCompleted => _task.IsCompleted;
 
+    // Reuse the already localized "Open task" resource from Calendar.
+    public string OpenTaskLabel =>
+        _localization.GetString("CalendarOpenTask");
+
+    /// <summary>
+    /// Update an existing visual row without changing its identity.
+    /// // Each property notifies the UI only when its source value changed.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    public void Update(TaskListItem task)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+
+        if (task.Id != Id)
+        {
+            throw new ArgumentException(
+                "A row cannot be updated with a different task ID.",
+                nameof(task));
+        }
+
+        var previous = _task;
+        _task = task;
+
+        if (previous.Title != task.Title)
+        {
+            OnPropertyChanged(nameof(Title));
+        }
+
+        if (previous.TaskNumber != task.TaskNumber)
+        {
+            OnPropertyChanged(nameof(TaskNumberText));
+            OnPropertyChanged(nameof(HasTaskNumber));
+        }
+
+        if (previous.ShortDescription != task.ShortDescription)
+        {
+            OnPropertyChanged(nameof(ShortDescriptionText));
+        }
+
+        if (previous.TaskDate != task.TaskDate)
+        {
+            OnPropertyChanged(nameof(DateText));
+        }
+
+        if (previous.TotalPlannedMinutes != task.TotalPlannedMinutes)
+        {
+            OnPropertyChanged(nameof(PlannedText));
+        }
+
+        if (previous.TotalActualMinutes != task.TotalActualMinutes)
+        {
+            OnPropertyChanged(nameof(ActualText));
+        }
+
+        if (previous.StatusId != task.StatusId ||
+            previous.StatusName != task.StatusName ||
+            previous.StatusSystemKey != task.StatusSystemKey)
+        {
+            OnPropertyChanged(nameof(StatusText));
+        }
+
+        if (previous.IsCompleted != task.IsCompleted)
+        {
+            OnPropertyChanged(nameof(IsCompleted));
+        }
+    }
+
     public void RefreshLocalization()
     {
         OnPropertyChanged(nameof(DateText));
         OnPropertyChanged(nameof(PlannedText));
         OnPropertyChanged(nameof(ActualText));
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(OpenTaskLabel));
     }
 
     private string FormatDuration(long? totalMinutes)

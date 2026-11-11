@@ -10,6 +10,10 @@ public sealed class CalendarDayViewModel : ObservableObject
 {
     private readonly ILocalizationService _localization;
     private bool _isSelected;
+    private bool _isToday;
+    private int _taskCount;
+    private long _plannedMinutes;
+    private long _actualMinutes;
 
     public CalendarDayViewModel(
         DateOnly? date,
@@ -30,12 +34,12 @@ public sealed class CalendarDayViewModel : ObservableObject
         IsCurrentMonth = date.HasValue &&
             date.Value.Year == displayedMonth.Year &&
             date.Value.Month == displayedMonth.Month;
-        IsToday = date == today;
+        _isToday = date == today;
         _isSelected = date == selectedDate;
 
-        TaskCount = taskCount;
-        PlannedMinutes = plannedMinutes;
-        ActualMinutes = actualMinutes;
+        _taskCount = taskCount;
+        _plannedMinutes = plannedMinutes;
+        _actualMinutes = actualMinutes;
 
         SelectCommand = new RelayCommand(
             () =>
@@ -49,7 +53,7 @@ public sealed class CalendarDayViewModel : ObservableObject
     public DateOnly? Date { get; }
     public bool IsSelectable => Date.HasValue;
     public bool IsCurrentMonth { get; }
-    public bool IsToday { get; }
+    public bool IsToday => _isToday;
 
     public bool IsSelected
     {
@@ -57,9 +61,9 @@ public sealed class CalendarDayViewModel : ObservableObject
         set => SetProperty(ref _isSelected, value);
     }
 
-    public int TaskCount { get; }
-    public long PlannedMinutes { get; }
-    public long ActualMinutes { get; }
+    public int TaskCount => _taskCount;
+    public long PlannedMinutes => _plannedMinutes;
+    public long ActualMinutes => _actualMinutes;
     public bool HasTasks => TaskCount > 0;
     public bool HasPlanned => PlannedMinutes > 0;
     public bool HasActual => ActualMinutes > 0;
@@ -99,6 +103,44 @@ public sealed class CalendarDayViewModel : ObservableObject
     }
 
     public ICommand SelectCommand { get; }
+
+    /// <summary>Refresh indicators without replacing the calendar cell.</summary>
+    public void UpdateTotals(int taskCount, long plannedMinutes, long actualMinutes)
+    {
+        var changed = false;
+
+        if (SetProperty(ref _taskCount, taskCount, nameof(TaskCount)))
+        {
+            OnPropertyChanged(nameof(HasTasks));
+            OnPropertyChanged(nameof(TaskCountText));
+            changed = true;
+        }
+
+        if (SetProperty(ref _plannedMinutes, plannedMinutes, nameof(PlannedMinutes)))
+        {
+            OnPropertyChanged(nameof(HasPlanned));
+            OnPropertyChanged(nameof(PlannedText));
+            changed = true;
+        }
+
+        if (SetProperty(ref _actualMinutes, actualMinutes, nameof(ActualMinutes)))
+        {
+            OnPropertyChanged(nameof(HasActual));
+            OnPropertyChanged(nameof(ActualText));
+            changed = true;
+        }
+
+        if (changed)
+        {
+            OnPropertyChanged(nameof(HasEvents));
+            OnPropertyChanged(nameof(SummaryText));
+        }
+    }
+
+    public void UpdateToday(DateOnly today)
+    {
+        SetProperty(ref _isToday, Date == today, nameof(IsToday));
+    }
 
     public void RefreshLocalization()
     {

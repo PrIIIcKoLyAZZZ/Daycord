@@ -53,77 +53,26 @@
         </DataTemplate>
     </Window.DataTemplates>
 
-    <!-- Sidebar navigation styles -->
+    <!-- Sidebar resources and styles (DC-018) -->
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Daycord.Desktop/Themes/NavigationIcons.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
     <Window.Styles>
-        <Style Selector="Button.sidebar-nav">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="3,0,0,0"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="14,11"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="MinHeight" Value="42"/>
-        </Style>
-
-        <Style Selector="Button.sidebar-nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background"
-                    Value="{DynamicResource Background}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource PrimaryText}"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-        </Style>
-
-        <Style Selector="Button.sidebar-nav.active">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource Accent}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
-
-        <Style Selector="Button.sidebar-nav.active /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedBackground}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource Accent}"/>
-        </Style>
-
-        <Style Selector="Button.sidebar-nav.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedHoverBackground}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource Accent}"/>
-        </Style>
-
-        <Style Selector="Button.sidebar-nav.active:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background"
-                    Value="{DynamicResource SidebarSelectedHoverBackground}"/>
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource Accent}"/>
-        </Style>
-
-        <Style Selector="Button.sidebar-nav:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="BorderBrush"
-                    Value="{DynamicResource Accent}"/>
-        </Style>
+        <StyleInclude Source="avares://Daycord.Desktop/Styles/Sidebar.axaml"/>
+        <!-- DC-041: modal visuals only; does not change navigation styles. -->
+        <StyleInclude Source="avares://Daycord.Desktop/Styles/OverlayEffects.axaml"/>
     </Window.Styles>
 
     <!-- Root layout -->
 
-    <Grid Background="{DynamicResource Background}">
+    <Grid x:Name="ApplicationRoot"
+          Background="{DynamicResource Background}">
 
         <!-- Database initialization -->
 
@@ -203,7 +152,8 @@
 
         <!-- Main application shell -->
 
-        <Grid IsVisible="{Binding IsDatabaseReady}"
+        <Grid x:Name="ApplicationShell"
+              IsVisible="{Binding IsDatabaseReady}"
               ColumnDefinitions="200,*">
 
             <!-- Sidebar -->
@@ -218,22 +168,26 @@
 
                     <!-- Brand -->
 
-                    <StackPanel Grid.Row="0"
-                                Margin="12,0,0,36"
-                                Spacing="10">
+                    <Grid Grid.Row="0"
+                          Margin="12,0,0,36"
+                          ColumnDefinitions="Auto"
+                          RowDefinitions="Auto,Auto"
+                          HorizontalAlignment="Left">
 
-                        <Border Width="32"
+                        <Border Grid.Row="0"
                                 Height="3"
+                                Margin="0,0,0,10"
                                 CornerRadius="2"
-                                HorizontalAlignment="Left"
+                                HorizontalAlignment="Stretch"
                                 Background="{DynamicResource Accent}"/>
 
-                        <TextBlock Text="{Binding AppWordmark}"
+                        <TextBlock Grid.Row="1"
+                                   Text="{Binding AppWordmark}"
                                    FontSize="20"
                                    FontWeight="Bold"
                                    LetterSpacing="1"
                                    Foreground="{DynamicResource PrimaryText}"/>
-                    </StackPanel>
+                    </Grid>
 
                     <!-- Navigation heading -->
 
@@ -251,30 +205,75 @@
 
                         <Button Classes="sidebar-nav"
                                 Classes.active="{Binding IsHomeSelected}"
-                                Content="{Binding NavHomeLabel}"
-                                Command="{Binding NavigateHomeCommand}"/>
+                                Command="{Binding NavigateHomeCommand}"
+                                AutomationProperties.Name="{Binding NavHomeLabel}">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8"
+                                        VerticalAlignment="Center">
+                                <Path Classes="sidebar-icon"
+                                      Data="{StaticResource SidebarHomeIcon}"/>
+                                <TextBlock Text="{Binding NavHomeLabel}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <Button Classes="sidebar-nav"
                                 Classes.active="{Binding IsCalendarSelected}"
-                                Content="{Binding NavCalendarLabel}"
-                                Command="{Binding NavigateCalendarCommand}"/>
+                                Command="{Binding NavigateCalendarCommand}"
+                                AutomationProperties.Name="{Binding NavCalendarLabel}">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8"
+                                        VerticalAlignment="Center">
+                                <Path Classes="sidebar-icon"
+                                      Data="{StaticResource SidebarCalendarIcon}"/>
+                                <TextBlock Text="{Binding NavCalendarLabel}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <Button Classes="sidebar-nav"
                                 Classes.active="{Binding IsTasksSelected}"
-                                Content="{Binding NavTasksLabel}"
-                                Command="{Binding NavigateTasksCommand}"/>
+                                Command="{Binding NavigateTasksCommand}"
+                                AutomationProperties.Name="{Binding NavTasksLabel}">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8"
+                                        VerticalAlignment="Center">
+                                <Path Classes="sidebar-icon"
+                                      Data="{StaticResource SidebarTasksIcon}"/>
+                                <TextBlock Text="{Binding NavTasksLabel}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <Button Classes="sidebar-nav"
                                 Classes.active="{Binding IsNewTaskSelected}"
-                                Content="{Binding NavNewTaskLabel}"
-                                Command="{Binding NavigateNewTaskCommand}"/>
+                                Command="{Binding NavigateNewTaskCommand}"
+                                AutomationProperties.Name="{Binding NavNewTaskLabel}">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8"
+                                        VerticalAlignment="Center">
+                                <Path Classes="sidebar-icon"
+                                      Data="{StaticResource SidebarQuickTaskIcon}"/>
+                                <TextBlock Text="{Binding NavNewTaskLabel}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <Border Height="18"/>
 
                         <Button Classes="sidebar-nav"
                                 Classes.active="{Binding IsReportsSelected}"
-                                Content="{Binding NavReportsLabel}"
-                                Command="{Binding NavigateReportsCommand}"/>
+                                Command="{Binding NavigateReportsCommand}"
+                                AutomationProperties.Name="{Binding NavReportsLabel}">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8"
+                                        VerticalAlignment="Center">
+                                <Path Classes="sidebar-icon"
+                                      Data="{StaticResource SidebarReportsIcon}"/>
+                                <TextBlock Text="{Binding NavReportsLabel}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <!-- Bottom navigation -->
@@ -286,8 +285,28 @@
 
                         <Button Classes="sidebar-nav"
                                 Classes.active="{Binding IsSettingsSelected}"
-                                Content="{Binding NavSettingsLabel}"
-                                Command="{Binding NavigateSettingsCommand}"/>
+                                Command="{Binding NavigateSettingsCommand}"
+                                AutomationProperties.Name="{Binding NavSettingsLabel}">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="8"
+                                        VerticalAlignment="Center">
+
+                                <!-- Bounce + clockwise gear rotation -->
+                                <Path Classes="sidebar-icon settings-gear"
+                                      Data="{StaticResource SidebarSettingsIcon}"
+                                      RenderTransformOrigin="50%,50%">
+                                    <Path.RenderTransform>
+                                        <TransformGroup>
+                                            <RotateTransform Angle="0"/>
+                                            <TranslateTransform Y="0"/>
+                                        </TransformGroup>
+                                    </Path.RenderTransform>
+                                </Path>
+
+                                <TextBlock Text="{Binding NavSettingsLabel}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </Border>
 
                 </Grid>
@@ -324,6 +343,7 @@
 
                     <!-- DC-015: Settings hosts the existing DC-014 backup UI.
                          The shared page header remains in MainWindow. -->
+
                     <Border IsVisible="{Binding IsSettingsSelected}">
                         <views:SettingsView x:Name="SettingsPage"
                                             DataContext="{x:Null}"/>

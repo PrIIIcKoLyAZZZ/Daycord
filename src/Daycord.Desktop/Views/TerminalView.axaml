@@ -40,18 +40,39 @@
             <Setter Property="MinHeight" Value="32" />
         </Style>
 
+        <!-- Matches the discreet open action in Tasks. -->
         <Style Selector="Button.quick-history-open">
+            <Setter Property="Opacity" Value="0" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground"
-                    Value="{DynamicResource Accent}" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="7" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="36" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.quick-history-row:pointerover Button.quick-history-open,
+                         Border.quick-history-row:focus-within Button.quick-history-open,
+                         Button.quick-history-open:focus-visible">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Button.quick-history-open:pointerover,
+                         Button.quick-history-open:focus-visible">
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="Button.quick-history-open:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.quick-history-open:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SidebarSelectedBackground}" />
+        </Style>
+        <Style Selector="Button.quick-history-open:pointerover Path,
+                         Button.quick-history-open:focus-visible Path">
+            <Setter Property="Stroke" Value="{DynamicResource Accent}" />
+        </Style>
+        <Style Selector="Button.quick-history-open:disabled">
+            <Setter Property="Opacity" Value="0" />
         </Style>
 
         <Style Selector="Button.quick-submit">
@@ -110,7 +131,8 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:SessionTaskItemViewModel">
 
-                            <Border Background="{DynamicResource Surface}"
+                            <Border Classes="quick-history-row"
+                                    Background="{DynamicResource Surface}"
                                     CornerRadius="5"
                                     Padding="10"
                                     Margin="0,0,0,5">
@@ -169,13 +191,14 @@
                                             Command="{Binding $parent[ItemsControl].((vm:TerminalViewModel)DataContext).OpenSessionTaskCommand}"
                                             CommandParameter="{Binding}">
 
-                                        <Path Width="18"
-                                              Height="18"
+                                        <Path Width="15"
+                                              Height="15"
                                               Stretch="Uniform"
-                                              Stroke="{DynamicResource Accent}"
-                                              StrokeThickness="1.8"
+                                              Stroke="{DynamicResource SecondaryText}"
+                                              StrokeThickness="1.7"
                                               StrokeLineCap="Round"
-                                              Data="M5,15 L15,5 M7,5 L15,5 L15,13" />
+                                              StrokeJoin="Round"
+                                              Data="M5,15 L15,5 M8,5 L15,5 L15,12" />
                                     </Button>
                                 </Grid>
                             </Border>

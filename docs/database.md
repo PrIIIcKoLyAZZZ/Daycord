@@ -1,382 +1,311 @@
 # Daycord Database
 
+**Target version:** 0.1.1
+
 ## 1. Overview
 
-Daycord 0.1.0 uses SQLite as its local persistent data store.
+Daycord uses SQLite for local data persistence.
 
-The database contains tasks, task statuses, planned time, actual work, report presets, report settings, application settings, and migration history.
+The database stores:
 
-The implementation uses:
+- Tasks and task statuses.
+- Planning periods.
+- Actual work entries.
+- Report presets and settings.
+- Application preferences.
+- Database migration history.
 
-- Microsoft.Data.Sqlite for SQLite connections.
-- Dapper for query execution and object mapping.
-- Versioned embedded SQL migrations.
+The persistence layer uses:
+
+- `Microsoft.Data.Sqlite` for database connections.
+- `Dapper` for SQL queries and object mapping.
+- Embedded SQL migrations for schema management.
 - Explicit type handlers for GUIDs, dates, and UTC timestamps.
-- SQLite transactions and foreign key constraints.
 
 Entity Framework Core is not used.
 
-The database is initialized automatically when the application starts.
+Database initialization is performed during application startup.
 
 ## 2. Database Location
 
 Database paths are managed by:
 
-`src/Daycord.Infrastructure/Persistence/AppDataPaths.cs`
+```text
+src/Daycord.Infrastructure/Persistence/AppDataPaths.cs
+```
 
-The application uses:
+The database filename is:
 
-`Environment.SpecialFolder.LocalApplicationData`
+```text
+daycord.db
+```
 
-and creates a `Daycord` subdirectory.
+### Release Locations
 
-The main database file is named:
-
-`daycord.db`
-
-Typical locations are:
-
-### macOS
+**macOS:**
 
 ```text
 ~/Library/Application Support/Daycord/daycord.db
 ```
 
-### Windows
+**Windows:**
 
 ```text
 %LOCALAPPDATA%\Daycord\daycord.db
 ```
 
-The exact location depends on the operating system and the current user profile.
+The application resolves its data directory using `Environment.SpecialFolder.LocalApplicationData`.
 
-### 2.1 Internal Directories
+### Debug Environment
 
-`AppDataPaths` also defines:
+The Desktop application's Debug configuration uses a separate data directory:
+
+```text
+Daycord-test/
+```
+
+The Release configuration uses:
 
 ```text
 Daycord/
-├── daycord.db
-├── Backups/
-│   ├── SchemaUpgrades/
-│   └── BeforeRestore/
-└── RestoreStaging/
-    └── pending-restore.json
 ```
 
-These directories serve different purposes:
+This separation helps prevent normal development activity from modifying the Release database.
 
-- `SchemaUpgrades` stores recovery copies associated with database schema upgrades.
-- `BeforeRestore` stores safety copies created before database restoration.
-- `RestoreStaging` holds files associated with pending restoration.
-- `pending-restore.json` records the pending restore operation.
+Tests that perform destructive operations must use their own isolated databases and must not rely on the user's application data directory.
 
-User-selected backup destinations may be outside these internal directories.
+### Related Storage
 
-Do not remove the internal directories while Daycord is running or while a restoration is pending.
+The application data directory also contains internal backup, recovery, and diagnostic files.
 
-## 3. Database Connection Management
+Their purposes and lifecycle are documented in [Backup and Recovery](backup-and-recovery.md).
 
-SQLite connections are created through:
+Do not remove database files or internal recovery artifacts to resolve startup failures.
 
-`SqliteConnectionFactory`
+## 3. Database Connections
 
-The factory configures the following connection properties:
+SQLite connections are created through `SqliteConnectionFactory`.
 
-| Property | Value |
+Normal application connections use:
+
+| Setting | Value |
 |---|---|
-| Mode | ReadWriteCreate |
-| ForeignKeys | true |
-| Pooling | false |
+| Mode | `ReadWriteCreate` |
+| ForeignKeys | `true` |
+| Pooling | `false` |
 | DefaultTimeout | 15 seconds |
 
-Each database operation should properly dispose of its connection.
+Foreign key enforcement must be enabled for normal operations.
 
-`Pooling = false` helps make connection lifetimes explicit, especially during database restoration.
+The migration runner verifies foreign key enforcement before applying migrations.
 
-Foreign key enforcement is enabled when opening normal application connections.
+Connections should be disposed after their operations complete.
 
-The migration runner verifies that foreign key enforcement is active before proceeding.
+Connection pooling is disabled to keep connection lifetimes explicit, particularly during restoration.
 
 ## 4. Database Schema
 
-The Daycord 0.1.0 database contains eight application tables and one migration history table.
+The current database contains seven application tables and one migration history table.
 
-| Table | Purpose |
+| Table | Responsibility |
 |---|---|
 | `TaskStatuses` | Task status definitions |
-| `Tasks` | Task records |
+| `Tasks` | Primary task records |
 | `PlanningPeriods` | Planned work durations |
 | `WorkEntries` | Actual work records |
-| `ReportPresets` | Configurable report layouts |
+| `ReportPresets` | Excel report configurations |
 | `ReportSettings` | Active report preset |
 | `AppSettings` | Application preferences |
-| `__SchemaMigrations` | Applied migration history |
-
-`__SchemaMigrations` is created by `MigrationRunner`, not directly by `001_InitialSchema.sql`.
+| `__SchemaMigrations` | Applied schema migration history |
 
 ### 4.1 TaskStatuses
 
-Defines available task statuses.
+Stores task status definitions.
 
-| Column | Type | Description |
+Important columns:
+
+- `Id` — GUID primary key.
+- `SystemKey` — stable key for built-in statuses.
+- `Name` — non-empty display name.
+- `IsSystem` — built-in status flag.
+- `IsCompleted` — completion flag.
+- `SortOrder` — display order.
+
+Built-in statuses:
+
+| SystemKey | Default name | IsCompleted |
 |---|---|---|
-| `Id` | TEXT | Primary key, GUID |
-| `SystemKey` | TEXT NULL | Stable identifier for system statuses |
-| `Name` | TEXT | Non-empty status name |
-| `IsSystem` | INTEGER | System status flag, 0 or 1 |
-| `IsCompleted` | INTEGER | Completion flag, 0 or 1 |
-| `SortOrder` | INTEGER | Display order |
+| `open` | Open | `0` |
+| `completed` | Completed | `1` |
 
-Constraints:
+The application uses stable system identifiers and the `IsCompleted` property.
 
-- `Id` is the primary key.
-- `Name` cannot be empty or whitespace-only.
-- `IsSystem` and `IsCompleted` must be 0 or 1.
-- System statuses must have a non-empty `SystemKey`.
-- Custom statuses must have a NULL `SystemKey`.
-- Non-NULL system keys are unique.
-
-The initial migration creates two built-in statuses:
-
-| SystemKey | Name | IsCompleted |
-|---|---|---|
-| `open` | Open | 0 |
-| `completed` | Completed | 1 |
-
-Their identifiers are stable constants defined in `TaskStatusDefinition`.
-
-Application logic must use `IsCompleted` to determine whether a status represents completion.
-
-Do not compare a status's display name to a localized string.
+Completion logic must not depend on localized status names.
 
 ### 4.2 Tasks
 
-Stores the primary task records.
+Stores task information.
 
-| Column | Type | Description |
-|---|---|---|
-| `Id` | TEXT | Primary key, GUID |
-| `TaskDate` | TEXT NULL | Optional task date |
-| `TaskNumber` | TEXT NULL | Optional identifier supplied by the user |
-| `Title` | TEXT | Required task title |
-| `ShortDescription` | TEXT NULL | Short description |
-| `DescriptionMarkdown` | TEXT NULL | Markdown description |
-| `StatusId` | TEXT | References TaskStatuses |
-| `CreatedAtUtc` | TEXT | Creation timestamp |
-| `UpdatedAtUtc` | TEXT | Last modification timestamp |
-| `CompletedAtUtc` | TEXT NULL | Completion timestamp |
+Important columns:
 
-Constraints:
+| Column | Description |
+|---|---|
+| `Id` | GUID primary key |
+| `TaskDate` | Optional task date |
+| `TaskNumber` | Optional user-defined number |
+| `Title` | Required title |
+| `ShortDescription` | Optional short description |
+| `DescriptionMarkdown` | Optional Markdown content |
+| `StatusId` | Reference to TaskStatuses |
+| `CreatedAtUtc` | Creation timestamp |
+| `UpdatedAtUtc` | Modification timestamp |
+| `CompletedAtUtc` | Optional completion timestamp |
 
-- `Title` cannot be empty or whitespace-only.
-- `TaskNumber` may be NULL but cannot be whitespace-only.
-- `StatusId` references `TaskStatuses(Id)`.
-- Status deletion is restricted when tasks reference that status.
+`TaskDate` is a calendar date, not a timestamp.
 
-Indexes:
-
-- `IX_Tasks_TaskDate`
-- `IX_Tasks_TaskNumber`
-- `IX_Tasks_StatusId`
-
-Task dates and timestamps represent different concepts.
-
-`TaskDate` is a calendar date without a timezone.
-
-The timestamp columns record moments in UTC.
+The task's planning and actual work records have their own independent dates.
 
 ### 4.3 PlanningPeriods
 
-Stores planned work for tasks.
+Stores planned work associated with tasks.
 
-| Column | Type | Description |
-|---|---|---|
-| `Id` | TEXT | Primary key, GUID |
-| `TaskId` | TEXT | References Tasks |
-| `PlannedDate` | TEXT | Date of planned work |
-| `PlannedMinutes` | INTEGER | Planned duration |
+| Column | Description |
+|---|---|
+| `Id` | GUID primary key |
+| `TaskId` | Reference to Tasks |
+| `PlannedDate` | Planned work date |
+| `PlannedMinutes` | Planned duration in minutes |
 
-Constraints:
-
-- `PlannedMinutes` must be greater than zero.
-- `TaskId` references `Tasks(Id)`.
-- Foreign key deletion behavior is RESTRICT.
-
-Indexes:
-
-- `IX_PlanningPeriods_TaskId`
-- `IX_PlanningPeriods_PlannedDate`
+`PlannedMinutes` must be greater than zero.
 
 A task can have multiple planning periods.
 
 `PlannedDate` does not have to equal the task's `TaskDate`.
 
-Planned durations are stored in integer minutes.
-
 ### 4.4 WorkEntries
 
-Stores actual work performed.
+Stores actual work performed on tasks.
 
-| Column | Type | Description |
-|---|---|---|
-| `Id` | TEXT | Primary key, GUID |
-| `TaskId` | TEXT | References Tasks |
-| `WorkDate` | TEXT | Date of actual work |
-| `ActualMinutes` | INTEGER | Actual duration |
-| `WorkDescription` | TEXT NULL | Work description |
-| `Note` | TEXT NULL | Optional note |
-| `CreatedAtUtc` | TEXT | Creation timestamp |
-| `UpdatedAtUtc` | TEXT | Last modification timestamp |
+| Column | Description |
+|---|---|
+| `Id` | GUID primary key |
+| `TaskId` | Reference to Tasks |
+| `WorkDate` | Date of performed work |
+| `ActualMinutes` | Actual duration in minutes |
+| `WorkDescription` | Optional work description |
+| `Note` | Optional note |
+| `CreatedAtUtc` | Creation timestamp |
+| `UpdatedAtUtc` | Modification timestamp |
 
-Constraints:
+`ActualMinutes` must be greater than zero.
 
-- `ActualMinutes` must be greater than zero.
-- `TaskId` references `Tasks(Id)`.
-- Foreign key deletion behavior is RESTRICT.
+A task can contain multiple work entries.
 
-Indexes:
-
-- `IX_WorkEntries_TaskId`
-- `IX_WorkEntries_WorkDate`
-
-A task may have multiple work entries on the same date.
-
-`WorkDate` is independent of `TaskDate` and `PlannedDate`.
+`WorkDate` is independent of TaskDate and PlannedDate.
 
 ### 4.5 ReportPresets
 
-Stores report layout configurations.
+Stores configurable Excel report layouts.
 
-| Column | Type | Description |
-|---|---|---|
-| `Id` | TEXT | Primary key, GUID |
-| `Name` | TEXT | Preset name |
-| `IsBuiltIn` | INTEGER | Built-in flag |
-| `ColumnsJson` | TEXT | JSON column configuration |
-| `CreatedAtUtc` | TEXT | Creation timestamp |
-| `UpdatedAtUtc` | TEXT | Modification timestamp |
+Important columns:
 
-Constraints:
+- `Id` — GUID primary key.
+- `Name` — preset name.
+- `IsBuiltIn` — built-in preset flag.
+- `ColumnsJson` — JSON column configuration.
+- `CreatedAtUtc` — creation timestamp.
+- `UpdatedAtUtc` — modification timestamp.
 
-- `Name` length must be between 1 and 120 characters after trimming.
-- `IsBuiltIn` must be 0 or 1.
-- `ColumnsJson` must contain valid JSON.
-- Names are unique using `COLLATE NOCASE`.
-- Only the known Default preset ID may have `IsBuiltIn = 1`.
-- The Default preset ID must have `IsBuiltIn = 1`.
+The database contains a built-in Default preset with a stable identifier.
 
-The Default preset ID is:
+Preset names are unique using case-insensitive comparison.
 
-```text
-7b9f3e18-6fc7-449e-9a12-e59063d58101
-```
+`ColumnsJson` must contain syntactically valid JSON.
 
-The initial migration creates the built-in preset using language-independent column header tokens.
+Application-level validation additionally controls supported fields, column configurations, and headings.
 
-For example:
+Built-in report headings use language-independent tokens, resolved by the application.
 
-```text
-@daycord:Date
-@daycord:TaskNumber
-@daycord:TaskTitle
-@daycord:PlannedTime
-```
-
-These tokens are resolved to localized column headers by the reporting implementation.
-
-Custom user-defined headers are stored as literal text.
-
-The application validates report fields, header lengths, and duplicate fields through `WorkReportPreset`.
-
-The database's `json_valid` constraint verifies JSON syntax, not the complete application-level report schema.
+Custom headings are stored as literal text.
 
 ### 4.6 ReportSettings
 
-Stores the selected report preset.
+Stores the active report preset.
 
-| Column | Type | Description |
-|---|---|---|
-| `SingletonId` | INTEGER | Primary key, always 1 |
-| `ActivePresetId` | TEXT | References ReportPresets |
+The table contains a singleton record:
 
-The singleton constraint requires:
-
-```sql
+```text
 SingletonId = 1
 ```
 
-The foreign key uses `ON DELETE RESTRICT`.
+`ActivePresetId` references `ReportPresets`.
 
-When an active custom preset is deleted through the repository, the application first selects the Default preset within the same transaction.
+The active preset must exist.
 
-Report configuration must not be modified by direct SQL without respecting this relationship.
+When the active custom preset is deleted through the repository, the application selects the Default preset within the same transaction.
 
 ### 4.7 AppSettings
 
-Introduced by migration `002_ApplicationSettings.sql`.
+Stores application preferences.
 
-| Column | Type | Description |
-|---|---|---|
-| `SingletonId` | INTEGER | Primary key, always 1 |
-| `Language` | TEXT | Persisted language code |
-| `Theme` | TEXT | Appearance preference |
-| `MinutesPerDay` | INTEGER | Duration represented by one day |
+| Column | Description |
+|---|---|
+| `SingletonId` | Singleton primary key |
+| `Language` | Application language code |
+| `Theme` | Appearance setting |
+| `MinutesPerDay` | Minutes represented by one day |
 
-Default values:
+Defaults:
 
-| Setting | Default |
+| Setting | Value |
 |---|---|
 | Language | `en` |
 | Theme | `System` |
 | MinutesPerDay | `1440` |
 
-Constraints:
+Allowed theme values:
 
-- `SingletonId` must equal 1.
-- `Language` must be 2 to 35 characters and contain no surrounding whitespace.
-- `Theme` must be `System`, `Light`, or `Dark`.
-- `MinutesPerDay` must be an integer between 1 and 1,440.
+- `System`
+- `Light`
+- `Dark`
 
-The database deliberately does not restrict `Language` to a fixed enumeration.
+`MinutesPerDay` must be an integer between 1 and 1,440.
 
-Supported language codes are validated by `AppLanguageCodes` in Core.
+The SQL schema does not restrict language codes to a fixed set.
 
-A new supported language does not require changing the SQL constraint.
+Supported languages are validated through the application's language model.
 
 ### 4.8 __SchemaMigrations
 
-Tracks applied database migrations.
+Stores the history of applied schema migrations.
 
-| Column | Type | Description |
-|---|---|---|
-| `Version` | INTEGER | Primary key, migration number |
-| `Name` | TEXT | Migration filename |
-| `Checksum` | TEXT | SHA-256 checksum |
-| `AppliedAtUtc` | TEXT | UTC application timestamp |
+| Column | Description |
+|---|---|
+| `Version` | Migration version |
+| `Name` | Migration filename |
+| `Checksum` | SHA-256 checksum |
+| `AppliedAtUtc` | UTC application timestamp |
 
-All columns are required.
+This table is managed by `MigrationRunner`.
 
-Migration versions must be consecutive and begin at `001`.
+Applied migration entries must match the corresponding embedded SQL resources.
 
-The checksum represents the embedded SQL migration text.
+## 5. Relationships and Deletion
 
-The migration runner rejects an applied migration if its version, filename, or checksum differs from the corresponding embedded migration.
-
-## 5. Entity Relationships
+Main relationships:
 
 ```text
 TaskStatuses
     |
-    +----< Tasks
-              |
-              +----< PlanningPeriods
-              |
-              +----< WorkEntries
+    +-- Tasks
+          |
+          +-- PlanningPeriods
+          |
+          +-- WorkEntries
 
 ReportPresets
     |
-    +----< ReportSettings
+    +-- ReportSettings
 
 AppSettings
     (singleton)
@@ -385,38 +314,37 @@ __SchemaMigrations
     (migration history)
 ```
 
-The task relationship is one-to-many for both planning periods and work entries.
+Foreign keys use `ON DELETE RESTRICT`.
 
-Task status relationships are many-to-one.
+The application does not rely on SQLite cascading deletion for tasks.
 
-Report settings reference one active report preset.
+When deleting a task, `SqliteTaskRepository` explicitly removes:
 
-AppSettings and ReportSettings use singleton records.
+1. Associated WorkEntries.
+2. Associated PlanningPeriods.
+3. The Task record.
 
-## 6. Foreign Keys and Deletion
+The operations execute within a transaction.
 
-Foreign keys use RESTRICT rather than relying on automatic cascading deletion.
+Do not change foreign key deletion behavior without reviewing the repository implementation.
 
-The `SqliteTaskRepository` explicitly deletes dependent work entries and planning periods before deleting a task.
+## 6. Data Types and Serialization
 
-These operations occur in a transaction.
+### GUIDs
 
-The deletion sequence is:
+GUID values are stored as SQLite TEXT using the standard `D` format.
 
-1. Delete the task's WorkEntries.
-2. Delete the task's PlanningPeriods.
-3. Delete the Task record.
-4. Commit the transaction.
+Example:
 
-Do not modify the database schema to use cascading deletion without reviewing repository behavior.
+```text
+5e8a148e-1a3b-4b17-bba6-251392a01d61
+```
 
-## 7. Date and Time Storage
+Dapper uses the registered GUID type handler.
 
-Daycord distinguishes date-only values from UTC timestamps.
+### Calendar Dates
 
-### 7.1 DateOnly
-
-`DateOnly` values are stored as ISO-style date strings:
+Date-only values are stored as:
 
 ```text
 yyyy-MM-dd
@@ -425,333 +353,266 @@ yyyy-MM-dd
 Example:
 
 ```text
-2026-10-30
+2026-11-11
 ```
 
-Fields include:
+Date-only fields include:
 
 - `Tasks.TaskDate`
 - `PlanningPeriods.PlannedDate`
 - `WorkEntries.WorkDate`
 
-These fields represent calendar dates, not UTC instants.
+These values do not contain a time or timezone.
 
-### 7.2 UTC DateTime
+### UTC Timestamps
 
-Application timestamp fields use the .NET round-trip format:
-
-```csharp
-DateTime.UtcNow.ToString(
-    "O",
-    CultureInfo.InvariantCulture)
-```
-
-An example serialized value is:
-
-```text
-2026-10-30T12:34:56.0000000Z
-```
-
-This format preserves an explicit UTC representation.
-
-`SqliteTypeHandlers.UtcDateTimeHandler` requires parsed timestamps to have `DateTimeKind.Utc`.
-
-The handler expects .NET's exact `"O"` format when mapping database values to DateTime.
-
-Do not use local timestamps or timezone-less values in application timestamp columns.
-
-### 7.3 GUIDs
-
-GUIDs are stored as TEXT using the standard `D` format.
+Application-generated .NET `DateTime` values are stored using the round-trip `"O"` format.
 
 Example:
 
 ```text
-5e8a148e-1a3b-4b17-bba6-251392a01d61
+2026-11-11T12:34:56.0000000Z
 ```
 
-`SqliteTypeHandlers.GuidHandler` uses the corresponding exact parsing convention.
+The Dapper UTC DateTime handler requires a UTC value.
 
-### 7.4 Direct SQL and DataGrip
+Other SQLite-generated timestamps and migration-history timestamps may use compatible ISO 8601 UTC representations according to their respective validation rules.
 
-Direct SQL insertion can bypass application-level validation.
+Do not replace UTC timestamps with local or timezone-less values.
 
-In particular, SQLite itself does not enforce the .NET timestamp format for ordinary TEXT columns.
+### Durations
 
-A timestamp such as:
+Planned and actual durations are stored as integer minutes.
+
+For example:
 
 ```text
-2026-10-30 12:34:56
+1 hour 30 minutes = 90 minutes
 ```
 
-may be stored in SQLite but fail when Dapper maps it to a UTC DateTime.
+The configurable day length affects duration input and presentation.
 
-For test data, prefer application services.
+Changing `MinutesPerDay` does not modify previously saved durations.
 
-If direct SQL insertion is required:
+## 7. Schema Migrations
 
-- Work on an isolated test database.
-- Use valid foreign keys.
-- Use the correct GUID format.
-- Use `yyyy-MM-dd` for dates.
-- Use explicitly formatted UTC timestamps.
-- Respect positive-minute constraints.
-- Validate the resulting database before opening it in the application.
+Database migrations are managed by:
 
-Never populate or modify the production user database merely to test reports or application features.
-
-## 8. Migration System
-
-Migrations are implemented by:
-
-`src/Daycord.Infrastructure/Persistence/MigrationRunner.cs`
-
-They are embedded into the Infrastructure assembly through:
-
-```xml
-<EmbeddedResource Include="Persistence/Migrations/*.sql" />
+```text
+src/Daycord.Infrastructure/Persistence/MigrationRunner.cs
 ```
 
-The migration runner discovers the embedded resources at runtime.
+Migration resources are embedded in the Infrastructure assembly.
 
-### 8.1 Current Migrations
+Current migrations:
 
 | Version | File | Purpose |
 |---|---|---|
-| 001 | `001_InitialSchema.sql` | Tasks, statuses, planning, work entries, reports |
+| 001 | `001_InitialSchema.sql` | Core schema, tasks, time records, and reports |
 | 002 | `002_ApplicationSettings.sql` | Application preferences |
 
-There has never been a separate UTC migration numbered 002 in the current migration history.
+No additional migration is required for the backup and recovery mechanisms introduced in version 0.1.1.
 
-Do not add references to such a migration.
+### Initialization
 
-### 8.2 First Run
+On application startup, `MigrationRunner`:
 
-For a new database, the initializer:
-
-1. Creates the application data directory.
+1. Loads the embedded SQL migrations.
 2. Opens the SQLite database.
 3. Starts an immediate transaction.
-4. Checks foreign key enforcement.
-5. Creates `__SchemaMigrations`.
-6. Applies the available migrations in order.
-7. Records migration names and checksums.
-8. Validates database integrity.
-9. Commits the transaction.
-10. Attempts to enable WAL mode.
+4. Verifies foreign key enforcement.
+5. Checks existing migration history.
+6. Determines which migrations are pending.
+7. Creates a safety backup when upgrading an existing recognized database.
+8. Applies pending migrations in order.
+9. Records migration names, checksums, and timestamps.
+10. Verifies database integrity and required system data.
+11. Commits the transaction.
+12. Attempts to enable WAL journal mode.
 
-The runner substitutes the stable built-in status IDs into migration 001 before executing it.
+If an initialization operation fails, the migration transaction is rolled back.
 
-The checksum is calculated from the original embedded SQL content.
+### Migration History Validation
 
-### 8.3 Existing Databases
+Applied migrations must have:
 
-When a database already has migration history, the runner checks that:
+- Recognized sequential versions.
+- Expected filenames.
+- Matching SHA-256 checksums.
+- Valid UTC application timestamps.
 
-- The history table has the expected structure.
-- Applied versions are known and consecutive.
-- Migration filenames match.
-- Applied checksums match.
-- Migration timestamps contain explicit UTC information.
-- The expected task tables exist.
-- Built-in task statuses have valid identities and completion flags.
+Applied migrations are checked against the embedded SQL resources.
 
-An unknown existing database without recognized migration history is not automatically overwritten or recreated.
+An existing database without recognized migration history is not silently recreated or overwritten.
 
-### 8.4 Upgrading from 001 to 002
+A database containing unknown or newer migrations is not automatically downgraded.
 
-A database containing migration 001 can be upgraded by applying migration 002.
+### Migration Development Rules
 
-Before upgrading an existing recognized database, the application creates a schema-upgrade backup.
+When changing the schema:
 
-The migration is executed transactionally.
+1. Create a new sequentially numbered migration.
+2. Preserve existing migration files unchanged.
+3. Maintain compatibility with existing user data.
+4. Respect foreign keys and application invariants.
+5. Test upgrades using an isolated copy of an existing database.
 
-The migration creates AppSettings without dropping existing task or reporting tables.
+**Never edit an already published migration.**
 
-### 8.5 Migration Checksums
+Changing its SQL text changes its checksum and can prevent existing databases from initializing.
 
-Migration checksums are calculated using SHA-256 over the embedded SQL text.
+Migration checksum errors are not automatically repaired by Emergency Recovery.
 
-Once a migration has been applied and distributed, its contents must remain unchanged.
+## 8. Schema Upgrade Backups
 
-Even a harmless edit to the migration file changes its checksum and can cause initialization to fail on existing databases.
+Before applying pending schema migrations to a recognized existing database, `DatabaseBackupService` creates a verified SQLite snapshot.
 
-Correct schema evolution requires a new migration.
-
-Example naming convention:
+The backup is stored in:
 
 ```text
-003_DescriptiveSchemaChange.sql
-004_AnotherSchemaChange.sql
+Backups/SchemaUpgrades/
 ```
 
-These are illustrative future filenames, not existing migrations.
+The backup is created through the SQLite Online Backup API and validated before publication.
 
-Never add a migration file without a corresponding schema-change requirement.
+If the pre-upgrade backup cannot be created or validated, the migration does not proceed.
 
-## 9. Migration Development Rules
+A schema-upgrade backup is separate from:
 
-When introducing a new migration:
+- User backups.
+- Automatic rotating backups.
+- Pre-restore safety backups.
 
-1. Create a new sequentially numbered SQL file.
-2. Preserve all existing migrations unchanged.
-3. Keep migration operations compatible with existing user data.
-4. Avoid destructive schema replacements.
-5. Consider foreign key references and indexes.
-6. Verify migration checksum behavior.
-7. Test on a fresh isolated database.
-8. Test on an isolated copy representing the previous schema.
-9. Test repeated startup and migration idempotence.
-10. Validate the upgraded database before release.
+Schema upgrades do not require deleting or recreating the user's database.
 
-Do not reset the user's database to apply schema changes.
+## 9. SQLite WAL and Sidecar Files
 
-## 10. Transactions
+Daycord attempts to use SQLite Write-Ahead Logging (WAL) after migration initialization.
 
-Daycord uses explicit transactions for multi-step database operations.
-
-Examples include:
-
-- Task creation with an initial planning period.
-- Task deletion with dependent records.
-- Report preset changes requiring related settings updates.
-- Schema migrations.
-
-A multi-step operation must either complete successfully or roll back.
-
-Repository changes must preserve transactional consistency.
-
-## 11. WAL Mode
-
-After successful migration processing, Daycord attempts:
-
-```sql
-PRAGMA journal_mode = WAL;
-```
-
-WAL may be unavailable or fail under some filesystem conditions.
-
-The application tolerates selected SQLite errors during this optional configuration step.
-
-Correctness must not depend on WAL being successfully enabled.
-
-When WAL is active, SQLite may create additional files such as:
+SQLite may create:
 
 ```text
 daycord.db-wal
 daycord.db-shm
 ```
 
-These files are part of SQLite's runtime persistence behavior.
+Depending on the active journal mode and transaction state, a journal file may also exist.
 
-Do not copy an active database using a simple filesystem copy and assume the result is a consistent backup.
+These files can contain information required for correct database operation.
 
-Use the application's SQLite backup mechanism.
+**Do not copy or delete the active database file independently of its SQLite sidecars.**
 
-## 12. Database Integrity
+Daycord creates consistent backups through the SQLite Online Backup API rather than copying the active `.db` file directly.
 
-The migration runner validates the database with:
+Published snapshots are normalized into standalone database files.
+
+### Restore Handling
+
+Normal restoration coordinates WAL checkpointing and journal-mode transition before replacing the active database.
+
+Emergency recovery preserves the original SQLite file set without attempting to open the corrupted database through SQLite.
+
+The original files are archived and moved into quarantine before a verified replacement is installed.
+
+Recovery does not treat an arbitrary copied database file as a valid snapshot.
+
+See [Backup and Recovery](backup-and-recovery.md).
+
+## 10. Database Integrity and Safety
+
+Database safety relies on several independent checks.
+
+### MigrationRunner
+
+Responsible for:
+
+- Migration history verification.
+- Schema updates.
+- Required built-in data validation.
+- SQLite integrity checks.
+- Foreign key checks.
+
+### SqliteSnapshotValidator
+
+Responsible for validating standalone backup and recovery candidates.
+
+Validation includes:
+
+- Database integrity.
+- Foreign keys.
+- Required database structure.
+- Migration compatibility.
+- Required application configuration.
+
+The validator does not repair invalid data.
+
+### PendingRestoreCoordinator
+
+Responsible for installing a previously prepared database state during startup.
+
+It does not define or apply schema migrations.
+
+### Emergency Recovery
+
+Responsible for attempting restoration from a verified automatic backup after eligible corruption.
+
+It does not repair arbitrary schema or migration errors.
+
+## 11. Developer Guidelines
+
+### Working with Test Data
+
+Use isolated test databases.
+
+Do not perform destructive checks against the user's Release database.
+
+When inserting test data through SQL:
+
+- Use correctly formatted GUIDs.
+- Store date-only values as `yyyy-MM-dd`.
+- Use valid UTC timestamp formats.
+- Respect foreign key relationships.
+- Respect positive-minute constraints.
+- Preserve required singleton records and system statuses.
+
+### Read-Only Inspection
+
+Useful SQLite integrity commands:
 
 ```sql
 PRAGMA integrity_check;
-```
-
-The expected result is:
-
-```text
-ok
-```
-
-It also executes:
-
-```sql
 PRAGMA foreign_key_check;
-```
-
-The expected result is no rows.
-
-These checks are also relevant when validating backups and recovery copies.
-
-### 12.1 Manual Inspection
-
-After creating an isolated database copy using a SQLite-consistent backup mechanism, you can inspect it using the SQLite CLI:
-
-```bash
-sqlite3 /path/to/test-daycord.db \
-  "PRAGMA integrity_check;"
-```
-
-```bash
-sqlite3 /path/to/test-daycord.db \
-  "PRAGMA foreign_key_check;"
 ```
 
 Migration history can be inspected with:
 
-```bash
-sqlite3 /path/to/test-daycord.db \
-  "SELECT Version, Name, Checksum, AppliedAtUtc
-   FROM __SchemaMigrations
-   ORDER BY Version;"
+```sql
+SELECT Version, Name, Checksum, AppliedAtUtc
+FROM __SchemaMigrations
+ORDER BY Version;
 ```
 
-These commands are examples for a test database.
+Run diagnostics against an isolated copy when possible.
 
-Do not perform destructive operations on the working user database.
+Do not edit migration history to bypass validation.
 
-## 13. Backup and Recovery
+### Troubleshooting
 
-The backup and restoration subsystem uses SQLite-aware snapshot operations.
+If database initialization fails:
 
-Key components are:
+1. Preserve the complete application data directory.
+2. Do not delete `daycord.db`.
+3. Do not remove WAL, SHM, or restore journal files.
+4. Check the application's diagnostic information.
+5. Verify the failure using an isolated copy of the data.
+6. Review backup and recovery state before attempting restoration.
 
-- `DatabaseBackupService`
-- `UserBackupService`
-- `SqliteSnapshotIO`
-- `SqliteSnapshotValidator`
-- `PendingRestoreCoordinator`
+Never delete user data merely to force the application to start.
 
-Schema upgrade backups and user-created backups serve separate purposes.
+## 12. Related Documentation
 
-Restoration is deferred until the next application startup so the database can be replaced without active application connections.
-
-Before installing a restored database, Daycord creates a safety backup.
-
-The restored database must pass initialization before restoration is finalized.
-
-See [Backup and Recovery](backup-and-recovery.md).
-
-## 14. Report Preset Compatibility
-
-The report preset repository contains a compatibility mechanism for an older built-in preset name.
-
-It changes only the known legacy built-in record when appropriate and avoids overwriting user-created presets.
-
-This behavior is intentionally separate from SQL migration 001.
-
-Do not remove this compatibility mechanism without reviewing existing databases and release compatibility requirements.
-
-Do not rewrite migration 001 merely to change the historical default preset seed.
-
-## 15. Data Safety Rules
-
-The following rules apply to all future development:
-
-- Never delete the user's database as a routine troubleshooting action.
-- Never modify already applied migrations.
-- Never disable migration checksum checks.
-- Never replace an active database while normal application connections are open.
-- Never use ordinary file copying as a substitute for SQLite-aware backup.
-- Never assume an unknown SQLite schema belongs to Daycord.
-- Never silently discard tasks, time entries, settings, or report presets.
-- Always test destructive and recovery scenarios in an isolated environment.
-- Preserve internal safety backups until the user or an explicit retention policy handles them.
-
-## 16. Related Documentation
-
-- [Architecture](architecture.md)
-- [Development](development.md)
-- [Backup and Recovery](backup-and-recovery.md)
-- [Testing](testing.md)
-
-This document describes the database implementation of Daycord 0.1.0.
+- [Architecture](architecture.md) — Application layers and responsibilities.
+- [Backup and Recovery](backup-and-recovery.md) — SQLite backup, restore, and emergency recovery.
+- [Development](development.md) — Development conventions and project setup.
+- [Testing](testing.md) — Automated database checks.
+- [User Guide](user-guide.md) — User-facing backup and restore instructions.

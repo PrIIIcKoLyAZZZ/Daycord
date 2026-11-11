@@ -55,6 +55,12 @@ public partial class TaskDetailsView : UserControl
 
         _calendar.DateSelected += OnCalendarDateSelected;
 
+        // Focused controls get the first chance to handle Escape.
+        AddHandler(
+            InputElement.KeyDownEvent,
+            OnDetailsKeyDown,
+            RoutingStrategies.Bubble);
+
         AttachedToVisualTree += (_, _) =>
         {
             _attached = true;
@@ -207,6 +213,71 @@ public partial class TaskDetailsView : UserControl
             _calendar.Refresh(
                 WorkSelectedDate(viewModel),
                 viewModel.DateCulture);
+        }
+    }
+
+    private void OnDetailsKeyDown(
+        object? sender,
+        KeyEventArgs e)
+    {
+        if (e.Handled ||
+            e.Key != Key.Escape ||
+            !_attached ||
+            _connected is not { } viewModel)
+        {
+            return;
+        }
+
+        // Dismiss the topmost confirmation safely.
+        if (viewModel.IsDiscardConfirmationOpen)
+        {
+            e.Handled = true;
+
+            if (viewModel.KeepEditingCommand.CanExecute(null))
+            {
+                viewModel.KeepEditingCommand.Execute(null);
+            }
+
+            return;
+        }
+
+        if (viewModel.IsDeleteWorkEntryConfirmationOpen)
+        {
+            e.Handled = true;
+
+            if (viewModel.CancelDeleteWorkEntryCommand.CanExecute(null))
+            {
+                viewModel.CancelDeleteWorkEntryCommand.Execute(null);
+            }
+
+            return;
+        }
+
+        if (viewModel.IsDeletePeriodConfirmationOpen)
+        {
+            e.Handled = true;
+
+            if (viewModel.CancelDeletePeriodCommand.CanExecute(null))
+            {
+                viewModel.CancelDeletePeriodCommand.Execute(null);
+            }
+
+            return;
+        }
+
+        if (_calendar.IsOpen)
+        {
+            _calendar.Close();
+            e.Handled = true;
+            return;
+        }
+
+        // BackCommand already protects unsaved changes.
+        e.Handled = true;
+
+        if (viewModel.BackCommand.CanExecute(null))
+        {
+            viewModel.BackCommand.Execute(null);
         }
     }
 
