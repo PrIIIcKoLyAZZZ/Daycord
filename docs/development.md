@@ -1,30 +1,40 @@
 # Daycord Developer Guide
 
+**Target version:** 0.1.1
+
 ## 1. Introduction
 
-This document describes how to set up, build, run, debug, and extend Daycord 0.1.0.
+This guide describes how to build, run, debug, and extend Daycord.
 
-Daycord is a cross-platform desktop application developed with C# and .NET 10.
+Daycord is an offline-first desktop application using:
 
-Its user interface is implemented using Avalonia UI and the MVVM pattern.
+- C# and .NET 10.
+- Avalonia UI.
+- CommunityToolkit.Mvvm.
+- SQLite and Dapper.
+- ClosedXML.
+- Microsoft.Extensions.DependencyInjection.
 
-Application data is persisted locally using SQLite and Dapper.
+The application supports macOS ARM64 and Windows x64.
 
-This guide reflects the implementation after the completion of the initial MVP development tasks.
+For architectural responsibilities, see [Architecture](architecture.md).
 
 ## 2. Development Environment
 
-### 2.1 Prerequisites
+### Prerequisites
 
-The recommended development environment includes:
+Required:
 
-- .NET SDK 10.
-- JetBrains Rider.
+- .NET SDK compatible with `global.json`.
 - Git.
 - macOS or Windows.
-- SQLite CLI or a database tool such as DataGrip.
 
-The repository includes `global.json`:
+Recommended:
+
+- JetBrains Rider.
+- SQLite CLI or DataGrip.
+
+The repository specifies:
 
 ```json
 {
@@ -36,141 +46,48 @@ The repository includes `global.json`:
 }
 ```
 
-Install an SDK compatible with this configuration.
-
 Verify the installed SDK:
 
 ```bash
 dotnet --info
 ```
 
-### 2.2 JetBrains Rider
+### JetBrains Rider
 
-Open the solution:
+Open:
 
 ```text
 Daycord.slnx
 ```
 
-Allow Rider to restore NuGet dependencies and index the projects.
+Use Debug for everyday development and debugging.
 
-The recommended configuration for normal development is Debug.
-
-For release validation, use Release.
-
-Avoid introducing platform-specific dependencies into Core or Infrastructure unless they are explicitly required by an approved architectural change.
+Use Release when validating production configuration
+or preparing distribution artifacts.
 
 ## 3. Repository Structure
 
-```text
-Daycord/
-├── Daycord.slnx
-├── global.json
-├── Directory.Build.props
-├── Directory.Build.targets
-├── Directory.Packages.props
-├── README.md
-├── docs/
-├── scripts/
-└── src/
-    ├── Daycord.Core/
-    ├── Daycord.Infrastructure/
-    └── Daycord.Desktop/
-```
+The solution contains three application projects:
 
-### 3.1 Core
-
-`Daycord.Core` contains:
-
-- Domain entities.
-- Application contracts.
-- Application models.
-- Business services.
-
-It must remain independent of Avalonia, SQLite implementations, and the desktop operating system.
-
-### 3.2 Infrastructure
-
-`Daycord.Infrastructure` contains:
-
-- SQLite connection management.
-- Dapper repositories.
-- Schema migrations.
-- Database initialization.
-- SQLite backup and recovery.
-- Excel generation through ClosedXML.
+| Project | Responsibility |
+|---|---|
+| `Daycord.Core` | Domain models, contracts, application services |
+| `Daycord.Infrastructure` | SQLite persistence, migrations, backup, reporting |
+| `Daycord.Desktop` | Avalonia UI, navigation, localization, startup |
 
 Infrastructure depends on Core.
 
-### 3.3 Desktop
-
-`Daycord.Desktop` contains:
-
-- Application startup.
-- Avalonia Views.
-- ViewModels.
-- Navigation.
-- Localization.
-- Themes.
-- Application settings integration.
-- Shared calendar controls.
-- Dependency injection configuration.
-- Release-specific desktop resources.
-
 Desktop depends on Core and Infrastructure.
 
-## 4. NuGet Package Management
+Core must not reference Infrastructure or Desktop.
 
-Daycord uses Central Package Management.
+Automated verification projects are located in `tests/`.
 
-Package versions are defined in:
+## 4. Building and Running
 
-`Directory.Packages.props`
+All commands below are executed from the repository root.
 
-The current major dependencies are:
-
-| Package | Version |
-|---|---|
-| Avalonia | 12.1.4 |
-| CommunityToolkit.Mvvm | 8.4.2 |
-| Dapper | 2.1.89 |
-| Microsoft.Data.Sqlite | 10.0.13 |
-| Microsoft.Extensions.DependencyInjection | 10.0.13 |
-| ClosedXML | 0.105.1 |
-
-Additional Avalonia and development packages are also declared in the central package file.
-
-### 4.1 Adding a Dependency
-
-When a new package is required:
-
-1. Add its version to `Directory.Packages.props`.
-2. Add its package reference to the relevant project.
-3. Do not specify the version again in the individual project file.
-4. Restore dependencies.
-5. Build Debug and Release.
-6. Confirm that the dependency belongs in the appropriate architectural layer.
-
-Avoid introducing duplicate libraries for functionality that already exists.
-
-### 4.2 Updating Dependencies
-
-Dependency updates should be intentional.
-
-Before updating a package:
-
-- Review breaking changes.
-- Check .NET 10 compatibility.
-- Check Avalonia compatibility.
-- Review licensing implications.
-- Verify both supported release platforms.
-- Test affected functionality.
-
-Do not upgrade dependencies solely because a newer version is available during release stabilization.
-
-## 5. Building the Solution
-
-From the repository root, restore dependencies:
+Restore dependencies:
 
 ```bash
 dotnet restore Daycord.slnx
@@ -179,295 +96,334 @@ dotnet restore Daycord.slnx
 Build Debug:
 
 ```bash
-dotnet build Daycord.slnx -c Debug
+dotnet build Daycord.slnx --configuration Debug
 ```
 
 Build Release:
 
 ```bash
-dotnet build Daycord.slnx -c Release
+dotnet build Daycord.slnx --configuration Release
 ```
 
-The solution should compile all three projects:
-
-- Daycord.Core
-- Daycord.Infrastructure
-- Daycord.Desktop
-
-The MVP legacy-cleanup stage completed with successful Debug and Release builds on macOS.
-
-These build results do not replace runtime testing on both supported platforms.
-
-## 6. Running Daycord
-
-Run the Desktop project:
+Run the Desktop application in Debug:
 
 ```bash
 dotnet run \
-  --project src/Daycord.Desktop/Daycord.Desktop.csproj
+  --project src/Daycord.Desktop/Daycord.Desktop.csproj \
+  --configuration Debug
 ```
 
-The application initializes the SQLite database during startup.
+On macOS, the Debug build creates an application bundle
+in the configured Debug output directory.
 
-On macOS, the Debug configuration also prepares a `Daycord.app` bundle under the configured Debug output directory.
+### Debug and Release Data
 
-The macOS bundle contains the application executable, application metadata, and icon resources.
+Daycord uses separate application data directories.
 
-### 6.1 First Launch
+| Configuration | Directory |
+|---|---|
+| Debug | `Daycord-test` |
+| Release | `Daycord` |
 
-During startup, Daycord:
+This separation is configured in `ServiceRegistration`.
 
-1. Creates the dependency injection container.
-2. Creates the main application window.
-3. Acquires the application database lock.
-4. Checks for a pending database restoration.
-5. Initializes and migrates SQLite.
-6. Loads application settings.
-7. Applies language and appearance preferences.
-8. Enables normal application screens.
+It must not be removed without reviewing the consequences
+for existing user data.
 
-Do not access database-dependent features before initialization completes.
+Destructive testing must use independently isolated
+temporary databases, not either normal application profile.
 
-### 6.2 Database Initialization Errors
+## 5. NuGet Package Management
 
-When database initialization fails, the application displays a failure state rather than silently recreating the database.
+Dependencies use Central Package Management.
 
-Investigate the underlying exception before attempting recovery.
+Versions are maintained in:
 
-Do not delete `daycord.db` to resolve an initialization error.
+```text
+Directory.Packages.props
+```
 
-## 7. Debugging
+To add a dependency:
 
-JetBrains Rider can be used for normal debugging.
+1. Declare its version centrally.
+2. Add a PackageReference to the appropriate project.
+3. Do not duplicate the package version in the project file.
+4. Restore dependencies.
+5. Build the solution.
+6. Verify compatibility with supported platforms.
 
-Recommended debugging targets include:
+Do not introduce a new dependency for functionality that
+already exists in the solution without a clear reason.
 
-- Application startup.
-- TaskService.
-- Repository operations.
-- ViewModel commands.
-- Navigation transitions.
-- Localization updates.
-- Database migrations.
-- Report generation.
-- Backup and recovery.
+## 6. Application Architecture
 
-### 7.1 Debugging Persistence
+The normal application flow is:
 
-Inspect database operations at the repository layer.
+```text
+Avalonia View
+     |
+     v
+ViewModel
+     |
+     v
+Application Service
+     |
+     v
+Core Contract
+     |
+     v
+Infrastructure Implementation
+     |
+     v
+SQLite / XLSX
+```
 
-Relevant classes include:
+### Core
 
-- `SqliteConnectionFactory`
-- `SqliteTaskRepository`
-- `SqliteWorkReportPresetRepository`
-- `SqliteAppSettingsRepository`
-- `MigrationRunner`
+Core owns application rules and contracts.
 
-Use an isolated database when investigating SQL writes or migrations.
+Examples:
 
-Avoid changing the real user's data during debugging.
+- `TaskService`
+- `WorkReportService`
+- `WorkReportPresetService`
 
-### 7.2 Release Diagnostics
+Business validation belongs in application services or
+appropriate domain/application models.
 
-Debug and Release builds are not identical.
+### Infrastructure
 
-The application includes Avalonia diagnostic support as a development dependency, with production asset inclusion controlled by the project configuration.
+Infrastructure owns database queries, repository
+implementations, and external file generation.
 
-Do not add diagnostics-only dependencies to Release behavior without a specific requirement.
+Views and ViewModels must not issue direct persistence
+queries for normal application operations.
 
-Release builds should be tested independently of Debug.
+### Desktop
 
-## 8. MVVM Conventions
+Desktop owns presentation, user interaction, navigation,
+localization, and application lifecycle.
 
-Daycord uses CommunityToolkit.Mvvm.
+Use the MVVM pattern.
 
-ViewModels manage presentation state and coordinate application operations.
+Keep UI-specific code in the presentation layer.
 
-Views should remain focused on visual presentation and UI-specific interaction.
+## 7. Dependency Injection
 
-### 8.1 ViewModel Responsibilities
-
-ViewModels may:
-
-- Expose observable properties.
-- Provide commands.
-- Validate UI input.
-- Translate application results into presentation models.
-- Request navigation.
-- React to localization or settings changes.
-
-They should not duplicate repository implementations or domain business rules.
-
-### 8.2 Views
-
-Avalonia views are implemented using AXAML and associated C# code-behind where necessary.
-
-Code-behind is appropriate for:
-
-- Popup placement.
-- Keyboard focus.
-- Native window integration.
-- Visual lifecycle handling.
-- Control-specific events.
-
-Avoid placing database queries and application business logic directly in code-behind.
-
-### 8.3 Async Operations
-
-Database and report operations should be asynchronous where supported.
-
-Use cancellation tokens when appropriate.
-
-Do not block the UI thread with long-running persistence or export operations.
-
-Commands must handle errors and update UI state consistently.
-
-## 9. Dependency Injection
-
-Dependency injection registration is centralized in:
+Service registrations are centralized in:
 
 ```text
 src/Daycord.Desktop/Bootstrap/ServiceRegistration.cs
 ```
 
-The container is built using `Microsoft.Extensions.DependencyInjection`.
+Use constructor injection.
 
-### 9.1 Important Registrations
+Choose service lifetimes according to their dependencies
+and the state they maintain.
 
-| Service | Implementation | Lifetime |
-|---|---|---|
-| `IDatabaseInitializer` | `DatabaseInitializer` | Singleton |
-| `ITaskRepository` | `SqliteTaskRepository` | Transient |
-| `TaskService` | `TaskService` | Transient |
-| `IAppSettingsRepository` | `SqliteAppSettingsRepository` | Singleton |
-| `IAppSettingsService` | `AppSettingsService` | Singleton |
-| `IUserBackupService` | `UserBackupService` | Singleton |
-| `INavigationService` | `NavigationService` | Singleton |
-| `ILocalizationService` | `LocalizationService` | Singleton |
-| `IWorkReportPresetRepository` | `SqliteWorkReportPresetRepository` | Transient |
-| `WorkReportService` | `WorkReportService` | Singleton |
-| `WorkReportPresetService` | `WorkReportPresetService` | Singleton |
-| `IWorkReportExporter` | `ClosedXmlWorkReportExporter` | Singleton |
+### Tracked Repositories
 
-Additional services and ViewModels are registered in the same file.
+The application registers tracked repository decorators:
 
-### 9.2 ViewModel Factories
+- `TrackedTaskRepository`
+- `TrackedAppSettingsRepository`
+- `TrackedWorkReportPresetRepository`
 
-Quick Task and Task Details use factories:
+They delegate persistence to SQLite repositories and notify
+`DatabaseChangeTracker` after successful writes.
+
+When introducing a new database mutation:
+
+1. Use the established repository.
+2. Preserve its transaction boundaries.
+3. Ensure successful committed changes are tracked.
+4. Do not mark failed operations as committed.
+5. Do not mark read-only operations as database changes.
+
+Missing change tracking can leave committed data outside
+the automatic backup scheduler's pending revision state.
+
+### Editor Factories
+
+Task Details and Quick Task use ViewModel factories:
 
 ```csharp
-Func<TerminalViewModel>
 Func<TaskDetailsViewModel>
+Func<TerminalViewModel>
 ```
 
-These factories allow the application to create separate editing sessions.
+These factories provide independent editing sessions.
 
-Do not replace these factories with application-wide singleton editor instances.
+Do not replace them with shared editor instances that
+accidentally carry unsaved state between unrelated tasks.
 
-Doing so may introduce unexpected state sharing.
+### Maintaining Registrations
 
-### 9.3 Settings Initialization
+Before removing a dependency:
 
-Settings-related ViewModels are constructed lazily.
+- Search constructor injections.
+- Check `ServiceRegistration`.
+- Check startup and navigation consumers.
+- Check ViewModel factories.
+- Check backup and recovery dependencies.
 
-The application must initialize SQLite and load persisted settings before constructing components that require current settings.
+Do not remove a component merely because it is not referenced
+directly by an AXAML view.
 
-`MainWindow` coordinates lazy initialization when the Settings page is activated.
+## 8. MVVM and UI Development
 
-### 9.4 DI Maintenance
+ViewModels should:
 
-When removing or replacing a component:
+- Expose observable state.
+- Coordinate application services.
+- Validate presentation input.
+- Provide commands and navigation requests.
+- React to localization and settings changes.
+- Preserve appropriate unsaved editing state.
 
-1. Search for constructor injections.
-2. Search `ServiceRegistration.cs`.
-3. Check navigation factories.
-4. Check ViewModel factories.
-5. Check startup dependencies.
-6. Remove only obsolete registrations.
-7. Rebuild Debug and Release.
+Views and code-behind may handle:
 
-Do not assume that a class is unused simply because it has no direct references in Views.
+- Keyboard focus.
+- Control-specific events.
+- Popup placement.
+- Native file dialogs.
+- Window lifecycle.
+- Visual interactions.
 
-## 10. Task Management
+Avoid SQL queries, persistence orchestration, and domain
+business rules in view code-behind.
 
-Application task operations are coordinated by:
+### Asynchronous Operations
 
-`Daycord.Core.Application.Services.TaskService`
+Long-running database, backup, and export operations should
+not block the UI thread.
 
-Persistence is implemented through:
+Use asynchronous APIs and cancellation when supported.
 
-`ITaskRepository`
+Prevent overlapping operations where they would conflict.
 
-The SQLite implementation is:
+Update busy and error states consistently.
 
-`SqliteTaskRepository`
+Do not assume a successful operation until the underlying
+service has completed.
 
-### 10.1 Task Creation
+## 9. Tasks and Navigation
 
-A new task should be created through `TaskService`.
+Task operations use `TaskService`.
 
-The application uses `CreateTaskRequest` to transfer validated task data.
+Creation and editing use application request models such as:
 
-### 10.2 Task Updates
+- `CreateTaskRequest`
+- `UpdateTaskRequest`
 
-Task modifications use `UpdateTaskRequest` and corresponding service operations.
+Task completion depends on `TaskStatuses.IsCompleted`,
+not the status's localized display name.
 
-Task creation timestamps must remain unchanged during editing.
+Deleting a task must preserve referential integrity.
 
-Completion timestamps must reflect completion-state changes.
+The existing repository deletes dependent work and planning
+records within a transaction.
 
-### 10.3 Task Statuses
+### Task Details
 
-Task completion semantics are stored in `TaskStatuses.IsCompleted`.
+`TaskDetailsViewModel` supports both creation and editing.
 
-Do not hard-code comparisons against status names such as `Open` or `Completed`.
+It maintains independent in-memory drafts for actual work
+entries.
 
-Status names are presentation data.
+Switching between drafts does not automatically save changes.
 
-### 10.4 Task Deletion
+New editing behavior must preserve draft isolation and
+unsaved-change handling.
 
-Task deletion must preserve referential integrity.
+### Keyboard Navigation
 
-`SqliteTaskRepository` removes dependent work entries and planning periods before deleting the task, using a transaction.
+Task opening and keyboard interaction are coordinated by
+the Tasks View and ViewModel.
 
-Do not introduce SQL deletion paths that bypass this behavior.
+The list supports:
 
-## 11. Task Details Editor
+- Selecting rows.
+- Opening a task through the supported keyboard action.
+- Opening a task through mouse interaction.
+- Using the dedicated Open Task action.
 
-`TaskDetailsViewModel` implements the full task editing experience.
+Keyboard handlers must respect focus ownership.
 
-The editor supports task creation and editing.
+They must not activate underlying task actions while
+confirmation dialogs or incompatible loading states are active.
 
-It also coordinates:
+### Navigation Service
 
-- Task properties.
-- Markdown descriptions.
-- Planned time.
-- Actual work entries.
-- Work-entry drafts.
+Navigation is managed through `INavigationService`.
 
-### 11.1 Create and Edit Modes
+Use navigation requests rather than direct View-to-View
+dependencies.
 
-Task Details supports explicit editor modes.
+For date-specific navigation, use:
 
-Do not implement a separate full-task editor for task creation when the existing editor supports the required operation.
+```csharp
+NavigateToTasksForDate(DateOnly date)
+```
 
-### 11.2 Work-Entry Drafts
+The Tasks screen consumes this request and applies the
+appropriate `TaskDate` filter.
 
-Each work entry may have an independent in-memory editing draft.
+Do not implement Home-to-Tasks navigation by directly
+modifying unrelated ViewModel instances.
 
-The user can switch between work entries without saving every intermediate edit.
+## 10. Dates and Calendar
 
-A draft is not persisted automatically.
+Daycord distinguishes:
 
-Database changes occur only when the corresponding save operation succeeds.
+| Field | Meaning |
+|---|---|
+| `TaskDate` | Date assigned to a task |
+| `PlannedDate` | Date of planned work |
+| `WorkDate` | Date of actual work |
 
-Unsaved state must be handled when leaving the editing context.
+These dates must remain independent.
 
-Future changes to Task Details must preserve this behavior.
+### Shared Calendar
 
-## 12. Duration Parsing
+The reusable date-selection control is:
+
+```text
+Views/DaycordCalendarView.axaml
+Views/DaycordCalendarView.axaml.cs
+```
+
+Use it for new date-selection interfaces instead of
+duplicating calendar generation and popup behavior.
+
+The parent view owns its date input and coordinates
+opening, selection, and closing.
+
+The shared control provides:
+
+- Month navigation.
+- Date selection.
+- Selected-date highlighting.
+- Today selection.
+- Localized month and weekday presentation.
+
+Do not replace the shared calendar with an unrelated
+platform DatePicker without an explicit requirement.
+
+### Calendar Data
+
+Calendar data is retrieved through:
+
+```csharp
+TaskService.GetCalendarDataAsync(...)
+```
+
+The returned model separates tasks, planning periods,
+and actual work entries.
+
+Use the correct date field for each collection.
+
+## 11. Duration Handling
 
 Duration parsing is centralized in:
 
@@ -475,150 +431,44 @@ Duration parsing is centralized in:
 src/Daycord.Desktop/ViewModels/PlannedDuration.cs
 ```
 
-The class is internal to the Desktop assembly.
+Examples:
 
-It supports input such as:
+| Input | Meaning |
+|---|---|
+| `1` | 1 hour |
+| `30m` | 30 minutes |
+| `1h 30m` | 90 minutes |
+| `1d` | 1 configured day |
+| `2d 3h` | 2 configured days plus 3 hours |
 
-```text
-1
-30m
-1h
-1h 30m
-1d
-2d 3h
-```
+The parser also supports localized duration expressions.
 
-Russian duration abbreviations are also supported.
+Use the existing parsing and formatting methods.
 
-### 12.1 Plain Numbers
+Do not introduce separate duration parsers for Tasks,
+Quick Task, Reports, or Settings.
 
-A plain numeric value represents hours.
+### MinutesPerDay
 
-For example:
+The setting determines how a day-based duration is converted
+to integer minutes.
 
-```text
-1 = 60 minutes
-```
+The default value is 1,440 minutes.
 
-A plain `1` does not represent one minute.
+Stored durations remain integer minutes.
 
-### 12.2 Days
+Changing `MinutesPerDay` does not recalculate saved data.
 
-The `d` suffix represents one configured day.
+The day-length setting itself must not accept recursive
+day-based expressions.
 
-By default:
+Its accepted value must be between 1 and 1,440 minutes.
 
-```text
-1d = 1440 minutes
-```
-
-If `MinutesPerDay` is 480:
-
-```text
-1d = 480 minutes
-2d 3h = 1140 minutes
-```
-
-### 12.3 Stored Durations
-
-Durations are stored as integer minutes.
-
-Changing `MinutesPerDay` changes the interpretation of new day-based input, not historical values.
-
-### 12.4 Parsing APIs
-
-The existing parser exposes:
-
-```csharp
-TryParse(...)
-TryParseRequired(...)
-TryParseDayLength(...)
-Format(...)
-```
-
-Use the existing methods within the Desktop layer.
-
-Do not implement separate parsers for Quick Task, Task Details, Settings, or other duration fields.
-
-### 12.5 Day-Length Setting
-
-The day-length setting accepts a duration but does not allow a `d` component.
-
-This avoids defining the length of one day in terms of itself.
-
-The accepted result must be between 1 and 1,440 minutes.
-
-## 13. Date Selection
-
-Daycord uses a shared calendar control:
-
-```text
-src/Daycord.Desktop/Views/DaycordCalendarView.axaml
-src/Daycord.Desktop/Views/DaycordCalendarView.axaml.cs
-```
-
-This control provides the custom Daycord calendar interface.
-
-It supports:
-
-- Month navigation.
-- Date selection.
-- Localized month and weekday labels.
-- Popup positioning.
-- Today selection.
-- Selected-date highlighting.
-
-### 13.1 Reusing the Calendar
-
-New UI features requiring date selection should reuse `DaycordCalendarView`.
-
-Do not copy its AXAML or calendar-generation logic into another view.
-
-The parent view owns its date input and integrates the calendar popup.
-
-The calendar exposes date-selection events and methods for opening, refreshing, and closing the popup.
-
-### 13.2 Calendar Data
-
-The application-level calendar data API is provided through:
-
-`TaskService.GetCalendarDataAsync`
-
-The resulting model separates:
-
-- Tasks by `TaskDate`.
-- Planning periods by `PlannedDate`.
-- Actual work entries by `WorkDate`.
-
-Do not substitute one date field for another.
-
-A task can have planned or actual work on dates different from its task date.
-
-## 14. Home Dashboard
-
-The Home dashboard uses:
-
-`HomeDashboardViewModel`
-
-The dashboard displays task and time-related information for the current local date.
-
-New dashboard features should reuse existing application services rather than issuing SQL directly from the ViewModel.
-
-Completion calculations must use status metadata, not localized status names.
-
-## 15. Localization
+## 12. Localization
 
 Daycord supports English and Russian.
 
-Localization is implemented using:
-
-- `AppLanguage`
-- `AppLanguageCodes`
-- `ILocalizationService`
-- `LocalizationService`
-- RESX resources
-
-Resource files:
+Localization resources:
 
 ```text
 src/Daycord.Desktop/Localization/
@@ -626,203 +476,176 @@ src/Daycord.Desktop/Localization/
 └── Strings.ru.resx
 ```
 
-English is the default language.
+Localization is provided by:
 
-### 15.1 Adding a Localized String
+- `ILocalizationService`
+- `LocalizationService`
+- `AppLanguage`
+- `AppLanguageCodes`
 
-When adding user-facing text:
+### Adding User-Facing Text
 
-1. Add a unique resource key to `Strings.resx`.
+When introducing a localized string:
+
+1. Add a key to `Strings.resx`.
 2. Add the corresponding translation to `Strings.ru.resx`.
 3. Resolve the key through the localization service.
-4. Ensure that open views update when the language changes.
-5. Verify the text in both supported languages.
+4. Refresh affected ViewModel properties on language changes.
+5. Verify English and Russian presentation.
 
-Avoid hard-coding localized strings in ViewModels or AXAML when the text should respond to the application language setting.
+Avoid hard-coded language-dependent strings in AXAML and
+ViewModels.
 
-### 15.2 Dynamic Language Switching
+### Dynamic Language Changes
 
-`LocalizationService` publishes changes when the active language changes.
+Language changes take effect without an application restart.
 
-ViewModels that display localized content should react to these changes.
+Existing editing state must be preserved.
 
-Changing language must not discard user input, editing drafts, or unsaved report configuration.
+Do not discard:
 
-### 15.3 Adding Another Language
+- Unsaved task changes.
+- Work-entry drafts.
+- Report preset edits.
+- Current navigation context.
 
-To add a new language:
+UI layout must remain stable when switching between
+different-length localized strings.
 
-1. Extend `AppLanguage`.
-2. Add its language code to `AppLanguageCodes`.
-3. Add the appropriate RESX resource file.
-4. Update the localization service and UI selection as needed.
-5. Test dynamic language switching.
-6. Test reporting labels and Excel export.
-7. Test persistence across application restarts.
+## 13. Themes, Styles, and Animations
 
-The AppSettings database schema does not restrict the Language column to only English and Russian.
+Daycord supports:
 
-A new language normally does not require a database migration.
+- System.
+- Light.
+- Dark.
 
-## 16. Application Settings
+Use the existing theme resources.
 
-Application settings are represented by:
+Avoid hard-coded foreground, background, and border colors
+when an appropriate dynamic resource exists.
 
-`Daycord.Core.Application.Models.AppSettings`
+### Shared AXAML Resources
 
-Persistence is implemented through:
+Reusable styles, animations, effects, and icon geometries
+should be placed in appropriate shared resource dictionaries.
 
-`IAppSettingsRepository`
-
-The desktop-facing service is:
-
-`IAppSettingsService`
-
-The current implementation is:
-
-`AppSettingsService`
-
-Settings include:
-
-- Language.
-- Theme.
-- MinutesPerDay.
-
-### 16.1 Saving Settings
-
-Settings changes are persisted through the settings service.
-
-The service publishes updated settings only after the repository successfully saves them.
-
-Do not update the in-memory settings before successful persistence.
-
-### 16.2 Theme Handling
-
-Themes use Avalonia's native `ThemeVariant` mechanism.
-
-Available modes are:
+Existing examples:
 
 ```text
-System
-Light
-Dark
+Styles/Sidebar.axaml
+Styles/OverlayEffects.axaml
+Themes/NavigationIcons.axaml
 ```
 
-System mode follows the operating system's appearance.
+When developing new UI elements:
 
-Use the existing theme resources rather than adding unrelated colors directly to controls.
+1. Reuse existing shared resources where appropriate.
+2. Centralize newly introduced reusable behavior.
+3. Avoid duplicating animations and icon geometries.
+4. Preserve light and dark theme compatibility.
+5. Keep screen-specific styling local when reuse is unnecessary.
 
-### 16.3 Settings Feedback
+Do not assume all existing UI resources are already
+centralized.
 
-Language and appearance changes are immediately visible.
+Broader refactoring should be handled separately from
+unrelated feature or bugfix work.
 
-The duration setting provides a preview of its current meaning.
+### UI Stability
 
-Do not reintroduce an automatic "Settings saved" notification solely for confirmation.
+When changing layouts:
 
-This behavior was intentionally excluded from the accepted MVP design.
+- Test both interface languages.
+- Verify window resizing.
+- Prevent localized content from unexpectedly changing
+  the width of stable parent containers.
+- Check overlay sizing, clipping, and focus behavior.
+- Preserve smooth transitions between UI states.
 
-## 17. Excel Reporting
+## 14. Excel Reporting
 
-Daycord uses the current report implementation:
+Reporting uses:
 
 - `WorkReportService`
 - `WorkReportPresetService`
-- `WorkReportColumnLabels`
+- `ReportsViewModel`
 - `IWorkReportExporter`
 - `ClosedXmlWorkReportExporter`
 
-The previous `MonthlyWorkReportService` is not part of the current architecture.
+### Report Data
 
-### 17.1 Report Data
+`WorkReportService` builds the complete reporting model.
 
-Report data is constructed through `WorkReportService`.
+It includes:
 
-The service retrieves task-related calendar data and prepares rows for the exporter.
+- Planning-period rows.
+- Actual-work rows without corresponding planning.
+- TaskDate-only rows for eligible tasks without time records.
 
-Do not write a second report data aggregation implementation for new exports.
+Do not create fictional duration values for tasks that
+have no planned or actual work.
 
-### 17.2 Presets
+Actual work must not be counted multiple times when
+several planning periods share a task and date.
 
-Report presets are persisted through:
+### Statistics and Presets
 
-`IWorkReportPresetRepository`
+Report statistics must use the complete report model.
 
-The implementation is:
+The selected Excel preset controls export configuration,
+not the underlying report statistics.
 
-`SqliteWorkReportPresetRepository`
+A TaskDate-only row can be omitted from an export when
+the selected preset lacks meaningful identifying columns.
 
-The built-in Default preset has a stable identifier.
+The exported row count can therefore differ from the
+complete report row count.
 
-It cannot be deleted.
+Do not treat report row count as unique task count.
 
-Custom presets can store different columns and user-defined headers.
+### Exporting XLSX
 
-### 17.3 Column Headers
+Excel workbooks are generated using ClosedXML.
 
-Automatic headers use language-independent tokens.
+The exporter captures the selected language for each
+export operation.
 
-Example:
+Built-in headers are localized through resource-backed
+header tokens.
 
-```text
-@daycord:Date
-```
+Custom user headings remain unchanged.
 
-The reporting system resolves these tokens using the selected language.
+Time formatting must support totals exceeding 24 hours.
 
-User-entered headers remain literal.
+## 15. SQLite Development
 
-Do not translate user-entered text automatically.
+SQLite persistence is implemented in Infrastructure.
 
-### 17.4 Exporting
+Use:
 
-XLSX generation is implemented through ClosedXML.
+- `SqliteConnectionFactory`
+- Dapper repositories.
+- Existing type handlers.
+- Explicit transactions where required.
 
-The exporter captures the current application language at the beginning of an export.
+### Data Types
 
-A language change during export must not produce mixed-language report headings and totals.
+GUID values are stored as standard `D` strings.
 
-Excel duration values must support totals greater than 24 hours.
-
-### 17.5 Report Compatibility
-
-The repository contains compatibility logic for an earlier built-in preset name.
-
-This logic is intentional and must not be removed without reviewing persisted user data.
-
-## 18. SQLite Development Rules
-
-SQLite persistence belongs in Infrastructure.
-
-Repositories should use the shared connection factory and Dapper.
-
-### 18.1 Database Connections
-
-Use `SqliteConnectionFactory`.
-
-Dispose of opened connections correctly.
-
-Maintain foreign key enforcement.
-
-### 18.2 Type Handlers
-
-Daycord uses explicit type handlers for:
-
-- GUID.
-- DateOnly.
-- UTC DateTime.
-
-Do not assume arbitrary SQLite TEXT timestamp formats can be mapped safely.
-
-DateOnly values use:
+Date-only values use:
 
 ```text
 yyyy-MM-dd
 ```
 
-UTC DateTime values use .NET's round-trip `"O"` format.
+Application UTC DateTime values use the .NET round-trip
+`"O"` representation.
 
-### 18.3 Migrations
+Do not introduce local or timezone-less timestamps
+into fields requiring UTC.
+
+### Migrations
 
 Current migrations:
 
@@ -831,200 +654,226 @@ Current migrations:
 002_ApplicationSettings.sql
 ```
 
-Migrations are embedded in the Infrastructure assembly.
+Migration history includes version, filename, checksum,
+and application timestamp.
 
-Do not edit a migration that has already been applied.
+Previously applied migration SQL must remain immutable.
 
-New schema changes require a new migration with the next sequential version.
+For schema changes:
 
-### 18.4 Migration Checksums
+1. Add a new sequential migration.
+2. Preserve existing migration files.
+3. Keep existing user data compatible.
+4. Respect foreign keys and required system records.
+5. Verify initialization from an older schema.
 
-Migration checksums are verified during initialization.
+Do not edit migration checksums or bypass validation
+to resolve startup failures.
 
-Changing a historical migration can prevent existing databases from opening.
+### Direct Database Access
 
-Do not disable or bypass checksum validation.
+Use isolated test databases for direct SQL experiments.
 
-### 18.5 Testing Database Changes
+Do not manually modify the normal Release database.
 
-Use isolated database environments.
+Be aware that direct SQL can bypass application-level
+validation even when SQLite constraints are satisfied.
 
-Test:
+See [Database](database.md) for schema details.
 
-- Fresh database initialization.
-- Upgrade from an existing schema.
-- Repeated initialization.
-- Foreign key integrity.
-- Schema checksum compatibility.
-- Preservation of existing user data.
+## 16. Backup and Recovery Development
 
-Do not modify the production `daycord.db` during tests.
-
-## 19. Backup and Recovery Development
-
-The backup subsystem includes:
+The backup system includes:
 
 - `UserBackupService`
+- `DatabaseBackupService`
+- `AutomaticBackupService`
+- `DatabaseChangeTracker`
+- `AutomaticBackupScheduler`
 - `SqliteSnapshotIO`
 - `SqliteSnapshotValidator`
 - `PendingRestoreCoordinator`
-- `PendingRestoreState`
+- `AutomaticRecoveryCandidateSelector`
+- `EmergencyRestoreInstaller`
 
-The database must not be replaced while normal application connections are active.
+### Backup Rules
 
-### 19.1 Backups
+Use SQLite-aware snapshot creation.
 
-Use SQLite-aware snapshot operations.
+Do not copy a live SQLite `.db` file as a substitute for
+the Online Backup API.
 
-Do not use an ordinary file copy of an active SQLite database as a substitute for the backup API.
+Validate snapshots before publishing them.
 
-Validate generated snapshots.
+Preserve previous backups when a new backup fails.
 
-### 19.2 Restoration
+Do not bypass the change tracker when adding new
+database-writing operations.
 
-Restoration is deferred until a subsequent application startup.
+### Restore Rules
 
-The restore coordinator processes staged files before normal database initialization.
+Normal user restoration is deferred to application startup.
 
-A safety backup is created before the working database is replaced.
+A restored database must pass validation and initialization
+before the operation is completed.
 
-The restored database must pass initialization before restoration is finalized.
+Maintain:
 
-### 19.3 Testing
+- The application instance lock.
+- The restore journal.
+- Staged snapshot verification.
+- Raw original-file preservation.
+- Safety backups for normal restoration.
+- Quarantine and recovery failure handling.
 
-Restoration testing must use an isolated environment.
+Do not replace the active database while normal application
+SQLite connections are open.
 
-Do not simulate corrupt backups or interrupted restoration using the main user database.
+### Emergency Recovery Rules
 
-See [Backup and Recovery](backup-and-recovery.md).
+Emergency recovery applies only to eligible corruption.
 
-## 20. Release Configuration
+It must not be used to bypass migration validation.
 
-Application version properties are centralized in:
+An emergency recovery operation must not:
 
-`Directory.Build.props`
+- Install an unverified backup.
+- Overwrite an unresolved restore journal.
+- Treat damaged source files as a valid safety snapshot.
+- Automatically repeat an ambiguous installation.
+- Delete original damaged files before preservation.
 
-Packaging targets are centralized in:
+Changes to recovery behavior require verification with
+isolated data and the relevant automated checks.
 
-`Directory.Build.targets`
+For implementation details, see
+[Backup and Recovery](backup-and-recovery.md).
 
-The current application version is:
+## 17. Debugging and Diagnostics
+
+Useful debugging areas include:
+
+- Database startup and migrations.
+- Repository transactions.
+- Navigation state and keyboard focus.
+- Date filtering.
+- Task editing drafts.
+- Localization updates.
+- Report aggregation and export.
+- Backup scheduling.
+- Restore and recovery state transitions.
+
+Startup and recovery diagnostics are recorded on a
+best-effort basis in:
 
 ```text
-0.1.0
+Diagnostics/recovery-events.jsonl
 ```
 
-The release targets are:
+The diagnostic implementation avoids persisting raw
+exception messages that may contain private data.
+
+When investigating a database failure:
+
+1. Preserve the affected data directory.
+2. Do not delete database or restore files.
+3. Inspect available diagnostics.
+4. Reproduce the problem using isolated data.
+5. Review the relevant initialization or recovery stage.
+
+Do not include real user database contents in issue
+reports, documentation, or shared logs.
+
+## 18. Release Configuration
+
+Application version properties are defined in:
+
+```text
+Directory.Build.props
+```
+
+Packaging targets are configured through:
+
+```text
+Directory.Build.targets
+```
+
+Supported runtime identifiers:
 
 ```text
 osx-arm64
 win-x64
 ```
 
-### 20.1 Release Builds
+Release publishing uses platform-specific packaging
+workflows.
 
-The project configures Release builds without:
+Do not modify packaging configuration or application
+versioning as part of an unrelated development task.
 
-- Trimming.
-- Native AOT.
-- Single-file publishing.
-- ReadyToRun publishing.
+See [Releasing](releasing.md) for platform-specific
+requirements, commands, and artifact descriptions.
 
-Do not enable these optimizations without validating compatibility with Avalonia, Dapper, localization, and report generation.
+## 19. Validation Before Integration
 
-### 20.2 macOS
+Before submitting implementation changes:
 
-macOS Release publishing creates a self-contained application bundle.
+1. Confirm the correct architectural layer.
+2. Check modified dependencies and DI registrations.
+3. Build the solution.
+4. Run relevant automated verification suites.
+5. Verify affected UI behavior on supported platforms
+   when required.
+6. Review localization and theme compatibility.
+7. Check SQLite and migration compatibility if affected.
+8. Review the Git diff.
 
-The existing automation also prepares DMG and ZIP distribution artifacts.
-
-### 20.3 Windows
-
-Windows publishing produces a self-contained executable distribution.
-
-The existing macOS-hosted packaging workflow uses NSIS to generate Setup.exe and a portable ZIP.
-
-### 20.4 Release Signing
-
-Version 0.1.0 distributions are unsigned.
-
-Apple Developer ID signing, Apple notarization, and Windows Authenticode signing are not configured.
-
-Do not describe unsigned artifacts as signed or notarized.
-
-### 20.5 Future Mac App Store Distribution
-
-The existing DMG workflow is not a Mac App Store submission workflow.
-
-Future Mac App Store support requires separate work, including App Sandbox compatibility, signing, entitlements, and an appropriate App Store distribution process.
-
-These capabilities are not part of the accepted 0.1.0 release configuration.
-
-See [Releasing](releasing.md).
-
-## 21. Validation Checklist
-
-Before submitting a code change:
-
-- Confirm that the change belongs in the correct project.
-- Check architecture and DI registrations.
-- Restore dependencies.
-- Build Debug.
-- Build Release.
-- Check localization changes.
-- Check compatibility with existing SQLite data.
-- Check migration integrity if persistence changed.
-- Check affected user workflows.
-- Review `git diff`.
-- Run `git diff --check`.
-- Record the checks actually performed.
-
-Recommended commands:
+Useful commands:
 
 ```bash
 dotnet restore Daycord.slnx
-dotnet build Daycord.slnx -c Debug
-dotnet build Daycord.slnx -c Release
+
+dotnet build Daycord.slnx --configuration Debug
+
+dotnet build Daycord.slnx --configuration Release
 
 git diff --check
 git status --short
 git diff --stat
 ```
 
-A successful build is not evidence that all runtime scenarios have passed.
+Detailed automated verification commands are documented
+in [Testing](testing.md).
 
-The current solution does not contain a dedicated automated test project.
+Compilation and automated verification do not replace
+manual platform acceptance when it is required.
 
-Functional verification relies on available manual and technical test procedures, documented separately.
+## 20. Development Safety Rules
 
-## 22. Development Safety Rules
+All contributors must preserve these constraints:
 
-All contributors should follow these rules:
+1. Keep domain logic out of Views.
+2. Preserve the established project dependency structure.
+3. Use existing application services and repositories.
+4. Track successful database changes for automatic backup.
+5. Preserve independent task, planning, and work dates.
+6. Reuse calendar and duration components.
+7. Preserve unsaved editing drafts.
+8. Keep localization and theme switching functional.
+9. Centralize reusable visual resources.
+10. Keep report statistics independent of Excel presets.
+11. Preserve database migration history.
+12. Never silently delete user data.
+13. Do not bypass backup validation or restore journals.
+14. Use isolated data for destructive testing.
+15. Keep release documentation aligned with actual
+    application behavior.
 
-1. Preserve the three-project dependency structure.
-2. Keep persistence operations out of Views.
-3. Reuse existing application services.
-4. Keep task, planned, and actual work dates independent.
-5. Reuse `DaycordCalendarView`.
-6. Reuse `PlannedDuration`.
-7. Preserve independent WorkEntry drafts.
-8. Preserve existing database migration history.
-9. Do not delete or reset user data during development.
-10. Do not modify a live SQLite database for destructive testing.
-11. Keep translations consistent between supported languages.
-12. Do not introduce duplicate report implementations.
-13. Do not remove backward compatibility code without checking existing persisted data.
-14. Verify DI registrations when changing service lifetimes.
-15. Keep release packaging aligned with centralized project versioning.
-16. Report unverified behavior as unverified rather than assuming it works.
-
-## 23. Related Documentation
+## 21. Related Documentation
 
 - [Architecture](architecture.md)
 - [Database](database.md)
-- [User Guide](user-guide.md)
-- [Releasing](releasing.md)
 - [Backup and Recovery](backup-and-recovery.md)
 - [Testing](testing.md)
-
-This guide describes the development conventions and implementation constraints of Daycord 0.1.0.
+- [Releasing](releasing.md)
+- [User Guide](user-guide.md)
