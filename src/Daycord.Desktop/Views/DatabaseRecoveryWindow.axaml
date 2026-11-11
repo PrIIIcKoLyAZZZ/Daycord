@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Daycord.Desktop.Views.DatabaseRecoveryWindow"
+        Title="Daycord"
+        Width="510"
+        Height="270"
+        MinWidth="510"
+        MinHeight="270"
+        MaxWidth="510"
+        MaxHeight="270"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Background}">
+
+    <Window.Styles>
+        <Style Selector="Button.recovery-close">
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground" Value="{DynamicResource Background}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="22,11" />
+            <Setter Property="MinHeight" Value="42" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <Style Selector="Button.recovery-close:pointerover">
+            <Setter Property="Opacity" Value="0.9" />
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="20">
+        <Border Background="{DynamicResource Surface}"
+                CornerRadius="14"
+                Padding="28">
+            <StackPanel Spacing="17" VerticalAlignment="Center">
+                <Border Width="42"
+                        Height="4"
+                        CornerRadius="2"
+                        HorizontalAlignment="Left"
+                        Background="{DynamicResource Accent}" />
+
+                <TextBlock x:Name="StatusHeading"
+                           FontSize="19"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource PrimaryText}" />
+
+                <TextBlock x:Name="StatusDescription"
+                           FontSize="14"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryText}" />
+
+                <Button x:Name="CloseButton"
+                        Classes="recovery-close"
+                        IsVisible="False"
+                        Click="OnCloseClick" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

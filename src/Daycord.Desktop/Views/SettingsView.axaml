@@ -62,10 +62,11 @@
                   HorizontalScrollBarVisibility="Disabled">
 
         <Grid Margin="30,26,30,36">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MaxWidth="760"/>
+            </Grid.ColumnDefinitions>
 
-            <StackPanel MaxWidth="760"
-                        HorizontalAlignment="Left"
-                        Spacing="22">
+            <StackPanel Spacing="22">
 
                 <!-- Application Settings -->
 

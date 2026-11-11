@@ -9,7 +9,9 @@ using Daycord.Desktop.Navigation;
 
 namespace Daycord.Desktop.ViewModels;
 
-/// <summary>Persistent calendar state; data is always reloaded from SQLite on activation.</summary>
+/// <summary>
+/// Persistent calendar state; data is reloaded from SQLite on activation.
+/// </summary>
 public sealed partial class CalendarPageViewModel : ObservableObject, IDisposable
 {
     private readonly TaskService _tasks;
@@ -23,6 +25,10 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
     private bool _hasLoaded;
     private Exception? _loadError;
     private CalendarData? _data;
+
+    private IReadOnlyList<CalendarTaskItem> _displayedTasks = [];
+    private IReadOnlyList<CalendarPlanningItem> _displayedPlanned = [];
+    private IReadOnlyList<CalendarWorkItem> _displayedActual = [];
 
     private DateOnly _displayedMonth;
     private DateOnly _selectedDate;
@@ -122,11 +128,14 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
     public bool CanGoPrevious => DisplayedMonth != DateOnly.MinValue;
     public bool CanGoNext => DisplayedMonth.Year != 9999 || DisplayedMonth.Month != 12;
     public bool HasLoadError => _loadError is not null;
-    public bool IsLoaded => _hasLoaded && !IsLoading && !HasLoadError;
+
+    // A same-month refresh must not hide a successfully loaded panel.
+    public bool IsLoaded => _hasLoaded && !HasLoadError;
 
     public bool HasSelectedTasks => SelectedTasks.Count > 0;
     public bool HasSelectedPlanned => SelectedPlanned.Count > 0;
     public bool HasSelectedActual => SelectedActual.Count > 0;
+
     public bool IsSelectedDayEmpty => IsLoaded &&
         !HasSelectedTasks && !HasSelectedPlanned && !HasSelectedActual;
 
@@ -135,6 +144,7 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
 
     public long SelectedPlannedMinutes => _selectedPlannedMinutes;
     public long SelectedActualMinutes => _selectedActualMinutes;
+
     public string SelectedPlannedText => CalendarDurationText.Format(
         SelectedPlannedMinutes, _localization);
     public string SelectedActualText => CalendarDurationText.Format(
@@ -169,7 +179,9 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
         ? string.Empty
         : string.Format(Culture, Text("CalendarLoadFailed"), _loadError.Message);
 
-    /// <summary>Called when Calendar becomes the visible main page or Task Details closes.</summary>
+    /// <summary>
+    /// Called when Calendar becomes visible or Task Details closes.
+    /// </summary>
     public Task ActivateAsync()
     {
         if (_disposed) return Task.CompletedTask;
@@ -194,28 +206,11 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
             .ToArray();
     }
 
+    // Create cells only when the displayed month changes.
     private void BuildDays()
     {
         var offset = ((int)DisplayedMonth.DayOfWeek + 6) % 7;
         var firstDayNumber = DisplayedMonth.DayNumber - offset;
-        var totals = new Dictionary<DateOnly, DayTotals>();
-
-        if (_data is not null)
-        {
-            foreach (var item in _data.Tasks)
-                GetTotals(totals, item.TaskDate).TaskCount++;
-            foreach (var item in _data.PlannedWork)
-            {
-                var day = GetTotals(totals, item.PlannedDate);
-                day.PlannedMinutes = checked(day.PlannedMinutes + item.PlannedMinutes);
-            }
-            foreach (var item in _data.ActualWork)
-            {
-                var day = GetTotals(totals, item.WorkDate);
-                day.ActualMinutes = checked(day.ActualMinutes + item.ActualMinutes);
-            }
-        }
-
         var today = DateOnly.FromDateTime(DateTime.Today);
         var days = new List<CalendarDayViewModel>(42);
 
@@ -227,17 +222,57 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
                 ? DateOnly.FromDayNumber(dayNumber)
                 : null;
 
-            var totalsForDay = date.HasValue && totals.TryGetValue(date.Value, out var value)
-                ? value
-                : new DayTotals();
-
             days.Add(new CalendarDayViewModel(
                 date, DisplayedMonth, SelectedDate, today,
-                totalsForDay.TaskCount, totalsForDay.PlannedMinutes,
-                totalsForDay.ActualMinutes, _localization, SelectDay));
+                0, 0, 0, _localization, SelectDay));
         }
 
         Days = days;
+        OnPropertyChanged(nameof(IsMonthEmpty));
+    }
+
+    // Update indicators without replacing calendar cells.
+    private void UpdateDayIndicators(CalendarData? data)
+    {
+        var totals = new Dictionary<DateOnly, DayTotals>();
+
+        if (data is not null)
+        {
+            foreach (var item in data.Tasks)
+                GetTotals(totals, item.TaskDate).TaskCount++;
+
+            foreach (var item in data.PlannedWork)
+            {
+                var day = GetTotals(totals, item.PlannedDate);
+                day.PlannedMinutes = checked(
+                    day.PlannedMinutes + item.PlannedMinutes);
+            }
+
+            foreach (var item in data.ActualWork)
+            {
+                var day = GetTotals(totals, item.WorkDate);
+                day.ActualMinutes = checked(
+                    day.ActualMinutes + item.ActualMinutes);
+            }
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        foreach (var day in Days)
+        {
+            var values = day.Date is DateOnly date &&
+                         totals.TryGetValue(date, out var found)
+                ? found
+                : null;
+
+            day.UpdateTotals(
+                values?.TaskCount ?? 0,
+                values?.PlannedMinutes ?? 0,
+                values?.ActualMinutes ?? 0);
+
+            day.UpdateToday(today);
+        }
+
         OnPropertyChanged(nameof(IsMonthEmpty));
     }
 
@@ -249,6 +284,7 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
             result = new DayTotals();
             totals.Add(date, result);
         }
+
         return result;
     }
 
@@ -264,51 +300,140 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
         foreach (var day in Days)
             day.IsSelected = day.Date == SelectedDate;
 
-        var tasks = _data?.Tasks.Where(x => x.TaskDate == SelectedDate).ToArray()
-            ?? [];
-        var planned = _data?.PlannedWork.Where(x => x.PlannedDate == SelectedDate).ToArray()
-            ?? [];
-        var actual = _data?.ActualWork.Where(x => x.WorkDate == SelectedDate).ToArray()
-            ?? [];
+        var tasks = _data?.Tasks
+            .Where(x => x.TaskDate == SelectedDate).ToArray() ?? [];
 
-        SelectedTasks = tasks.Select(x => CalendarEntryViewModel.FromTask(
-            x, _localization, OpenTask)).ToArray();
-        SelectedPlanned = planned.Select(x => CalendarEntryViewModel.FromPlanning(
-            x, _localization, OpenTask)).ToArray();
-        SelectedActual = actual.Select(x => CalendarEntryViewModel.FromWork(
-            x, _localization, OpenTask)).ToArray();
+        var planned = _data?.PlannedWork
+            .Where(x => x.PlannedDate == SelectedDate).ToArray() ?? [];
 
-        _selectedPlannedMinutes = planned.Sum(x => (long)x.PlannedMinutes);
-        _selectedActualMinutes = actual.Sum(x => (long)x.ActualMinutes);
+        var actual = _data?.ActualWork
+            .Where(x => x.WorkDate == SelectedDate).ToArray() ?? [];
 
-        OnPropertyChanged(nameof(SelectedPlannedMinutes));
-        OnPropertyChanged(nameof(SelectedActualMinutes));
-        OnPropertyChanged(nameof(SelectedPlannedText));
-        OnPropertyChanged(nameof(SelectedActualText));
-        OnPropertyChanged(nameof(HasSelectedTasks));
-        OnPropertyChanged(nameof(HasSelectedPlanned));
-        OnPropertyChanged(nameof(HasSelectedActual));
+        if (!SameTasks(_displayedTasks, tasks))
+        {
+            SelectedTasks = tasks.Select(x =>
+                CalendarEntryViewModel.FromTask(
+                    x, _localization, OpenTask)).ToArray();
+
+            _displayedTasks = tasks;
+            OnPropertyChanged(nameof(HasSelectedTasks));
+        }
+
+        if (!SamePlanned(_displayedPlanned, planned))
+        {
+            SelectedPlanned = planned.Select(x =>
+                CalendarEntryViewModel.FromPlanning(
+                    x, _localization, OpenTask)).ToArray();
+
+            _displayedPlanned = planned;
+            OnPropertyChanged(nameof(HasSelectedPlanned));
+        }
+
+        if (!SameActual(_displayedActual, actual))
+        {
+            SelectedActual = actual.Select(x =>
+                CalendarEntryViewModel.FromWork(
+                    x, _localization, OpenTask)).ToArray();
+
+            _displayedActual = actual;
+            OnPropertyChanged(nameof(HasSelectedActual));
+        }
+
+        var plannedMinutes = planned.Sum(x => (long)x.PlannedMinutes);
+
+        if (_selectedPlannedMinutes != plannedMinutes)
+        {
+            _selectedPlannedMinutes = plannedMinutes;
+            OnPropertyChanged(nameof(SelectedPlannedMinutes));
+            OnPropertyChanged(nameof(SelectedPlannedText));
+        }
+
+        var actualMinutes = actual.Sum(x => (long)x.ActualMinutes);
+
+        if (_selectedActualMinutes != actualMinutes)
+        {
+            _selectedActualMinutes = actualMinutes;
+            OnPropertyChanged(nameof(SelectedActualMinutes));
+            OnPropertyChanged(nameof(SelectedActualText));
+        }
+
         OnPropertyChanged(nameof(IsSelectedDayEmpty));
     }
+
+    // Compare actual displayed fields so unchanged sections keep their VMs.
+    private static bool SameTasks(
+        IReadOnlyList<CalendarTaskItem> left,
+        IReadOnlyList<CalendarTaskItem> right) =>
+        left.Select(x => (
+            x.TaskId, x.TaskDate, x.TaskNumber, x.TaskTitle,
+            x.StatusId, x.StatusName, x.StatusSystemKey, x.IsCompleted))
+        .SequenceEqual(right.Select(x => (
+            x.TaskId, x.TaskDate, x.TaskNumber, x.TaskTitle,
+            x.StatusId, x.StatusName, x.StatusSystemKey, x.IsCompleted)));
+
+    private static bool SamePlanned(
+        IReadOnlyList<CalendarPlanningItem> left,
+        IReadOnlyList<CalendarPlanningItem> right) =>
+        left.Select(x => (
+            x.Id, x.TaskId, x.PlannedDate, x.PlannedMinutes,
+            x.TaskNumber, x.TaskTitle, x.StatusId,
+            x.StatusName, x.StatusSystemKey, x.IsCompleted))
+        .SequenceEqual(right.Select(x => (
+            x.Id, x.TaskId, x.PlannedDate, x.PlannedMinutes,
+            x.TaskNumber, x.TaskTitle, x.StatusId,
+            x.StatusName, x.StatusSystemKey, x.IsCompleted)));
+
+    private static bool SameActual(
+        IReadOnlyList<CalendarWorkItem> left,
+        IReadOnlyList<CalendarWorkItem> right) =>
+        left.Select(x => (
+            x.Id, x.TaskId, x.WorkDate, x.ActualMinutes,
+            x.WorkDescription, x.Note, x.TaskNumber, x.TaskTitle,
+            x.StatusId, x.StatusName, x.StatusSystemKey, x.IsCompleted))
+        .SequenceEqual(right.Select(x => (
+            x.Id, x.TaskId, x.WorkDate, x.ActualMinutes,
+            x.WorkDescription, x.Note, x.TaskNumber, x.TaskTitle,
+            x.StatusId, x.StatusName, x.StatusSystemKey, x.IsCompleted)));
 
     private void SelectDay(DateOnly date)
     {
         if (_disposed) return;
-        SelectedDate = date;
 
-        if (date.Year != DisplayedMonth.Year || date.Month != DisplayedMonth.Month)
+        if (date.Year != DisplayedMonth.Year ||
+            date.Month != DisplayedMonth.Month)
         {
-            DisplayedMonth = new DateOnly(date.Year, date.Month, 1);
-            _data = null;
-            _hasLoaded = false;
-            BuildDays();
-            UpdateSelectedDay();
-            _ = ReloadAsync();
+            SwitchMonth(
+                new DateOnly(date.Year, date.Month, 1),
+                date);
+            return;
         }
-        else
-        {
-            UpdateSelectedDay();
-        }
+
+        if (SelectedDate == date) return;
+
+        SelectedDate = date;
+        UpdateSelectedDay();
+    }
+
+    private void SwitchMonth(DateOnly month, DateOnly selectedDate)
+    {
+        // Invalidate pending queries before changing the month.
+        ++_loadVersion;
+        _loadCancellation?.Cancel();
+        IsLoading = false;
+
+        // Never display another month's data under a new heading.
+        _data = null;
+        _hasLoaded = false;
+        _loadError = null;
+
+        DisplayedMonth = month;
+        SelectedDate = selectedDate;
+
+        BuildDays();
+        UpdateSelectedDay();
+        NotifyLoadState();
+
+        _ = ReloadAsync();
     }
 
     private void OpenTask(Guid taskId)
@@ -329,45 +454,40 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
 
     private void MoveMonth(int delta)
     {
-        if (_disposed || (delta < 0 && !CanGoPrevious) ||
-            (delta > 0 && !CanGoNext)) return;
+        if (_disposed ||
+            (delta < 0 && !CanGoPrevious) ||
+            (delta > 0 && !CanGoNext))
+            return;
 
         var month = DisplayedMonth.AddMonths(delta);
-        var day = Math.Min(SelectedDate.Day,
+        var day = Math.Min(
+            SelectedDate.Day,
             DateTime.DaysInMonth(month.Year, month.Month));
-        DisplayedMonth = month;
-        SelectedDate = new DateOnly(month.Year, month.Month, day);
 
-        _data = null;
-        _hasLoaded = false;
-        BuildDays();
-        UpdateSelectedDay();
-        _ = ReloadAsync();
+        SwitchMonth(
+            month,
+            new DateOnly(month.Year, month.Month, day));
     }
 
     [RelayCommand]
     private void GoToToday()
     {
         if (_disposed) return;
+
         var today = DateOnly.FromDateTime(DateTime.Today);
         var month = new DateOnly(today.Year, today.Month, 1);
-        var changedMonth = month != DisplayedMonth;
-        DisplayedMonth = month;
-        SelectedDate = today;
 
-        if (changedMonth)
+        if (month != DisplayedMonth)
         {
-            _data = null;
-            _hasLoaded = false;
-            BuildDays();
-            UpdateSelectedDay();
-            _ = ReloadAsync();
+            SwitchMonth(month, today);
+            return;
         }
-        else
-        {
-            BuildDays();
-            UpdateSelectedDay();
-        }
+
+        SelectedDate = today;
+        UpdateSelectedDay();
+
+        foreach (var day in Days)
+            day.UpdateToday(today);
     }
 
     [RelayCommand]
@@ -377,41 +497,53 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
     {
         if (_disposed || !_isActive) return;
 
-        _loadCancellation?.Cancel();
+        var previous = _loadCancellation;
         var source = new CancellationTokenSource();
+
         _loadCancellation = source;
         var requestVersion = ++_loadVersion;
 
+        previous?.Cancel();
+
+        // Keep already loaded data while refreshing this same month.
         _loadError = null;
-        _hasLoaded = false;
-        _data = null;
         IsLoading = true;
         NotifyLoadState();
-        BuildDays();
-        UpdateSelectedDay();
 
         var offset = ((int)DisplayedMonth.DayOfWeek + 6) % 7;
         var firstDayNumber = DisplayedMonth.DayNumber - offset;
-        var startDayNumber = Math.Max(firstDayNumber, DateOnly.MinValue.DayNumber);
-        var endDayNumber = Math.Min(firstDayNumber + 41, DateOnly.MaxValue.DayNumber);
+        var startDayNumber = Math.Max(
+            firstDayNumber,
+            DateOnly.MinValue.DayNumber);
+        var endDayNumber = Math.Min(
+            firstDayNumber + 41,
+            DateOnly.MaxValue.DayNumber);
+
         var from = DateOnly.FromDayNumber(startDayNumber);
         var to = DateOnly.FromDayNumber(endDayNumber);
 
         try
         {
-            // SQLite/Dapper work must not run on the Avalonia UI thread.
             var data = await Task.Run(
-                () => _tasks.GetCalendarDataAsync(from, to, source.Token),
+                () => _tasks.GetCalendarDataAsync(
+                    from, to, source.Token),
                 source.Token);
 
-            if (!IsCurrentLoad(source, requestVersion)) return;
+            if (!IsCurrentLoad(source, requestVersion))
+                return;
 
             _data = data;
-            _hasLoaded = true;
-            BuildDays();
+
+            UpdateDayIndicators(data);
             UpdateSelectedDay();
+
+            _hasLoaded = true;
         }
-        catch (OperationCanceledException) when (source.IsCancellationRequested) { }
+        catch (OperationCanceledException)
+            when (source.IsCancellationRequested)
+        {
+            // Replaced by a newer query or canceled on navigation.
+        }
         catch (Exception ex)
         {
             if (IsCurrentLoad(source, requestVersion))
@@ -419,7 +551,9 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
                 _loadError = ex;
                 _hasLoaded = false;
                 _data = null;
-                BuildDays();
+
+                // Failed refreshes must not masquerade as fresh data.
+                UpdateDayIndicators(null);
                 UpdateSelectedDay();
             }
         }
@@ -431,12 +565,17 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
                 IsLoading = false;
                 NotifyLoadState();
             }
+
             source.Dispose();
         }
     }
 
-    private bool IsCurrentLoad(CancellationTokenSource source, int version) =>
-        !_disposed && _isActive && _loadVersion == version &&
+    private bool IsCurrentLoad(
+        CancellationTokenSource source,
+        int version) =>
+        !_disposed &&
+        _isActive &&
+        _loadVersion == version &&
         ReferenceEquals(_loadCancellation, source);
 
     private void NotifyLoadState()
@@ -448,37 +587,69 @@ public sealed partial class CalendarPageViewModel : ObservableObject, IDisposabl
         OnPropertyChanged(nameof(IsSelectedDayEmpty));
     }
 
-    private void OnLocalizationChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnLocalizationChanged(
+        object? sender,
+        PropertyChangedEventArgs e)
     {
-        if (_disposed || (!string.IsNullOrEmpty(e.PropertyName) &&
-            e.PropertyName != nameof(ILocalizationService.CurrentLanguage))) return;
+        if (_disposed ||
+            (!string.IsNullOrEmpty(e.PropertyName) &&
+             e.PropertyName != nameof(
+                 ILocalizationService.CurrentLanguage)))
+            return;
 
         RefreshWeekdayLabels();
-        foreach (var day in Days) day.RefreshLocalization();
-        foreach (var item in SelectedTasks) item.RefreshLocalization();
-        foreach (var item in SelectedPlanned) item.RefreshLocalization();
-        foreach (var item in SelectedActual) item.RefreshLocalization();
+
+        foreach (var day in Days)
+            day.RefreshLocalization();
+
+        foreach (var item in SelectedTasks)
+            item.RefreshLocalization();
+
+        foreach (var item in SelectedPlanned)
+            item.RefreshLocalization();
+
+        foreach (var item in SelectedActual)
+            item.RefreshLocalization();
 
         string[] names =
         [
-            nameof(TitleLabel), nameof(MonthTitle), nameof(SelectedDayTitle),
-            nameof(TodayLabel), nameof(PreviousMonthLabel), nameof(NextMonthLabel),
-            nameof(SelectedDayLabel), nameof(TasksLabel), nameof(PlannedLabel),
-            nameof(ActualLabel), nameof(TotalPlannedLabel), nameof(TotalActualLabel),
-            nameof(SelectedPlannedText), nameof(SelectedActualText),
-            nameof(LoadingLabel), nameof(RetryLabel), nameof(NoEntriesLabel),
-            nameof(NoMonthDataLabel), nameof(NoTasksLabel), nameof(NoPlannedLabel),
-            nameof(NoActualLabel), nameof(OpenTaskLabel), nameof(ErrorText)
+            nameof(TitleLabel),
+            nameof(MonthTitle),
+            nameof(SelectedDayTitle),
+            nameof(TodayLabel),
+            nameof(PreviousMonthLabel),
+            nameof(NextMonthLabel),
+            nameof(SelectedDayLabel),
+            nameof(TasksLabel),
+            nameof(PlannedLabel),
+            nameof(ActualLabel),
+            nameof(TotalPlannedLabel),
+            nameof(TotalActualLabel),
+            nameof(SelectedPlannedText),
+            nameof(SelectedActualText),
+            nameof(LoadingLabel),
+            nameof(RetryLabel),
+            nameof(NoEntriesLabel),
+            nameof(NoMonthDataLabel),
+            nameof(NoTasksLabel),
+            nameof(NoPlannedLabel),
+            nameof(NoActualLabel),
+            nameof(OpenTaskLabel),
+            nameof(ErrorText)
         ];
-        foreach (var name in names) OnPropertyChanged(name);
+
+        foreach (var name in names)
+            OnPropertyChanged(name);
     }
 
     public void Dispose()
     {
         if (_disposed) return;
+
         _disposed = true;
         _localization.PropertyChanged -= OnLocalizationChanged;
-        _loadVersion++;
+
+        ++_loadVersion;
         _loadCancellation?.Cancel();
         _loadCancellation = null;
         _isActive = false;

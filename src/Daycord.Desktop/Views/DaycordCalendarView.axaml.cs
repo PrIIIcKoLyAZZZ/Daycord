@@ -1,9 +1,12 @@
 using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace Daycord.Desktop.Views;
 
@@ -15,6 +18,7 @@ namespace Daycord.Desktop.Views;
 public partial class DaycordCalendarView : UserControl
 {
     private readonly Popup _popup;
+    private readonly Border _calendarSurface;
     private readonly TextBlock _monthTitle;
     private readonly UniformGrid _weekdays;
     private readonly UniformGrid _days;
@@ -30,15 +34,36 @@ public partial class DaycordCalendarView : UserControl
     private CultureInfo _culture =
         CultureInfo.GetCultureInfo("en");
 
+    // Only the caller's calendar button is a focus return target.
+    // Do not restore focus for light dismiss, navigation or other
+    // programmatic closes: doing so would steal it from the user.
+    private Control? _returnFocusTarget;
+    private int _focusVersion;
+
     public DaycordCalendarView()
     {
         AvaloniaXamlLoader.Load(this);
 
         _popup = FindRequired<Popup>("CalendarPopup");
+        _calendarSurface = FindRequired<Border>("CalendarSurface");
         _monthTitle = FindRequired<TextBlock>("MonthTitle");
         _weekdays = FindRequired<UniformGrid>("WeekdayHeader");
         _days = FindRequired<UniformGrid>("CalendarDaysGrid");
         _todayButton = FindRequired<Button>("TodayButton");
+
+        // Popup content lives in its own popup tree. Handle Escape there,
+        // not in the host View or a global keyboard listener.
+        _calendarSurface.AddHandler(
+            InputElement.KeyDownEvent,
+            OnPopupKeyDown,
+            RoutingStrategies.Tunnel);
+
+        // Light-dismiss does not call our public Close() method.
+        _popup.Closed += (_, _) =>
+        {
+            _focusVersion++;
+            _returnFocusTarget = null;
+        };
 
         DetachedFromVisualTree += (_, _) => Close();
     }
@@ -60,6 +85,14 @@ public partial class DaycordCalendarView : UserControl
 
         Close();
 
+        // The last button in each existing date segment opens the
+        // calendar (Task Details also has a preceding Clear button).
+        _returnFocusTarget = placementTarget
+            .GetVisualDescendants()
+            .OfType<Button>()
+            .LastOrDefault(button =>
+                button.IsVisible && button.IsEnabled);
+
         _popup.PlacementTarget = placementTarget;
         _popup.Placement = placement;
 
@@ -74,6 +107,17 @@ public partial class DaycordCalendarView : UserControl
         Render();
 
         _popup.IsOpen = true;
+
+        // The popup is attached and laid out asynchronously. Focus a
+        // day after opening so Tab/Shift+Tab and Enter/Space work.
+        var version = _focusVersion;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (IsOpen && version == _focusVersion)
+            {
+                FocusDay(_selectedDate);
+            }
+        }, DispatcherPriority.Input);
     }
 
     /// <summary>
@@ -91,13 +135,81 @@ public partial class DaycordCalendarView : UserControl
 
         if (IsOpen)
         {
+            // Rendering replaces day buttons; keep keyboard focus on
+            // the same date when a live localization refresh occurs.
+            DateTime? focusedDay = null;
+
+            foreach (var button in _days.Children.OfType<Button>())
+            {
+                if (button.IsFocused &&
+                    button.Tag is DateTime focusedButtonDate)
+                {
+                    focusedDay = focusedButtonDate;
+                    break;
+                }
+            }
+
             Render();
+
+            if (focusedDay is { } day)
+            {
+                var version = _focusVersion;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (IsOpen && version == _focusVersion)
+                    {
+                        FocusDay(day);
+                    }
+                }, DispatcherPriority.Input);
+            }
         }
     }
 
     public void Close()
     {
+        _focusVersion++;
         _popup.IsOpen = false;
+        _returnFocusTarget = null;
+    }
+
+    private void CloseAndRestoreFocus()
+    {
+        var target = _returnFocusTarget;
+        Close();
+
+        if (target is { IsVisible: true, IsEnabled: true })
+        {
+            target.Focus(NavigationMethod.Tab);
+        }
+    }
+
+    private void OnPopupKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || e.Key != Key.Escape || !IsOpen)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        CloseAndRestoreFocus();
+    }
+
+    private void FocusDay(DateTime? preferredDate)
+    {
+        Button? FindDay(DateTime day) => _days.Children
+            .OfType<Button>()
+            .FirstOrDefault(button =>
+                button.Tag is DateTime candidate &&
+                candidate.Date == day.Date);
+
+        var firstOfMonth = _visibleMonth;
+        var target = (preferredDate is { } selected
+                          ? FindDay(selected)
+                          : null)
+                     ?? FindDay(DateTime.Today)
+                     ?? FindDay(firstOfMonth);
+
+        target?.Focus(NavigationMethod.Tab);
     }
 
     private T FindRequired<T>(string name)
@@ -270,7 +382,7 @@ public partial class DaycordCalendarView : UserControl
 
     private void Select(DateTime date)
     {
-        Close();
+        CloseAndRestoreFocus();
 
         DateSelected?.Invoke(
             this,

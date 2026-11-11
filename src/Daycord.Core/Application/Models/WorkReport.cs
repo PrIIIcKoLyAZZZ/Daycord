@@ -27,7 +27,8 @@ public sealed record WorkReportColumn(
 public enum WorkReportRowSource
 {
     PlanningPeriod = 1,
-    ActualWithoutPlanning = 2
+    ActualWithoutPlanning = 2,
+    TaskDateOnly = 3
 }
 
 /// <summary>
@@ -38,7 +39,8 @@ public enum WorkReportRowSource
 /// to one planning row only.
 ///
 /// WorkEntries without planning on the same date are
-/// represented separately.
+/// represented separately. A TaskDate-only row represents
+/// a dated task with no recorded planning or work.
 /// </summary>
 public sealed record WorkReportRow(
     DateOnly Date,
@@ -144,7 +146,8 @@ public sealed class WorkReport
     public DateOnly To { get; }
 
     /// <summary>
-    /// All prepared rows, including actual-only rows.
+    /// All prepared rows, including actual-only
+    /// and TaskDate-only rows.
     /// </summary>
     public IReadOnlyList<WorkReportRow> Rows { get; }
 
@@ -166,8 +169,9 @@ public sealed class WorkReport
     /// Actual-only rows are included when the report exposes
     /// actual time or descriptions of recorded work.
     ///
-    /// The standard planned-time report contains only
-    /// PlanningPeriod rows.
+    /// TaskDate-only rows require a visible task identifier.
+    /// Date alone is insufficient: multiple dated tasks may
+    /// share the same date, and Excel merges date cells.
     /// </summary>
     public IReadOnlyList<WorkReportRow> GetRowsForColumns(
         IReadOnlyCollection<WorkReportColumn> columns)
@@ -180,16 +184,39 @@ public sealed class WorkReport
                     WorkReportField.ActualTime or
                     WorkReportField.WorkDescription);
 
-        if (includesActualData)
-        {
-            return Rows;
-        }
-
         return Rows
-            .Where(
-                static row =>
-                    row.Source ==
-                    WorkReportRowSource.PlanningPeriod)
+            .Where(row => row.Source switch
+            {
+                WorkReportRowSource.PlanningPeriod => true,
+
+                WorkReportRowSource.ActualWithoutPlanning =>
+                    includesActualData,
+
+                WorkReportRowSource.TaskDateOnly =>
+                    HasVisibleTaskIdentity(row, columns),
+
+                _ => false
+            })
             .ToArray();
+    }
+
+    private static bool HasVisibleTaskIdentity(
+        WorkReportRow row,
+        IReadOnlyCollection<WorkReportColumn> columns)
+    {
+        return columns.Any(column => column.Field switch
+        {
+            WorkReportField.TaskNumber =>
+                !string.IsNullOrWhiteSpace(row.TaskNumber),
+
+            WorkReportField.TaskTitle =>
+                !string.IsNullOrWhiteSpace(row.TaskTitle),
+
+            WorkReportField.TaskShortDescription =>
+                !string.IsNullOrWhiteSpace(
+                    row.TaskShortDescription),
+
+            _ => false
+        });
     }
 }

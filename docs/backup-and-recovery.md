@@ -1,479 +1,417 @@
 # Daycord Backup and Recovery
 
-**Version:** 0.1.0
+**Target version:** 0.1.1
 
-## 1. Purpose
+## 1. Overview
 
-This document describes the technical implementation of SQLite backup and restoration in Daycord.
+Daycord protects its local SQLite database through several independent mechanisms:
 
-The backup subsystem is designed to preserve user data while allowing:
-
-- User-created database backups.
-- Validation of selected backup files.
-- Deferred restoration after application restart.
-- Automatic safety backups before restoration.
-- Recovery from certain interrupted operations.
-- Compatibility with supported older database migrations.
-
-This document describes implemented mechanisms, not a guarantee that every possible filesystem or hardware failure can be recovered from.
-
-## 2. Core Principles
-
-The implementation follows these rules:
-
-1. Never replace the active SQLite database during normal application use.
-2. Create database backups through SQLite-aware snapshot operations.
-3. Validate snapshots before making them available for restoration.
-4. Do not modify the user-selected source backup.
-5. Stage a restoration before restarting the application.
-6. Create a safety backup before changing the working database.
-7. Track restoration progress in a durable journal.
-8. Validate the restored database before enabling normal application features.
-9. Attempt rollback if installation or initialization fails.
-10. Retain safety backups rather than deleting them automatically.
-
-Destructive testing must use an isolated test environment.
-
-## 3. Components
-
-### 3.1 Application Contract
-
-```text
-src/Daycord.Core/Application/Contracts/IUserBackupService.cs
-```
-
-`IUserBackupService` defines:
-
-```csharp
-Task CreateBackupAsync(
-    string destinationPath,
-    CancellationToken cancellationToken = default);
-
-Task<BackupValidationResult> ValidateBackupAsync(
-    string sourcePath,
-    CancellationToken cancellationToken = default);
-
-Task PrepareRestoreAsync(
-    string sourcePath,
-    CancellationToken cancellationToken = default);
-```
-
-The validation result uses the statuses:
-
-- `Valid`
-- `InvalidFile`
-- `Corrupted`
-- `IncompatibleSchema`
-
-### 3.2 Infrastructure Components
-
-| Component | Responsibility |
+| Mechanism | Purpose |
 |---|---|
-| `UserBackupService` | User backup creation, validation, and restore preparation |
-| `SqliteSnapshotIO` | SQLite snapshot creation and durable file copying |
-| `SqliteSnapshotValidator` | Integrity, schema, and migration compatibility checks |
-| `PendingRestoreState` | Durable restore journal model |
-| `PendingRestoreCoordinator` | Startup restoration and rollback |
-| `DatabaseBackupService` | Safety backup for schema upgrades |
-| `AppDataPaths` | Application database and internal directories |
+| User Backup | Creates a database backup at a user-selected location |
+| Automatic Backup | Maintains recent verified database snapshots |
+| User Restore | Restores a backup selected through Settings |
+| Emergency Recovery | Attempts recovery from supported SQLite corruption |
+| Schema Upgrade Backup | Preserves the database before schema migrations |
 
-### 3.3 Desktop Components
+These mechanisms have different responsibilities and must not be treated as interchangeable.
 
-The user-facing workflow is implemented through:
+**Important:** Restoring a backup returns the database to the state captured in that backup. Changes made afterward may be lost.
 
-```text
-src/Daycord.Desktop/ViewModels/BackupSettingsViewModel.cs
-src/Daycord.Desktop/Views/BackupSettingsView.axaml
-src/Daycord.Desktop/Views/BackupSettingsView.axaml.cs
-```
+No backup or recovery mechanism guarantees preservation of every recent operation.
 
-The startup restoration sequence is coordinated by:
+## 2. Backup Storage
 
-```text
-src/Daycord.Desktop/App.axaml.cs
-```
+Application data paths are managed by `AppDataPaths`.
 
-The backup controls are displayed under application Settings.
+The default application directory is resolved using `Environment.SpecialFolder.LocalApplicationData`.
 
-## 4. Application Data Paths
+Typical locations:
 
-`AppDataPaths` determines the local application data directory.
-
-The main database is:
+**macOS:**
 
 ```text
-Daycord/daycord.db
+~/Library/Application Support/Daycord/
 ```
 
-The internal backup layout is:
+**Windows:**
+
+```text
+%LOCALAPPDATA%\Daycord\
+```
+
+Internal storage:
 
 ```text
 Daycord/
 ├── daycord.db
-├── .daycord-instance.lock
 ├── Backups/
+│   ├── Automatic/
 │   ├── SchemaUpgrades/
-│   └── BeforeRestore/
-└── RestoreStaging/
-    ├── pending-restore.json
-    └── pending-<operation-id>.db
+│   ├── BeforeRestore/
+│   └── Recovery/
+├── RestoreStaging/
+│   └── pending-restore.json
+└── Diagnostics/
+    └── recovery-events.jsonl
 ```
 
-The instance lock file and restoration staging files are internal implementation details.
+Directories and files are created as needed.
 
-The application may also create temporary files during backup, validation, or installation.
+| Directory | Purpose |
+|---|---|
+| `Automatic` | Rotating automatic database snapshots |
+| `SchemaUpgrades` | Backups created before schema migrations |
+| `BeforeRestore` | Safety backups for normal restoration |
+| `Recovery` | Preserved original database files and quarantine artifacts |
+| `RestoreStaging` | Staged snapshots and restore journal |
+| `Diagnostics` | Startup and recovery failure diagnostics |
 
-Do not manually remove these files while the application is running.
+User-created backups are saved to a location selected through the system file picker.
 
-### 4.1 User Backups
+Application-managed directories must not be manually modified while Daycord is running or a restore is pending.
 
-User-created backups are saved to the destination selected in the file picker.
+## 3. SQLite Snapshot Creation
 
-They do not have to be stored in Daycord's internal data directory.
+Daycord creates consistent database snapshots using the SQLite Online Backup API.
 
-The normal filename suggestion is:
+The shared implementation is:
+
+`SqliteSnapshotIO.CreateStandaloneSnapshot()`
+
+The snapshot process:
+
+1. Opens the source database through SQLite.
+2. Copies a consistent database state into a temporary destination.
+3. Includes committed changes held in the source WAL.
+4. Converts the destination to SQLite DELETE journal mode.
+5. Requires the completed snapshot to have no WAL, SHM, or journal sidecars.
+6. Flushes the standalone database file before publication.
+
+A snapshot is not considered usable merely because its file was created successfully.
+
+Its integrity and compatibility must also be verified.
+
+### Snapshot Validation
+
+`SqliteSnapshotValidator` performs read-only validation.
+
+Checks include:
+
+- SQLite `PRAGMA integrity_check`.
+- SQLite `PRAGMA foreign_key_check`.
+- Required tables, indexes, and columns.
+- Recognized migration history.
+- Migration names and SHA-256 checksums.
+- Required built-in task statuses.
+- Default report preset and report settings.
+- Application settings compatibility.
+
+The validator accepts supported older migration-history prefixes when they match the embedded migrations.
+
+Missing migrations are applied later by `MigrationRunner` during normal initialization.
+
+An invalid or incompatible backup cannot be installed as a valid recovery candidate.
+
+## 4. User Backup
+
+User backups are created through **Settings → Backup & Restore**.
+
+### Creating a Backup
+
+1. Open Settings.
+2. Select Create backup.
+3. Choose a local destination for the `.db` file.
+4. Save the backup.
+5. Check the operation status displayed by Daycord.
+
+Daycord creates and validates the snapshot before publishing the selected destination file.
+
+The Desktop layer:
+
+- Uses a temporary, validated snapshot.
+- Rejects destinations inside the protected application data directory.
+- Rejects unsafe destination redirects.
+- Copies the snapshot to a temporary file beside the destination.
+- Verifies the copied file using SHA-256.
+- Publishes the completed backup through a same-directory file move.
+
+Existing backup files may be replaced after the user's save or overwrite decision.
+
+The original destination is not intentionally replaced before the new file has been completely copied and verified.
+
+### Recommendations
+
+Keep independent backups outside Daycord's application data directory.
+
+Store important copies on another device or in a trusted backup location.
+
+User backups are especially recommended before application updates or database restoration.
+
+## 5. Automatic Backup
+
+`AutomaticBackupService` maintains up to **three published automatic SQLite snapshots**.
+
+The backup directory is:
 
 ```text
-Daycord-Backup-yyyy-MM-dd-HHmmss.db
+Backups/Automatic/
 ```
 
-### 4.2 Schema Upgrade Backups
-
-Schema upgrade backups are placed under:
+Published files follow this naming pattern:
 
 ```text
-Backups/SchemaUpgrades/
+daycord-auto-<UTC timestamp>-<identifier>.db
 ```
 
-They are created by `DatabaseBackupService` for recognized schema upgrades.
+### Backup Scheduling
 
-### 4.3 Pre-Restore Safety Backups
+Automatic backup activity is coordinated by:
 
-Pre-restore safety backups are placed under:
+- `DatabaseChangeTracker`
+- `AutomaticBackupScheduler`
+- `AutomaticBackupService`
+
+`DatabaseChangeTracker` records successfully committed application changes.
+
+`AutomaticBackupScheduler` checks for pending changes:
+
+- After application navigation between sections.
+- Periodically during an active session.
+- During normal application shutdown.
+
+The periodic scheduler checks once per minute.
+
+Ordinary automatic backup attempts have a minimum interval of two minutes after the latest published backup.
+
+Startup backup initialization and the final shutdown attempt can bypass this interval.
+
+These rules do not guarantee an immediate backup after every user action.
+
+### Detecting Changes
+
+Tracked repositories notify `DatabaseChangeTracker` after successfully completed write operations.
+
+The tracker maintains an in-memory revision counter.
+
+If the application has no unbacked changes, navigation checks do not need to open or inspect the database files.
+
+The backup service captures the revision before creating a snapshot.
+
+Changes committed after that captured revision remain pending, even if they occur while a snapshot is being created.
+
+### Publication and Rotation
+
+The automatic backup service:
+
+1. Checks whether a new backup is required.
+2. Creates a temporary standalone SQLite snapshot.
+3. Validates the temporary snapshot.
+4. Avoids publishing a duplicate when its content matches the latest available backup.
+5. Publishes the verified snapshot.
+6. Verifies the published snapshot.
+7. Updates the tracked backup revision.
+8. Removes older published backups beyond the retention limit.
+
+The newest existing snapshot is inspected during backup-service initialization.
+
+Older snapshots are not repeatedly revalidated during routine navigation. They are validated when considered for emergency recovery.
+
+A failed new snapshot does not intentionally replace the previously published backups.
+
+**Limitations:**
+
+- Backups are scheduled, not synchronous with every write.
+- Abrupt termination can prevent a pending snapshot from being created.
+- A normal shutdown attempts to flush remaining changes, but failure is still possible.
+- Automatic copies are stored within the same application data directory and do not protect against loss of that entire directory or device.
+
+Automatic backups supplement, rather than replace, independent user backups.
+
+## 6. User Restore
+
+User Restore is initiated through Settings.
+
+### Preparing Restoration
+
+1. Open Settings → Backup & Restore.
+2. Choose a backup file.
+3. Allow Daycord to validate it.
+4. Review the confirmation warning.
+5. Confirm the operation.
+6. Close and restart Daycord.
+
+The selected source is copied into private staging for validation.
+
+After confirmation, Daycord independently recreates and validates the staged snapshot.
+
+A SHA-256 checksum and restore journal are recorded.
+
+The running database is not replaced during the Settings operation.
+
+### Startup Restoration
+
+`PendingRestoreCoordinator` applies the prepared operation during the next application startup.
+
+The application first obtains an exclusive instance lock.
+
+For a normal restore, the coordinator:
+
+1. Validates the staged snapshot and its checksum.
+2. Preserves the original database file set in a raw archive.
+3. Creates a verified safety backup of the current database.
+4. Prepares the active database for replacement.
+5. Installs the staged snapshot.
+6. Validates the installed database.
+7. Allows schema and application settings initialization.
+8. Completes the restore only after successful initialization.
+
+A safety backup is retained in:
 
 ```text
 Backups/BeforeRestore/
 ```
 
-Their filenames follow the pattern:
+The original raw files are preserved separately in:
 
 ```text
-daycord-before-restore-<UTC timestamp>-<GUID>.db
+Backups/Recovery/
 ```
 
-These copies are retained after successful restoration and rollback.
+### Normal Restore Failure
 
-## 5. SQLite Backup API
+If installation or subsequent initialization fails, Daycord uses the recorded safety backup for a protected rollback when the required recovery artifacts are valid.
 
-SQLite databases may use write-ahead logging (WAL).
+The rollback process:
 
-When WAL is active, some recent transactions may reside in a WAL file rather than the main database file.
+- Validates the safety backup and archived references.
+- Records the rollback phase.
+- Moves the current SQLite file set into quarantine.
+- Reinstalls the verified safety snapshot.
+- Validates the restored database before clearing the journal.
 
-Therefore, directly copying a running `daycord.db` file is not a reliable backup strategy.
+An interrupted or ambiguous restore must not silently continue normal startup.
 
-Daycord uses the SQLite online backup API through:
+## 7. Emergency Recovery
 
-```csharp
-SqliteConnection.BackupDatabase(...)
-```
+Emergency Recovery is designed for eligible physical corruption of the active SQLite database.
 
-The implementation is centralized in:
+It is automatically considered during startup when schema initialization fails with a recognized SQLite corruption error.
 
-```text
-SqliteSnapshotIO.CreateStandaloneSnapshot
-```
+Supported primary SQLite error codes include:
 
-### 5.1 Snapshot Creation
-
-The snapshot operation:
-
-1. Opens the source SQLite database using a read-only connection.
-2. Creates a destination SQLite database.
-3. Copies the database through the SQLite backup API.
-4. Converts the destination journal mode to `DELETE`.
-5. Closes the database connections.
-6. Confirms that no SQLite sidecar files remain.
-
-A complete snapshot is represented by a standalone SQLite `.db` file.
-
-### 5.2 Sidecar Validation
-
-The snapshot implementation checks for:
-
-```text
--wal
--shm
--journal
-```
-
-If sidecar files remain when a standalone snapshot is required, the operation fails rather than publishing an uncertain copy.
-
-### 5.3 Copying Completed Snapshots
-
-After a database snapshot has been finalized and validated, Daycord may copy the completed file through a durable file-copy operation.
-
-This must not be confused with copying the active SQLite database.
-
-`SqliteSnapshotIO.CopyDurably` is used for copying previously created standalone snapshots during recovery.
-
-## 6. Creating a User Backup
-
-The user-facing operation begins in Settings.
-
-The sequence is:
-
-```text
-Settings
-   |
-   v
-Create backup
-   |
-   v
-Create temporary SQLite snapshot
-   |
-   v
-Validate snapshot
-   |
-   v
-Open Save File Picker
-   |
-   v
-Write temporary output at destination
-   |
-   v
-Compare SHA-256 checksums
-   |
-   v
-Publish final backup file
-```
-
-### 6.1 Temporary Snapshot
-
-The Desktop layer first requests a validated backup in the application's private staging directory.
-
-This ensures that the destination file picker is not used to write an incomplete SQLite database.
-
-### 6.2 Destination Validation
-
-Before saving, the Desktop layer checks that:
-
-- The destination is a local filesystem path.
-- The filename has the `.db` extension.
-- The directory is available.
-- The destination is not a symbolic link.
-- The destination is outside Daycord's protected internal data directory.
-
-The code resolves directory symlinks to prevent a destination from indirectly pointing into protected application storage.
-
-### 6.3 Atomic Publication
-
-The Desktop layer writes the snapshot into a temporary file in the destination directory.
-
-It calculates and compares SHA-256 hashes before publishing the final file.
-
-Publication uses a same-directory file move, allowing the final name to appear only after the output contents have been written and verified.
-
-If the user has approved overwriting an existing backup, the final move can replace it.
-
-### 6.4 Cancellation
-
-If the user cancels the file picker, no final backup file is published.
-
-Temporary files are cleaned up as part of the operation.
-
-### 6.5 Concurrent Operations
-
-`UserBackupService` uses a semaphore to reject overlapping backup or restore operations.
-
-The UI also prevents conflicting backup actions while an operation is active.
-
-## 7. Validating a Backup
-
-A backup must pass validation before it can be prepared for restoration.
-
-The service does not run validation or migrations directly against the user-selected backup.
-
-Instead, it creates a separate snapshot in private staging.
-
-The validator works against that snapshot.
-
-### 7.1 File Integrity
-
-Validation runs:
-
-```sql
-PRAGMA integrity_check;
-```
-
-The expected result is:
-
-```text
-ok
-```
-
-It also runs:
-
-```sql
-PRAGMA foreign_key_check;
-```
-
-The expected result is no rows.
-
-A failure indicates a corrupted or inconsistent snapshot.
-
-### 7.2 Required Schema
-
-The validator checks for the expected Daycord schema.
-
-Required core tables include:
-
-- `__SchemaMigrations`
-- `TaskStatuses`
-- `Tasks`
-- `PlanningPeriods`
-- `WorkEntries`
-- `ReportPresets`
-- `ReportSettings`
-
-For migration 002 databases, AppSettings is also required.
-
-The validator checks required indexes and columns.
-
-A generic SQLite file containing unrelated tables is not accepted as a Daycord backup.
-
-### 7.3 Migration History
-
-Validation verifies the migration history against embedded migration resources.
-
-Checks include:
-
-- Known migration versions.
-- Correct migration order.
-- Exact migration filenames.
-- SHA-256 checksums.
-- Valid UTC migration timestamps.
-
-A backup with modified or unknown migration history is not accepted.
-
-### 7.4 System Data
-
-Validation checks the identity and completion semantics of the built-in task statuses.
-
-It also validates the built-in report preset and the active report settings relationship.
-
-For databases containing migration 002, it checks the AppSettings structure and persisted values.
-
-### 7.5 Validation Results
-
-| Status | Meaning |
+| Code | Meaning |
 |---|---|
-| `Valid` | Supported and internally consistent Daycord database |
-| `InvalidFile` | Missing or invalid file |
-| `Corrupted` | SQLite integrity or foreign key validation failure |
-| `IncompatibleSchema` | Unsupported or inconsistent Daycord schema |
+| `SQLITE_CORRUPT` (11) | Database corruption |
+| `SQLITE_NOTADB` (26) | File is not a valid SQLite database |
 
-A validation result is meaningful only for the actual file contents examined at that time.
+This mechanism does not automatically handle every database failure.
 
-The service therefore validates the source again during restore preparation.
+For example, migration checksum mismatches, unknown migration histories, permission errors, and general filesystem failures are not automatically treated as recoverable corruption.
 
-## 8. Backup Version Compatibility
+### Selecting a Recovery Backup
 
-Daycord 0.1.0 contains two migrations:
+`AutomaticRecoveryCandidateSelector` searches the automatic backup directory.
 
-```text
-001_InitialSchema.sql
-002_ApplicationSettings.sql
-```
+Candidates are considered from newest to oldest.
 
-The validator supports a compatible prefix of the known migration history.
+Each candidate must:
 
-Therefore, a valid database containing migration 001 can be accepted even though it does not yet contain AppSettings.
+- Match the expected automatic backup filename.
+- Be an ordinary file rather than a redirected filesystem entry.
+- Have no SQLite sidecar files.
+- Pass database integrity and compatibility validation.
 
-After restoration, normal database initialization can apply migration 002.
+If the newest candidate is invalid, an older valid candidate may be selected.
 
-### 8.1 Migration 001 Backup
+If no suitable backup exists, recovery is not prepared.
 
-A migration 001 backup:
+### Recovery Process
 
-- Contains the original application schema.
-- Does not contain the AppSettings table.
-- Must have valid migration history.
-- Must pass integrity and schema checks.
+An eligible recovery operation follows these steps:
 
-After installation, the migration runner applies the missing AppSettings migration.
+1. Detect a supported SQLite corruption condition.
+2. Find a valid automatic backup.
+3. Stage and verify the selected snapshot.
+4. Record an emergency restore journal.
+5. Preserve the original database and existing SQLite sidecars.
+6. Move the damaged active file set into quarantine.
+7. Install the verified snapshot.
+8. Validate the installed database.
+9. Complete schema and application settings initialization.
+10. Finalize the recovery journal.
+11. Display the recovery-completed window.
 
-### 8.2 Migration 002 Backup
+The recovery-completed window provides a Restart action.
 
-A migration 002 backup must contain the application settings schema and valid persisted settings.
+Successful recovery is reported only after the required initialization and finalization steps have completed.
 
-Application settings are loaded from the restored database.
+### Preserving Damaged Data
 
-### 8.3 Unsupported Versions
+`RawDatabaseRecoveryArchive` preserves the original SQLite files byte-for-byte.
 
-Backups with unknown or incompatible migration versions are rejected.
-
-Do not manually edit migration history or disable SHA-256 verification to force compatibility.
-
-## 9. Preparing a Restoration
-
-Restoration preparation occurs while Daycord is running.
-
-It does not replace the live database.
-
-The sequence is:
+Possible files include:
 
 ```text
-Choose backup file
-        |
-        v
-Copy selected file to private staging
-        |
-        v
-Validate snapshot
-        |
-        v
-Display confirmation
-        |
-        v
-User confirms restoration
-        |
-        v
-Create new standalone staged snapshot
-        |
-        v
-Revalidate snapshot
-        |
-        v
-Calculate staged SHA-256
-        |
-        v
-Create pending restore journal
-        |
-        v
-Request normal application restart
+daycord.db
+daycord.db-wal
+daycord.db-shm
+daycord.db-journal
 ```
 
-### 9.1 User Confirmation
+The archive includes metadata and SHA-256 checksums.
 
-The UI warns that restoration will replace current data.
+`RollbackFileQuarantine` moves the active file set aside before a replacement is installed.
 
-The user may cancel the operation before confirmation.
+Raw archives and quarantine files are retained for investigation.
 
-### 9.2 Staging
+**A raw archive is not necessarily a valid SQLite backup.**
 
-`UserBackupService.PrepareRestoreAsync` creates a new independently validated snapshot.
+It may contain corrupted data and must not be presented as a verified recovery point.
 
-This matters because the selected source file may have changed since initial validation.
+### Interrupted Recovery
 
-The staged snapshot is stored as:
+Emergency recovery uses a dedicated installation path.
 
-```text
-RestoreStaging/pending-<operation-id>.db
-```
+Unlike a normal Restore, it cannot assume that the damaged original database is a valid rollback destination.
 
-### 9.3 Pending Journal
+An interrupted installation is not automatically repeated when the resulting file state is ambiguous.
 
-The operation is recorded in:
+A narrowly restricted automatic retry is supported only for an eligible failure that occurred before original-file preservation and installation.
+
+Before such a retry, Daycord verifies:
+
+- The previous emergency journal and its state.
+- The absence of installation or preservation artifacts that would make the operation ambiguous.
+- The active database is not already healthy.
+- The staged backup is still valid.
+- The staged backup checksum has not changed.
+
+The previous failed journal is preserved before the operation is rearmed.
+
+Other unresolved emergency states require intervention rather than an unsafe automatic replacement.
+
+### Recovery Failure
+
+Emergency recovery can fail when:
+
+- No valid automatic backup is available.
+- The original database files cannot be preserved.
+- A required recovery file is missing or modified.
+- Another process prevents exclusive access.
+- Installation or validation fails.
+- The restore journal is inconsistent.
+- The failure is not an eligible SQLite corruption condition.
+
+Daycord may prevent normal startup rather than replace the database with an unverified or incompatible snapshot.
+
+The emergency recovery window does not offer a manual backup-selection list.
+
+User-controlled Backup & Restore remains available through Settings when the application can start normally.
+
+## 8. Restore Journal
+
+Normal and emergency restoration use a persistent journal:
 
 ```text
 RestoreStaging/pending-restore.json
@@ -481,340 +419,84 @@ RestoreStaging/pending-restore.json
 
 The journal contains:
 
-- Operation identifier.
-- Staged filename.
-- SHA-256 hash of the staged database.
-- Restoration phase.
-- Safety backup filename, when created.
-- Safety backup SHA-256, when created.
+- Restore operation identifier.
+- Staged snapshot filename.
+- Staged snapshot SHA-256 checksum.
+- Restore mode.
+- Current restore phase.
+- References to preserved safety or raw recovery artifacts where applicable.
 
-The journal uses internal filenames rather than arbitrary user-provided absolute paths.
+`PendingRestoreStateStore` validates journal contents and permitted state transitions.
 
-Journal writes use a temporary file and atomic replacement.
+Journal updates are written to temporary files and published using same-directory moves.
 
-### 9.4 Pending Restore Protection
+The journal prevents an unfinished or ambiguous replacement from being mistaken for a completed restore.
 
-Only one restore operation may be scheduled at a time.
+It must not be manually deleted to bypass recovery failures.
 
-If a pending restore journal already exists, another restoration cannot be prepared until the existing operation has been resolved.
+## 9. Component Responsibilities
 
-## 10. Restoration State Machine
-
-The journal uses the following phases:
-
-| Phase | Description |
+| Component | Responsibility |
 |---|---|
-| `Prepared` | Validated backup is staged |
-| `SafetyCreated` | A pre-restore safety backup has been created |
-| `Installing` | Replacement of the working database is in progress |
-| `Installed` | Staged database has been installed |
-| `RollingBack` | Recovery to the previous database is in progress |
+| `SqliteSnapshotIO` | Creates standalone SQLite snapshots and durable copies |
+| `SqliteSnapshotValidator` | Validates database integrity and compatibility |
+| `UserBackupService` | Creates user backups and prepares user restoration |
+| `DatabaseBackupService` | Creates verified pre-migration backups |
+| `DatabaseChangeTracker` | Tracks committed changes requiring backup |
+| `AutomaticBackupScheduler` | Triggers backup attempts during application use and shutdown |
+| `AutomaticBackupService` | Publishes and rotates automatic snapshots |
+| `AutomaticRecoveryCandidateSelector` | Selects the newest usable automatic recovery candidate |
+| `AutomaticRecoveryPreparation` | Prepares eligible emergency recovery |
+| `EmergencyRestorePreparation` | Stages and journals emergency recovery |
+| `PendingRestoreCoordinator` | Coordinates deferred restoration under an application lock |
+| `EmergencyRestoreInstaller` | Safely installs and validates emergency recovery snapshots |
+| `EmergencyRestoreRetryPreparation` | Handles narrowly eligible retry preparation |
+| `RawDatabaseRecoveryArchive` | Preserves original SQLite files for investigation |
+| `RollbackFileQuarantine` | Moves the active database file set aside without overwriting it |
+| `PendingRestoreStateStore` | Validates and persists restoration journal states |
+| `DatabaseRecoveryDiagnostics` | Records sanitized startup and recovery diagnostics |
+| `MigrationRunner` | Validates migration history and applies supported schema changes |
 
-These phases allow startup logic to distinguish a prepared restore from an interrupted installation.
+The fundamental boundaries are:
 
-Do not treat the existence of a database file alone as proof that restoration succeeded.
+- **Backup** creates a verified copy.
+- **Restore** installs a selected saved state.
+- **Recovery** handles eligible failures using existing recovery points.
+- **MigrationRunner** validates and updates the database schema.
 
-## 11. Startup Restoration
+These responsibilities must remain separate.
 
-The restoration coordinator is:
+## 10. Diagnostics and Troubleshooting
+
+Startup and recovery failures may be recorded in:
 
 ```text
-PendingRestoreCoordinator
+Diagnostics/recovery-events.jsonl
 ```
 
-It is invoked during application startup before normal database initialization.
+Diagnostic records contain technical metadata such as:
 
-### 11.1 Application Lock
+- Application version.
+- Platform and architecture.
+- Startup or recovery stage.
+- Exception type.
+- SQLite error codes when applicable.
 
-The coordinator acquires a lifetime lock:
+The diagnostic implementation uses sanitized error descriptions instead of recording raw exception messages that could expose SQL text, filesystem paths, or user data.
 
-```text
-.daycord-instance.lock
-```
+Diagnostic logging is best-effort and must not replace the original failure.
 
-The lock prevents another Daycord instance from simultaneously using the same application data directory through the normal startup path.
+When investigating a database failure:
 
-The lock remains held during the application lifetime.
+1. Preserve the full application data directory.
+2. Do not delete the database or SQLite sidecar files.
+3. Do not remove an unfinished restore journal.
+4. Do not modify migration checksums.
+5. Inspect the available diagnostics.
+6. Reproduce destructive scenarios only with isolated test data.
 
-### 11.2 Applying a Prepared Restore
+For automated verification commands, see [Testing](testing.md).
 
-When a pending journal exists:
+For schema and migration details, see [Database](database.md).
 
-1. Read and validate the journal.
-2. Verify the staged database SHA-256 hash.
-3. Validate the staged SQLite snapshot.
-4. Create a new safety backup of the current database.
-5. Validate the safety backup.
-6. Record the safety backup filename and hash.
-7. Create a standalone installation snapshot.
-8. Checkpoint and leave WAL mode on the current database.
-9. Record the `Installing` phase.
-10. Replace the working database with the installation snapshot.
-11. Validate the installed database.
-12. Record the `Installed` phase.
-
-### 11.3 WAL Handling
-
-Before replacing the working database, the coordinator checks its journal mode.
-
-If WAL is active, the implementation attempts:
-
-```sql
-PRAGMA wal_checkpoint(TRUNCATE);
-```
-
-It then switches to:
-
-```sql
-PRAGMA journal_mode = DELETE;
-```
-
-The coordinator verifies that no SQLite sidecar files remain before file replacement.
-
-Failure to complete these steps blocks the replacement.
-
-### 11.4 Database Initialization
-
-After installation, Daycord performs normal database initialization.
-
-This includes applying supported pending migrations.
-
-Application settings are then loaded from the resulting database.
-
-### 11.5 Completing Restoration
-
-A restoration is finalized only after:
-
-- Database initialization succeeds.
-- Pending migrations succeed.
-- Application settings load.
-- Final installed database validation succeeds.
-
-On success, the pending journal is deleted and the staged backup is cleaned up.
-
-The pre-restore safety backup is retained.
-
-## 12. Rollback and Failure Handling
-
-The coordinator includes rollback logic for failures during installation or initialization.
-
-### 12.1 Failed Initialization
-
-If a restored database cannot complete initialization, Daycord attempts rollback using the validated safety backup.
-
-The application blocks normal startup and reports that a restart is required after recovery.
-
-### 12.2 Interrupted Installation
-
-If startup finds an operation left in `Installing` or `RollingBack`, it treats the previous operation as interrupted.
-
-It attempts rollback rather than assuming the installed database is correct.
-
-The application requests another restart after recovery.
-
-### 12.3 Rollback Procedure
-
-Rollback:
-
-1. Validates the safety backup.
-2. Records `RollingBack` in the journal.
-3. Creates a durable copy of the safety backup.
-4. Validates the copy and its SHA-256 hash.
-5. Prepares the current database for replacement.
-6. Replaces the working database.
-7. Verifies the resulting hash and snapshot.
-8. Removes the pending journal after successful rollback.
-
-The safety backup is preserved.
-
-### 12.4 Rollback Failure
-
-If the safety backup is missing, corrupted, or cannot be installed, recovery may fail.
-
-Daycord must not continue into normal application operation with an uncertain database state.
-
-Do not delete recovery files during investigation.
-
-A qualified developer should inspect the database, journal, and available independent backups.
-
-## 13. Application Settings Recovery
-
-Application settings are stored inside SQLite.
-
-Therefore, full database restoration also restores:
-
-- Selected language.
-- Appearance preference.
-- Minutes per day.
-
-Settings are loaded after the restored database has been installed and migrated.
-
-This ordering prevents the application from applying settings belonging to the database that has just been replaced.
-
-## 14. Report Configuration Recovery
-
-Report configuration is also stored in SQLite.
-
-A full backup contains:
-
-- ReportPresets.
-- ReportSettings.
-- The active report preset.
-- Custom column configuration.
-
-Restoring a database restores these records to the state captured in that backup.
-
-The validator checks report configuration consistency before accepting the snapshot.
-
-## 15. Schema Upgrade Backups
-
-`DatabaseBackupService` provides a separate backup mechanism for schema upgrades.
-
-It creates a SQLite backup before a recognized existing database is migrated to a newer schema.
-
-This is separate from user-initiated backup creation and pending restoration.
-
-Schema upgrade backups are stored under:
-
-```text
-Backups/SchemaUpgrades/
-```
-
-The implementation validates their SQLite integrity before treating them as successful backups.
-
-Do not remove this mechanism as duplicate legacy code.
-
-## 16. Failure Scenarios
-
-The following scenarios should be tested in isolation:
-
-| Scenario | Expected behavior |
-|---|---|
-| Non-SQLite file | Rejected |
-| Corrupted SQLite database | Rejected |
-| Unknown migration | Rejected |
-| Modified migration checksum | Rejected |
-| Invalid foreign keys | Rejected |
-| Invalid application settings | Rejected |
-| Missing backup file | Error without replacing active data |
-| Cancelled file picker | No restoration scheduled |
-| Unwritable backup destination | Error without publishing incomplete output |
-| Existing pending restoration | Second restoration rejected |
-| Missing staged snapshot | Restoration blocked |
-| Modified staged snapshot | SHA-256 mismatch; restoration blocked |
-| Interrupted installation | Rollback attempted |
-| Failed restored database initialization | Safety rollback attempted |
-| Missing safety backup during rollback | Startup blocked rather than silently continuing |
-
-These are expected behaviors derived from the implementation. They are not all confirmed runtime test results.
-
-## 17. Manual Recovery Principles
-
-Manual recovery should be performed only when the normal mechanism cannot restore the application.
-
-Before attempting manual repair:
-
-1. Completely close Daycord.
-2. Preserve the current data directory.
-3. Copy all relevant backup, journal, and staging files to a separate safe location.
-4. Record the installed application version.
-5. Record the observed error.
-6. Inspect available backup files without modifying originals.
-7. Validate candidate databases in an isolated environment.
-
-Do not:
-
-- Delete migration history.
-- Disable foreign keys.
-- Replace files while Daycord is running.
-- Remove the pending journal to hide an unresolved installation state.
-- Edit backup checksums.
-- Overwrite the last available safety backup.
-
-Manual recovery is not a normal end-user procedure.
-
-## 18. Safe Verification Environment
-
-Restore testing should use:
-
-- A separate operating-system user.
-- An isolated test environment.
-- A test harness using an independent `AppDataPaths` directory, where supported.
-
-Do not conduct crash simulations against the primary user database.
-
-### 18.1 Representative Test Data
-
-A full recovery test should include:
-
-- Several tasks.
-- Different task statuses.
-- Multiple planning periods.
-- Multiple work entries.
-- Report presets.
-- Custom report headers.
-- Modified application language.
-- Modified theme.
-- Modified day length.
-
-### 18.2 Successful Restoration Test
-
-A complete test should:
-
-1. Create representative data.
-2. Create a backup.
-3. Validate the backup.
-4. Modify the original test database through the application.
-5. Prepare restoration.
-6. Close Daycord.
-7. Restart Daycord.
-8. Confirm that the backed-up data has returned.
-9. Confirm that post-backup modifications are no longer present.
-10. Confirm that report presets and application settings were restored.
-11. Verify the safety backup.
-12. Run integrity and foreign key checks.
-
-Record actual test evidence and status in `testing.md`.
-
-## 19. Technical Safety Checklist
-
-Before changing backup or recovery code:
-
-- [ ] Confirm correct application data paths.
-- [ ] Preserve the application lifetime lock.
-- [ ] Preserve SQLite snapshot validation.
-- [ ] Preserve foreign key checks.
-- [ ] Preserve migration checksum checks.
-- [ ] Preserve staged backup hashing.
-- [ ] Preserve atomic journal updates.
-- [ ] Preserve safety backup creation.
-- [ ] Preserve WAL checkpoint handling.
-- [ ] Preserve startup rollback behavior.
-- [ ] Verify migration 001 backup compatibility.
-- [ ] Verify migration 002 backup compatibility.
-- [ ] Test normal restoration in isolation.
-- [ ] Test failures in isolation.
-- [ ] Verify that original user data is never silently discarded.
-
-## 20. Limitations
-
-Daycord 0.1.0 has an implemented backup and recovery architecture.
-
-However:
-
-- Not every storage or hardware failure can be recovered automatically.
-- Cross-version backup compatibility beyond the supported migration history is not guaranteed.
-- Users must maintain independent backups.
-- Some exceptional recovery scenarios have not been fully verified through runtime testing.
-- A successful static review does not prove a complete backup-and-restore cycle.
-
-## 21. Related Documentation
-
-- [Architecture](architecture.md)
-- [Database](database.md)
-- [Development](development.md)
-- [User Guide](user-guide.md)
-- [Releasing](releasing.md)
-- [Testing](testing.md)
-
-This document describes the backup and recovery implementation of Daycord 0.1.0.
+For end-user instructions, see [User Guide](user-guide.md).

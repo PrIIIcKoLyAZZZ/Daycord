@@ -3,8 +3,8 @@ using Daycord.Core.Application.Models;
 namespace Daycord.Core.Application.Services;
 
 /// <summary>
-/// Builds reporting data from persisted PlanningPeriods
-/// and WorkEntries using the existing Calendar API.
+/// Builds reporting data from persisted PlanningPeriods,
+/// WorkEntries and dated tasks without time records.
 /// </summary>
 public sealed class WorkReportService
 {
@@ -60,18 +60,51 @@ public sealed class WorkReportService
             .ThenBy(static item => item.Id)
             .ToArray();
 
+        // ListAsync returns task dates and all-time totals.
+        // A task with any PlanningPeriod or WorkEntry, even outside
+        // this report range, must not get a TaskDate-only row.
+        IReadOnlyList<TaskListItem> datedTasks = [];
+
+        if (calendar.Tasks.Count > 0)
+        {
+            datedTasks = await _taskService.ListAsync(
+                new TaskQuery
+                {
+                    DateFrom = from,
+                    DateTo = to
+                },
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var taskDateOnly = datedTasks
+            .Where(static task =>
+                task.TaskDate.HasValue &&
+                task.TotalPlannedMinutes is null &&
+                task.TotalActualMinutes is null)
+            .ToArray();
+
         // ShortDescription is not exposed by CalendarData.
-        // Load it only when the selected columns require it.
+        // Reuse the task listing where possible and load other
+        // tasks only when the selected columns require it.
         var shortDescriptions = new Dictionary<Guid, string?>();
 
         if (requestedFields?.Contains(
                 WorkReportField.TaskShortDescription) == true)
         {
+            foreach (var task in datedTasks)
+            {
+                shortDescriptions[task.Id] = task.ShortDescription;
+            }
+
             var taskIds = planned
                 .Select(static item => item.TaskId)
                 .Concat(actual.Select(
                     static item => item.TaskId))
                 .Distinct()
+                .Where(taskId =>
+                    !shortDescriptions.ContainsKey(taskId))
                 .OrderBy(static id => id);
 
             foreach (var taskId in taskIds)
@@ -120,7 +153,7 @@ public sealed class WorkReportService
             new HashSet<(Guid TaskId, DateOnly Date)>();
 
         var rows = new List<WorkReportRow>(
-            planned.Length + actual.Length);
+            planned.Length + actual.Length + taskDateOnly.Length);
 
         // Every PlanningPeriod becomes one row.
         foreach (var period in planned)
@@ -226,6 +259,28 @@ public sealed class WorkReportService
                     entry.WorkDescription ?? string.Empty));
         }
 
+        // A dated task without any recorded planning or work
+        // contributes one informational row, with no time values.
+        foreach (var task in taskDateOnly)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            rows.Add(new WorkReportRow(
+                Date: task.TaskDate!.Value,
+                TaskId: task.Id,
+                PlanningPeriodId: null,
+                WorkEntryIds: Array.Empty<Guid>(),
+                Source: WorkReportRowSource.TaskDateOnly,
+                TaskNumber: task.TaskNumber,
+                TaskTitle: task.Title,
+                TaskShortDescription:
+                    GetShortDescription(task.Id),
+                TaskStatus: task.StatusName,
+                PlannedMinutes: null,
+                ActualMinutes: null,
+                WorkDescription: string.Empty));
+        }
+
         // Deterministic ordering across repeated exports.
         var sorted = rows
             .OrderBy(static row => row.Date)
@@ -239,7 +294,8 @@ public sealed class WorkReportService
             .ThenBy(
                 static row =>
                     row.PlanningPeriodId ??
-                    row.WorkEntryIds[0])
+                    row.WorkEntryIds.FirstOrDefault())
+            .ThenBy(static row => row.TaskId)
             .ToArray();
 
         return new WorkReport(from, to, sorted);

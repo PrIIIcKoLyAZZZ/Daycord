@@ -12,13 +12,31 @@ internal static class SqliteSnapshotIO
         string sourcePath,
         string destinationPath)
     {
-        if (File.Exists(destinationPath))
+        var source = Path.GetFullPath(sourcePath);
+        var destination = Path.GetFullPath(destinationPath);
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+        if (string.Equals(source, destination, comparison))
+        {
+            throw new InvalidOperationException(
+                "The snapshot must not replace its source database.");
+        }
+
+        if (File.Exists(destination) || Directory.Exists(destination))
+        {
             throw new IOException(
                 "The snapshot destination already exists.");
+        }
+
+        // An orphaned destination sidecar may belong to an interrupted
+        // operation. Never let SQLite silently reuse that state.
+        RequireNoSidecars(destination);
 
         var sourceOptions = new SqliteConnectionStringBuilder
         {
-            DataSource = sourcePath,
+            DataSource = source,
             Mode = SqliteOpenMode.ReadOnly,
             Pooling = false,
             DefaultTimeout = 15
@@ -26,30 +44,31 @@ internal static class SqliteSnapshotIO
 
         var destinationOptions = new SqliteConnectionStringBuilder
         {
-            DataSource = destinationPath,
+            DataSource = destination,
             Mode = SqliteOpenMode.ReadWriteCreate,
             Pooling = false,
             DefaultTimeout = 15
         };
 
-        using (var source =
+        using (var sourceConnection =
                new SqliteConnection(sourceOptions.ToString()))
-        using (var destination =
+        using (var destinationConnection =
                new SqliteConnection(destinationOptions.ToString()))
         {
-            source.Open();
-            destination.Open();
+            sourceConnection.Open();
+            destinationConnection.Open();
 
-            source.BackupDatabase(destination);
+            // Online Backup API copies a consistent SQLite view, including
+            // committed transactions stored in the source WAL.
+            sourceConnection.BackupDatabase(destinationConnection);
 
             // Online backup preserves the source journal mode.
             // Converting the snapshot to DELETE ensures it remains
             // valid as a single .db file.
-            using var command = destination.CreateCommand();
+            using var command = destinationConnection.CreateCommand();
             command.CommandText = "PRAGMA journal_mode = DELETE;";
 
-            var result = Convert.ToString(
-                command.ExecuteScalar());
+            var result = Convert.ToString(command.ExecuteScalar());
 
             if (!string.Equals(
                     result,
@@ -62,7 +81,17 @@ internal static class SqliteSnapshotIO
             }
         }
 
-        RequireNoSidecars(destinationPath);
+        RequireNoSidecars(destination);
+
+        // SQLite handles are closed. Flush the complete single-file copy
+        // before callers publish it as a recovery point.
+        using var snapshotFile = new FileStream(
+            destination,
+            FileMode.Open,
+            FileAccess.ReadWrite,
+            FileShare.None);
+
+        snapshotFile.Flush(flushToDisk: true);
     }
 
     public static void CopyDurably(

@@ -1,30 +1,32 @@
 # Daycord User Guide
 
-**Version:** 0.1.0  
-**Supported platforms:** macOS ARM64 and Windows x64
+**Documentation target:** Daycord 0.1.1  
+**Platforms:** macOS ARM64 and Windows x64
 
 ## 1. Introduction
 
-Daycord is an offline-first desktop application for managing tasks, planning time, recording completed work, and generating Excel reports.
+Daycord is an offline-first desktop application for managing tasks, planning time, recording actual work, and creating Excel reports.
 
-Daycord keeps application data locally on your computer. You do not need to create an account or connect to an online service.
+All application data is stored locally in SQLite.
 
-The main sections are:
+Daycord does not require an account, server, or internet connection for everyday use.
 
-- **Home** — an overview of today's tasks and activity.
-- **Calendar** — tasks, planned work, and actual work organized by date.
-- **Tasks** — your task list, search, filters, and task management.
-- **New Task** — Quick Task creation.
-- **Reports** — configurable Excel reports.
-- **Settings** — language, appearance, day length, backup, and restoration.
+### Main Sections
 
-## 2. First Launch
+| Section | Purpose |
+|---|---|
+| Home | Today's tasks and activity |
+| Calendar | Tasks and time records by date |
+| Tasks | Task management, search, and filters |
+| New Task | Quick Task creation |
+| Reports | Excel reporting and presets |
+| Settings | Language, appearance, durations, and backups |
 
-Open Daycord from Applications on macOS or from the Start menu on Windows.
+## 2. Getting Started
 
-On the first launch, Daycord creates its local database and initializes the application.
+On first launch, Daycord creates its local database and initializes the application.
 
-The default settings are:
+Default settings:
 
 | Setting | Default |
 |---|---|
@@ -32,844 +34,799 @@ The default settings are:
 | Appearance | System |
 | Duration of one day | 24 hours |
 
-Application settings and task information are saved automatically to the local database when you complete the corresponding operation.
+To get started:
 
-You do not need to configure a server or create an account.
+1. Create a task using New Task or Tasks.
+2. Assign a task date if needed.
+3. Add planned time.
+4. Record actual work.
+5. Review your activity on Home or Calendar.
+6. Export an Excel report.
+7. Create a backup in Settings.
 
-### 2.1 First Steps
+## 3. Tasks
 
-A recommended first-time workflow is:
+### 3.1 Quick Task
 
-1. Create a task.
-2. Assign planned time.
-3. Record actual work.
-4. Review your activity on Home or Calendar.
-5. Generate an Excel report.
-6. Create a backup of your data.
+Quick Task is intended for creating tasks with minimal input.
 
-## 3. Home Dashboard
-
-Home summarizes your activity for the current day.
-
-The dashboard contains four main indicators:
-
-| Indicator | Description |
-|---|---|
-| Today's Tasks | Number of tasks scheduled for today |
-| Completed | Completed tasks in today's task summary |
-| Planned Today | Planned time assigned to today |
-| Actual Today | Actual time recorded for today |
-
-Below the indicators, Daycord displays sections for tasks, planned work, and actual work.
-
-### 3.1 Open a Task
-
-Select a task in the dashboard to open its details.
-
-You can inspect its descriptions, planned time, and work records.
-
-### 3.2 Empty States
-
-If you have no activity for today, the dashboard displays an empty-state message.
-
-Tasks and work assigned to other dates remain stored in the database.
-
-### 3.3 Refreshing Data
-
-The dashboard loads information when it is activated and refreshes after relevant navigation and data changes.
-
-If loading fails, use the available Retry action.
-
-## 4. Creating a Quick Task
-
-Quick Task is designed for creating tasks with minimal input.
-
-Open the **New Task** section.
-
-The Quick Task form includes:
-
-- Date.
-- Issue number (optional).
-- Title.
-- Planned time (optional).
-
-### 4.1 Create a Task
-
-1. Open New Task.
-2. Select or enter the task date.
-3. Optionally enter a task number, such as `DC-017`.
-4. Enter a task title.
-5. Optionally specify planned time.
+1. Open **New Task**.
+2. Select or enter a task date.
+3. Optionally enter a task number.
+4. Enter a title.
+5. Optionally enter planned time.
 6. Press Enter or use the create action.
 
-Daycord saves the new task to SQLite.
+If planned time is provided, Daycord creates a corresponding planning record.
 
-If planned time was entered, the corresponding planning record is created with the task.
+Recently created tasks are displayed during the current session.
 
-### 4.2 Date Selection
+Use the available task-details action to open a recently created task in the full editor.
 
-Use the calendar button to open Daycord's date picker.
+### 3.2 Full Task Editor
 
-You can also enter a date using the date field.
+To create a detailed task:
 
-The date picker is part of the application's custom interface rather than a native operating-system calendar.
+1. Open **Tasks**.
+2. Select the create-task action.
+3. Enter the task title.
+4. Optionally enter a task number and date.
+5. Select a status.
+6. Enter a short description or Markdown description.
+7. Select **Create Task**.
 
-### 4.3 Planned Time Examples
-
-Valid expressions include:
-
-| Input | Result with the default day length |
-|---|---|
-| `1` | 1 hour |
-| `30m` | 30 minutes |
-| `1h` | 1 hour |
-| `1h 30m` | 1 hour 30 minutes |
-| `1d` | 24 hours |
-| `2d 3h` | 51 hours |
-
-A plain number represents hours, not minutes.
-
-The meaning of `d` depends on the **Duration of one day** setting.
-
-### 4.4 Recently Created Tasks
-
-Quick Task displays tasks created during the current session.
-
-Use the task-details action beside a recent task to open its full editor.
-
-The recent-task list is session state, not a permanent replacement for the Tasks section.
-
-## 5. Creating a Full Task
-
-For detailed task creation, open **Tasks** and use the create-task action.
-
-This opens the full Task Details editor in creation mode.
-
-The editor supports:
+The full editor supports:
 
 - Task number.
-- Title.
-- Optional task date.
+- Task title.
+- Optional TaskDate.
 - Task status.
 - Short description.
 - Markdown description.
 - Planned time.
-- Actual work, after the task exists.
+- Actual work records after task creation.
 
-### 5.1 Create a Detailed Task
+TaskDate is optional in the full editor.
 
-1. Open Tasks.
-2. Select the action for creating a task.
-3. Enter a title.
-4. Optionally enter a task number.
-5. Select a date or leave it empty.
-6. Select the task status.
-7. Enter a short description.
-8. Add Markdown content if needed.
-9. Use **Create Task** to save.
+### 3.3 Editing Tasks
 
-Additional planned and actual time records can be managed through Task Details.
+Open an existing task to modify its information.
 
-### 5.2 Tasks Without Dates
+Select **Save Changes** to persist the changes.
 
-The task date is optional in the full task editor.
+Task Details includes an Edit/Preview mode for Markdown descriptions.
 
-A task without a task date can still have planned or actual work recorded on specific dates.
+If you attempt to leave with unsaved changes, Daycord can request confirmation before discarding them.
 
-These dates are stored independently.
+### 3.4 Task Statuses
 
-## 6. Editing Tasks
-
-Open the **Tasks** section and select the task you want to edit.
-
-The Task Details editor allows changes to the task's information.
-
-### 6.1 Edit a Task
-
-1. Open an existing task.
-2. Modify the required fields.
-3. Select **Save Changes**.
-4. Return to the task list when finished.
-
-You can change or clear an optional task number or task date.
-
-### 6.2 Markdown Descriptions
-
-Task Details includes a Markdown editor and preview.
-
-Use **Edit** to modify the Markdown source.
-
-Use **Preview** to view the rendered description.
-
-Markdown can be used for:
-
-- Headings.
-- Lists.
-- Emphasis.
-- Links.
-- Code snippets.
-- Other supported Markdown formatting.
-
-The short description and Markdown description are separate fields.
-
-### 6.3 Unsaved Changes
-
-If you attempt to leave an editing session with unsaved changes, Daycord may ask whether to discard those changes.
-
-Choose **Keep Editing** to continue editing, or **Discard Changes** to leave without saving.
-
-### 6.4 Deleting Tasks
-
-Tasks can be deleted from the Tasks section.
-
-1. Select the task.
-2. Choose Delete.
-3. Review the confirmation.
-4. Confirm the deletion.
-
-Deleting a task also removes its associated planned periods and actual work entries.
-
-**Warning:** Task deletion is permanent. Create a backup before making large or destructive changes.
-
-## 7. Finding and Filtering Tasks
-
-The Tasks page provides searching, filtering, and sorting.
-
-### 7.1 Search
-
-Use the search field to find tasks by title or short description.
-
-### 7.2 Filters
-
-Select **Filters** to expand the filter controls.
-
-Available filters include:
-
-- Task status.
-- Start date.
-- End date.
-- Sort field.
-- Sort direction.
-
-Date fields support keyboard entry and Daycord's shared calendar picker.
-
-### 7.3 Sorting
-
-You can sort tasks by supported fields such as:
-
-- Date.
-- Title.
-- Status.
-
-Change the sorting direction between ascending and descending.
-
-### 7.4 Clearing Filters
-
-Use **Clear filters** to restore the default filtering state.
-
-If no tasks match the selected criteria, Daycord displays an appropriate empty-state message.
-
-## 8. Task Statuses
-
-Each task has a status.
-
-Daycord includes the built-in statuses:
+Daycord includes two built-in statuses:
 
 - Open.
 - Completed.
 
-The underlying status model also supports custom statuses.
+Completion is determined by the status's completion property, not only its displayed name.
 
-A status has a completion property that determines whether the task is treated as completed.
+Changing a status may update completion indicators and timestamps.
 
-Changing a task's status may affect:
+### 3.5 Deleting Tasks
 
-- Completion indicators.
-- Completed task counts.
-- Completion timestamps.
+To delete a task:
 
-Status names are not used as the technical definition of completion.
+1. Open Tasks.
+2. Select the task.
+3. Choose the delete action.
+4. Review the confirmation dialog.
+5. Confirm or cancel.
 
-## 9. Planned Time
+The confirmation dialog uses a background blur effect.
 
-Planned time is managed using planning periods.
+Deleting a task also removes its associated planning periods and actual work entries.
 
-A planning period records:
+**Warning:** Deletion is permanent. Maintain backups of important data.
+
+## 4. Task Navigation
+
+### 4.1 Opening Tasks
+
+In the Tasks list, you can open a task using:
+
+- A double-click on its row.
+- Enter when the task row is selected and the task list has focus.
+- The dedicated Open Task button.
+
+A single click selects a task without opening its details.
+
+### 4.2 Keyboard Navigation
+
+The task list supports keyboard-based selection and navigation.
+
+- Use Tab to navigate between focusable controls.
+- Use the arrow keys to navigate the focused task list.
+- Press Enter to open the selected task.
+- Press Escape to clear the task selection when the list is focused.
+
+Enter does not open a task when focus is in the search field, filters, or date inputs.
+
+Within Task Details, Escape can close the calendar, cancel a confirmation, or initiate navigation back, depending on the active context.
+
+If unsaved changes are present, Daycord can require confirmation before leaving the editor.
+
+### 4.3 Confirmation Dialogs
+
+When a delete confirmation is open:
+
+- Escape cancels the confirmation.
+- Tab and Shift+Tab move between the available confirmation buttons.
+- Task-list navigation cannot activate an underlying task.
+
+## 5. Searching and Filtering Tasks
+
+Open **Tasks** to access searching, filtering, and sorting.
+
+### 5.1 Search
+
+Use the search field to find tasks by title or short description.
+
+### 5.2 Filters
+
+Select **Filters** to display the available controls.
+
+Filters include:
+
+- Task status.
+- Start date.
+- End date.
+- Sorting field.
+- Sorting direction.
+
+The date range filters tasks by TaskDate.
+
+Use **Clear filters** to reset the filtering state.
+
+### 5.3 Home to Today's Tasks
+
+On Home, select the **Today's Tasks** card or heading.
+
+Daycord opens Tasks and applies a date filter for the current local calendar day.
+
+The filter uses **TaskDate**.
+
+It does not use the dates of planning periods or actual work entries.
+
+For example:
+
+- TaskDate: November 11.
+- PlannedDate: November 12.
+- WorkDate: November 13.
+
+The task belongs to the November 11 task list.
+
+After navigation:
+
+- The date filter is visible.
+- The date range is set to today.
+- Search and status filters are reset.
+
+You can change or clear these filters afterward.
+
+The Today filter is not permanently enforced.
+
+## 6. Planning Time
+
+Planning periods represent intended work.
+
+Each planning period has:
 
 - A planned date.
-- A positive duration.
+- A duration.
 
-A task can have more than one planning period.
+A task can contain multiple planning periods.
 
-### 9.1 Add a Planning Period
+### 6.1 Add Planned Time
 
 1. Open an existing task.
 2. Find the Planned Time section.
 3. Select **Add period**.
-4. Choose the planned date.
+4. Choose a date.
 5. Enter a duration.
-6. Select **Save period**.
+6. Save the planning period.
 
-### 9.2 Edit a Planning Period
+You can edit or delete individual periods without deleting the task.
 
-Select an existing period, update its date or duration, and save the changes.
+### 6.2 Duration Input
 
-### 9.3 Delete a Planning Period
+Supported duration expressions include:
 
-Select the period's delete action and confirm.
-
-Deleting one planning period does not delete the task or other time records.
-
-### 9.4 Planned Totals
-
-Daycord calculates planned totals from the task's planning periods.
-
-For example:
-
-| Date | Planned |
+| Input | Duration |
 |---|---|
-| November 2 | 2h |
-| November 3 | 1h 30m |
-| November 5 | 3h |
+| `1` | 1 hour |
+| `30m` | 30 minutes |
+| `1h 30m` | 1 hour 30 minutes |
+| `2h` | 2 hours |
+| `1d` | 1 configured day |
+| `2d 3h` | 2 configured days and 3 hours |
 
-Total planned time: **6h 30m**.
+A plain number represents hours.
 
-Planned time represents intended effort. It does not automatically create actual work entries.
+The duration of one day can be configured in Settings.
 
-## 10. Actual Time and Work Log
+Planned time does not automatically create actual work records.
 
-Actual time is recorded using work entries.
+## 7. Actual Time
 
-A work entry contains:
+Actual time represents work performed on a task.
 
-- Work date.
+Each work entry contains:
+
+- WorkDate.
 - Actual duration.
 - Work description.
 - Optional note.
 
-A task can have multiple work entries, including multiple entries on the same date.
+A task can contain multiple work entries.
 
-### 10.1 Add a Work Entry
+### 7.1 Add a Work Entry
 
 1. Open an existing task.
-2. Find the Actual Time or Work Log section.
+2. Find the Actual Time section.
 3. Select **Add work entry**.
 4. Choose the work date.
 5. Enter the actual duration.
-6. Enter a work description or note as needed.
-7. Select **Save entry**.
+6. Enter a description or note if needed.
+7. Save the entry.
 
-Work entries are saved independently from the main task fields.
+### 7.2 Edit and Delete
 
-### 10.2 Edit a Work Entry
+Select an existing work entry to edit its date, duration, description, or note.
 
-1. Select an existing work entry.
-2. Change its date, duration, description, or note.
-3. Save the entry.
+Save the entry to persist the changes.
 
-### 10.3 Switching Between Drafts
+Individual work entries can also be deleted.
 
-Daycord supports separate in-memory drafts for work-entry editing.
+### 7.3 Switching Between Drafts
+
+Daycord preserves separate unsaved editing drafts during a work-entry editing session.
 
 For example:
 
-1. Select work entry A.
-2. Modify its description.
-3. Select work entry B without saving A.
-4. Modify work entry B.
-5. Return to A.
+1. Edit work entry A.
+2. Select work entry B without saving A.
+3. Edit work entry B.
+4. Return to A.
 
-The unsaved draft for A remains available in the editing session.
+The draft changes to A remain available during the editing session.
 
-**Important:** Switching between drafts does not save them to SQLite.
+Switching between drafts does not automatically save them to the database.
 
 Save the entries you want to keep before leaving the editor.
 
-### 10.4 Delete a Work Entry
+### 7.4 Planned vs. Actual Time
 
-Select the delete action for a work entry and confirm.
+Planned and actual time are calculated independently.
 
-Other work entries and planning periods are not deleted.
+A task may have:
 
-### 10.5 Actual Totals
+- 5 hours planned.
+- 3 hours of actual work.
 
-Actual totals are calculated from saved work entries.
+The difference does not automatically change either record.
 
-For example:
+## 8. Calendar and Dates
 
-| Date | Actual |
-|---|---|
-| November 2 | 1h 15m |
-| November 3 | 2h |
-| November 3 | 30m |
+Daycord uses a shared calendar component across its date-selection interfaces.
 
-Total actual time: **3h 45m**.
+### 8.1 Calendar Page
 
-Actual and planned time are always tracked independently.
+Open **Calendar** to view tasks and activity by month.
 
-## 11. Calendar
-
-The Calendar page provides a monthly view of tasks and time records.
-
-### 11.1 Navigating the Calendar
-
-Use the previous and next month controls to move between months.
+Use the previous and next month controls to navigate.
 
 Use **Today** to return to the current date.
 
-The calendar supports navigation across years.
-
-### 11.2 Daily Indicators
-
-Calendar cells can display indicators for:
+Select a day to inspect:
 
 - Tasks.
 - Planned work.
 - Actual work.
 
-These indicators represent separate kinds of activity.
+Available entries can open their associated task details.
 
-### 11.3 Selected Day
+### 8.2 Date Selection
 
-Select a date in the calendar.
+The shared Daycord calendar is available in:
 
-The selected-day section displays the available tasks, planned work, and actual work for that date.
+- Quick Task.
+- Tasks filters.
+- Task Details.
+- Planning periods.
+- Actual work entries.
+- Reports date ranges.
 
-You can open an associated task directly from the displayed entries.
+It provides consistent month navigation and date selection.
 
-### 11.4 Important Date Behavior
+Dates can also be entered manually in supported date fields.
 
-Daycord uses three independent dates:
+Use the date format indicated by the input field.
 
-| Date | Meaning |
+Task Details provides a way to clear the optional task date.
+
+Not every date field supports an empty value.
+
+### 8.3 Independent Dates
+
+Daycord uses three distinct dates:
+
+| Field | Meaning |
 |---|---|
-| Task Date | The date assigned to a task |
-| Planned Date | The date assigned to planned work |
-| Work Date | The date when work was recorded |
+| TaskDate | Date assigned to a task |
+| PlannedDate | Date assigned to a planning period |
+| WorkDate | Date assigned to an actual work entry |
 
-For example, a task may be dated November 2, have planned work on November 3, and actual work on November 4.
+For example:
 
-The Calendar represents each activity on its corresponding date.
+| Activity | Date |
+|---|---|
+| TaskDate | November 11 |
+| PlannedDate | November 12 |
+| WorkDate | November 13 |
 
-## 12. Excel Reports
+These dates are independent.
 
-The Reports section generates Excel work reports in XLSX format.
+Changing TaskDate does not automatically move existing planning periods or actual work entries.
 
-Reports are generated locally and can include activity across multiple months.
+The calendar displays each type of activity on its corresponding date.
 
-### 12.1 Choose a Reporting Period
+## 9. Reports
 
-1. Open Reports.
-2. Select the start date in **From**.
-3. Select the end date in **To**.
-4. Use the calendar controls or enter the dates manually.
-5. Review the updated report summary.
+The **Reports** section generates Excel work reports in XLSX format.
 
-The start date must not be later than the end date.
-
-### 12.2 Report Summary
-
-Reports can display:
-
-- Number of report rows.
-- Number of work entries.
-- Total planned time.
-- Total actual time.
-
-The data comes from saved planning periods and work entries.
-
-### 12.3 Select a Preset
-
-Use **Report preset** to select the report layout.
-
-Daycord includes a built-in Default preset.
-
-The standard report contains four columns:
-
-1. Date.
-2. Task.
-3. Work performed.
-4. Time.
-
-Custom presets can change the selected fields, headers, and column order.
-
-### 12.4 Export to Excel
-
-1. Choose the reporting period.
-2. Select the desired preset.
-3. Save any pending preset changes.
-4. Select **Export to Excel**.
-5. Choose a destination and filename.
-6. Save the workbook.
-
-The exported XLSX file can be opened in compatible spreadsheet applications such as Microsoft Excel.
-
-### 12.5 Duration Formatting
-
-Excel reports use time formats that can display totals exceeding 24 hours.
-
-For example, a total of 27 hours is represented as 27 hours rather than wrapping around to 3 hours.
-
-### 12.6 Empty Reporting Periods
-
-Daycord supports exporting a period without report rows.
-
-This may be useful for producing a report template for a period without recorded work.
-
-## 13. Report Presets
-
-Report presets define which fields appear in the exported workbook and how they are presented.
-
-### 13.1 Default Preset
-
-The Default preset is built into Daycord.
-
-It provides the standard reporting layout and cannot be deleted.
-
-### 13.2 Create a Custom Preset
+### 9.1 Reporting Period
 
 1. Open Reports.
-2. Find the preset controls.
-3. Enter a new preset name.
-4. Select the create-preset action.
-5. Select the new preset.
+2. Select the start date using **From**.
+3. Select the end date using **To**.
+4. Review the report statistics.
+5. Select an Excel preset.
+6. Export the workbook.
 
-### 13.3 Customize Columns
+The reporting period can span multiple months.
 
-Under **Columns and order**, you can:
+The start date cannot be later than the end date.
 
-- Enable or disable supported fields.
-- Rename column headers.
-- Move columns up.
-- Move columns down.
+### 9.2 Report Data
 
-Select **Save column settings** to persist your changes.
+The reporting model includes:
 
-### 13.4 Rename a Preset
+- Planning periods within the selected date range.
+- Actual work entries within the selected date range.
+- Eligible tasks with TaskDate but no planned or actual time records.
 
-Select the appropriate custom preset and use the preset rename action.
+Planning periods and actual work entries use their own dates.
 
-Enter the new name and confirm the change.
+TaskDate-only rows use the task's date.
 
-### 13.5 Delete a Preset
+### 9.3 Tasks Without Time Records
 
-Select a custom preset and use its delete action.
+A task with TaskDate but no planning periods or work entries can appear in the reporting model.
 
-Confirm the deletion.
+For example:
+
+- Task: Prepare documentation.
+- TaskDate: November 11.
+- Planned time: Not recorded.
+- Actual time: Not recorded.
+
+This task contributes an informational row to the full report model when its TaskDate falls within the selected period.
+
+It does not create fictional planned or actual duration.
+
+TaskDate-only rows apply to tasks without time records, not to tasks whose time records merely fall outside the selected period.
+
+### 9.4 Report Statistics
+
+Reports displays statistics for the selected period.
+
+| Statistic | Meaning |
+|---|---|
+| Report rows | Number of rows in the complete report model |
+| Planned total | Total planned duration |
+| Actual total | Total actual duration |
+| Work entries | Number of included actual work entries |
+
+**Report statistics do not depend on the selected Excel preset.**
+
+A preset determines the content of the exported workbook, not the underlying statistics.
+
+Report rows is not a count of unique tasks.
+
+One task may contribute multiple rows.
+
+### 9.5 Excel Row Filtering
+
+The number of exported Excel rows may differ from Report rows.
+
+The selected preset determines which types of rows are meaningful in the exported file.
+
+For example:
+
+- Planning rows are included.
+- Actual-only rows require an actual-time or work-description column.
+- TaskDate-only rows require a visible task identifier, such as a task title.
+
+A preset containing only a date column cannot provide a useful identity for TaskDate-only rows.
+
+Consequently, the exported XLSX may contain fewer data rows than the full reporting model.
+
+### 9.6 Report Presets
+
+Reports includes a built-in **Default** preset.
+
+Custom presets allow you to:
+
+- Choose columns.
+- Change their order.
+- Customize column headings.
+- Save column settings.
+- Rename presets.
+- Create additional presets.
+- Delete custom presets.
+- Reset the configuration to the default.
 
 The built-in Default preset cannot be deleted.
 
-### 13.6 Reset Configuration
+### 9.7 Exporting XLSX
 
-Use the available reset-to-default action to restore the standard column configuration where supported.
+To export a report:
 
-Review any unsaved changes before switching presets or leaving Reports.
+1. Select the reporting period.
+2. Choose a preset.
+3. Configure the columns if necessary.
+4. Save the preset settings.
+5. Select **Export to Excel**.
+6. Choose the destination.
+7. Save the workbook.
 
-### 13.7 Localized Headers
+Built-in report headings and totals use the language selected in Settings.
 
-Built-in column headings and report totals follow the language selected in Daycord Settings.
+Custom column headings are preserved as entered.
 
-Custom headers entered by users are preserved exactly as entered and are not translated automatically.
+Reports can also generate workbooks for periods without report rows.
 
-## 14. Language Settings
+## 10. Settings
 
-Open **Settings** and find the **Language** section.
+### 10.1 Language
+
+Open **Settings → Language**.
 
 Supported languages:
 
 - English.
 - Russian.
 
-Select the desired language.
+Changing the language updates the interface without restarting Daycord.
 
-The interface updates without restarting Daycord.
+The selected language is saved automatically.
 
-The selected language is saved and restored the next time the application starts.
+### 10.2 Appearance
 
-Excel reports use the selected language for their built-in headings and totals.
+Open **Settings → Appearance**.
 
-## 15. Appearance Settings
+Available modes:
 
-Open Settings and find **Appearance**.
-
-Available options:
-
-| Option | Behavior |
+| Mode | Behavior |
 |---|---|
-| System | Follow the operating system |
-| Light | Use the light appearance |
-| Dark | Use the dark appearance |
+| System | Follows the operating system |
+| Light | Uses the light theme |
+| Dark | Uses the dark theme |
 
-Changes are applied without restarting the application.
+Changes take effect without restarting.
 
-The appearance preference is saved to the local database.
+### 10.3 Duration of One Day
 
-## 16. Duration of One Day
+Open Settings and locate **Duration of one day**.
 
-Open Settings and find **Duration of one day**.
-
-By default:
+The default is:
 
 ```text
 1d = 24h
 ```
 
-You can configure a shorter day.
-
-For example, enter:
+For example, set the day length to:
 
 ```text
 8h
 ```
 
-Select Save.
-
-The preview then displays the equivalent of:
+After saving, the preview reflects the new setting:
 
 ```text
 1d = 8h
 ```
 
-Examples with an eight-hour day:
+With an eight-hour day:
 
-| Input | Result |
+| Input | Duration |
 |---|---|
-| `1d` | 8h |
-| `2d` | 16h |
-| `2d 3h` | 19h |
+| `1d` | 8 hours |
+| `2d` | 16 hours |
+| `2d 3h` | 19 hours |
 
 The allowed day length is between 1 minute and 24 hours.
 
-The setting affects the interpretation of day-based duration inputs. It does not recalculate existing saved records.
+Changing this setting does not recalculate existing saved durations.
 
-## 17. Creating a Backup
+## 11. Backup and Restore
 
-Daycord can create a backup containing your application data.
+Daycord provides user-controlled backups, automatic backups, and emergency recovery.
 
-A backup includes:
+These mechanisms have different purposes.
 
-- Tasks.
-- Task statuses.
-- Planning periods.
-- Actual work entries.
-- Report presets.
-- Report settings.
-- Application settings.
-- Database migration history.
+### 11.1 Creating a User Backup
 
-### 17.1 Create a Backup File
+To create a backup:
 
-1. Open Settings.
+1. Open **Settings**.
 2. Find **Backup & Restore**.
 3. Select **Create backup**.
-4. Choose a destination using the file picker.
-5. Save the `.db` backup file.
+4. Choose a destination.
+5. Save the `.db` file.
 6. Check the success message.
 
 Daycord creates and validates a consistent SQLite snapshot before publishing the backup file.
 
-The default suggested filename follows a pattern such as:
+A backup contains your application database, including tasks, time records, report presets, and settings.
+
+Store important backups outside the application data directory.
+
+An external drive or another trusted storage location is recommended.
+
+### 11.2 Automatic Backups
+
+Daycord automatically creates SQLite database snapshots.
+
+Automatic backups:
+
+- Use SQLite's Online Backup API.
+- Are validated before publication.
+- Are created after changes according to the backup scheduler.
+- Are not created unnecessarily when the database is unchanged.
+- Retain up to three published automatic copies.
+- Preserve previous backups if a new snapshot cannot be created successfully.
+
+Automatic backups are stored in:
 
 ```text
-Daycord-Backup-2026-10-30-221500.db
+Backups/Automatic
 ```
 
-The filename includes the local date and time.
+This directory is located inside Daycord's application data directory.
 
-### 17.2 Backup Storage Recommendations
+**Automatic backups are not guaranteed to run immediately after every operation.**
 
-Keep at least one backup outside your normal computer storage.
+The latest user changes may not yet be included in the newest available snapshot.
 
-Suitable destinations include:
+Maintain independent user backups for important data.
 
-- An external drive.
-- A dedicated backup folder.
-- A trusted storage service.
+### 11.3 Restoring a User Backup
 
-Daycord does not upload backups to a cloud service automatically.
+Restoring a backup replaces the current database state with the state contained in the selected backup.
 
-A backup is a copy of your complete application database. Protect it appropriately if it contains sensitive work information.
+To prepare restoration:
 
-## 18. Restoring a Backup
+1. Open **Settings → Backup & Restore**.
+2. Select **Choose backup file**.
+3. Choose a Daycord SQLite backup.
+4. Allow Daycord to validate it.
+5. Review the confirmation.
+6. Confirm restoration.
 
-**Warning:** Restoration replaces the current Daycord application data with the contents of the selected backup.
+Daycord prepares the operation without immediately replacing the running database.
 
-Create a fresh backup of your current data before restoring an older backup.
+After confirming:
 
-### 18.1 Prepare a Restoration
+1. Close Daycord.
+2. Start Daycord again.
+3. Allow the restoration to complete.
+4. Verify your tasks, time records, and settings.
+
+Daycord creates a safety backup before replacing the existing database.
+
+**Warning:** Changes made after the selected backup was created may no longer be present.
+
+Create a fresh backup of your current data before restoring an older copy.
+
+Invalid or incompatible backup files are rejected.
+
+## 12. Emergency Database Recovery
+
+Daycord includes automatic emergency recovery for eligible SQLite database corruption.
+
+This mechanism is separate from the user-controlled Restore feature.
+
+### 12.1 When Recovery Is Used
+
+Automatic recovery is intended for supported physical database corruption scenarios, including:
+
+- `SQLITE_CORRUPT`
+- `SQLITE_NOTADB`
+
+Not every database initialization failure qualifies for automatic recovery.
+
+For example, recovery is not a general-purpose solution for migration checksum errors.
+
+### 12.2 Recovery Process
+
+When eligible corruption is detected during startup, Daycord can:
+
+1. Identify an applicable database corruption condition.
+2. Search for a suitable automatic backup.
+3. Validate the recovery candidate.
+4. Preserve the original damaged database files.
+5. Install the selected backup through a protected restore process.
+6. Validate database initialization after restoration.
+7. Display a recovery-completed message.
+8. Offer to restart the application.
+
+The success message is displayed only after the recovery process has completed its required initialization checks.
+
+### 12.3 After Recovery
+
+When the recovery-completed window appears, select **Restart**.
+
+After Daycord restarts:
+
+1. Open Tasks.
+2. Verify the available tasks.
+3. Check planned and actual time records.
+4. Review report presets and Settings.
+5. Create a new user backup if the restored data is correct.
+
+**Important:** Emergency recovery returns the database to a previously backed-up state.
+
+Changes made after that backup may be missing.
+
+The damaged original files are preserved for possible investigation, but recovering the missing changes from them is not guaranteed.
+
+### 12.4 When Recovery Is Not Possible
+
+Daycord may be unable to recover automatically if:
+
+- No suitable automatic backup exists.
+- Available backups are invalid or incompatible.
+- Database or filesystem operations fail.
+- The failure is outside the supported recovery conditions.
+
+In these situations, Daycord can stop startup and display an error.
+
+The emergency recovery window does not provide a manual list of backups to choose from.
+
+The normal user-controlled Backup & Restore function remains available through Settings when the application can start.
+
+Do not delete or manually replace database files to force startup.
+
+Preserve the application data and seek assistance if necessary.
+
+## 13. Updating Daycord
+
+Daycord stores user data separately from the application executable.
+
+An ordinary update from 0.1.0 to 0.1.1 does not require deleting the database.
+
+Before updating:
 
 1. Open Settings.
-2. Find **Backup & Restore**.
-3. Select **Choose backup file**.
-4. Choose a Daycord `.db` backup.
-5. Allow Daycord to validate the file.
-6. Review the confirmation message.
-7. Select **Restore** to prepare the operation.
+2. Create a user backup.
+3. Store the backup in a safe location.
+4. Close Daycord.
+5. Install the newer application version.
+6. Start Daycord.
+7. Verify that your existing data is available.
 
-The currently running database is not replaced immediately.
+Daycord performs supported database initialization and migrations during startup.
 
-### 18.2 Apply the Restoration
+Do not delete `daycord.db` or the application data directory as part of the update process.
 
-After confirmation:
+If an update fails, preserve the database and any related files before attempting troubleshooting.
 
-1. Close Daycord normally.
-2. Launch Daycord again.
-3. Allow database initialization to finish.
-4. Verify that your restored tasks and work records are present.
-5. Verify your report presets and settings.
+## 14. Troubleshooting
 
-Daycord applies the pending restoration during startup, before normal application features access the database.
-
-### 18.3 Safety Backup
-
-Before replacing the active database, Daycord creates a safety backup of its previous state.
-
-The safety backup is stored under the application's internal `Backups/BeforeRestore` directory.
-
-These files are retained for recovery.
-
-Do not delete them while investigating a failed restoration.
-
-### 18.4 Invalid Backups
-
-Daycord checks whether the selected SQLite file belongs to a compatible Daycord schema.
-
-Invalid, corrupted, or incompatible backups are rejected.
-
-A file with the `.db` extension is not necessarily a valid Daycord backup.
-
-### 18.5 Interrupted Restoration
-
-Daycord includes recovery logic for interrupted restoration operations.
-
-However, no software can guarantee recovery from every possible storage or hardware failure.
-
-Maintain independent backups.
-
-If startup reports a restoration error, avoid deleting or manually replacing database files until the situation has been investigated.
-
-## 19. Troubleshooting
-
-### 19.1 Daycord Does Not Start
+### Daycord Does Not Start
 
 Check that you are using a supported operating system and architecture.
 
-The official release targets are:
+If the operating system displays a security warning, verify that the application was obtained from a trusted source.
 
-- macOS ARM64.
-- Windows x64.
+If a database error appears, preserve the application data directory.
 
-Check whether an operating-system security warning is blocking the application.
+Do not remove the database to bypass initialization.
 
-Version 0.1.0 distribution packages are not digitally signed.
+### A Task Is Missing
 
-### 19.2 Database Initialization Failed
+Open Tasks and inspect the search field and filters.
 
-Do not delete `daycord.db`.
+Clear the filters and check the complete task list.
 
-If the error occurred after a restoration, keep the safety backup and any restoration staging files.
+If the task was deleted or lost during restoration, recovering it may require an older backup.
 
-Record the displayed error and the circumstances under which it occurred.
+### Today's Tasks Does Not Show a Task
 
-### 19.3 A Task Is Missing
+Check the task's TaskDate.
 
-Check the Tasks search field and active filters.
+Today's Tasks uses TaskDate, not the dates of planned or actual work.
 
-Clear filters and inspect the full task list.
+### Planned and Actual Time Differ
 
-If the task was deleted, recovery may require restoring an earlier backup.
+Planned time and actual work are independent records.
 
-### 19.4 Planned and Actual Time Differ
+Check the saved dates and durations of their individual entries.
 
-This is normal when planned work and recorded work do not match.
+### A Report Contains Unexpected Rows
 
-Planned time and actual time are separate records.
+Check the reporting period and the dates of the underlying records.
 
-Check the dates and durations of individual entries.
+Remember that:
 
-### 19.5 The Calendar Does Not Show a Task
+- TaskDate-only tasks can contribute informational rows.
+- One task can contribute multiple report rows.
+- Report statistics are independent of Excel presets.
+- Excel column selection can affect exported rows.
 
-Check whether the task has a Task Date.
+### A Backup Cannot Be Created
 
-Planning and actual work appear according to their own dates, even when the task date is empty or different.
+Check that the selected destination is accessible and writable.
 
-### 19.6 An Excel Report Is Empty
+User backups must be saved to a supported local filesystem destination outside Daycord's protected application data directory.
 
-Check the selected reporting period.
+### A Backup Cannot Be Restored
 
-Confirm that relevant saved work entries or planning periods exist in that range.
+The backup may be invalid, corrupted, incompatible, or inaccessible.
 
-Check the selected report preset and enabled columns.
+Try another known-good backup if available.
 
-### 19.7 A Backup Cannot Be Saved
+Do not modify backup files or migration records to bypass validation.
 
-Check that the destination folder exists and is writable.
+### Emergency Recovery Failed
 
-Use a local filesystem destination.
+Preserve the original application data directory.
 
-Daycord protects its internal application data directory from being used as an ordinary backup export destination.
+Keep any available automatic backups and diagnostic files.
 
-### 19.8 A Backup Cannot Be Restored
+Do not delete restore staging files or manually overwrite the database.
 
-The file may be invalid, corrupted, incompatible, or inaccessible.
+## 15. Data Storage and Privacy
 
-Try validating another known-good backup.
-
-Do not manually edit the backup's migration history or bypass its validation.
-
-### 19.9 Language or Appearance Does Not Persist
-
-Confirm that Daycord completed initialization and that the setting change succeeded.
-
-If database persistence has failed, investigate the application database rather than resetting it.
-
-## 20. Data Storage and Privacy
-
-Daycord stores its data locally.
+Daycord stores application data locally in SQLite.
 
 Typical database locations:
 
-**macOS**
+**macOS:**
 
 ```text
 ~/Library/Application Support/Daycord/daycord.db
 ```
 
-**Windows**
+**Windows:**
 
 ```text
 %LOCALAPPDATA%\Daycord\daycord.db
 ```
 
-There is no built-in account synchronization or cloud collaboration in version 0.1.0.
+Daycord does not provide built-in cloud synchronization.
 
-The user is responsible for keeping independent backups.
+The database and its backups may contain private work information.
 
-Do not share your database or backup files unless you intend to share the information they contain.
+Treat backup files as sensitive data and store them securely.
 
-## 21. Known Limitations
+Maintain independent backups to protect against device loss, filesystem damage, and other failures.
 
-Daycord 0.1.0 is an MVP.
+## 16. Additional Documentation
 
-Current limitations include:
-
-- Official distribution is limited to macOS ARM64 and Windows x64.
-- There is no built-in cloud synchronization.
-- The macOS build is not Developer ID signed or notarized.
-- The Windows installer is not Authenticode signed.
-- Upgrade paths between different application versions have not been fully verified.
-- Some recovery failure scenarios remain unverified.
-- Additional defects identified during MVP testing may be documented separately.
-
-See [Testing](testing.md) for the verification register.
-
-## 22. Additional Documentation
+For technical information, see:
 
 - [Architecture](architecture.md)
 - [Database](database.md)
-- [Development](development.md)
-- [Releasing](releasing.md)
 - [Backup and Recovery](backup-and-recovery.md)
+- [Development](development.md)
 - [Testing](testing.md)
-
-This guide describes the features available in Daycord 0.1.0.
+- [Releasing](releasing.md)
